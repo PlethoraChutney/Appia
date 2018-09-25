@@ -5,7 +5,7 @@ library(ggplot2)
 long_trace_filename = "long_chromatograms.csv"
 
 ###### Make Graphs ######
-data <- read.csv(file = long_trace_filename, header = TRUE) %>% 
+data <- read.csv(file = long_trace_filename, header = TRUE) %>%
   group_by(Channel, Sample) %>%                                         # group_by lets us keep channels separate
   mutate(Normalized = (Signal-min(Signal))/(max(Signal) - min(Signal))) # when we normalize with this function
 

@@ -5,10 +5,12 @@ import pandas as pd
 import sys
 import os
 
-# if you make your own export method (in empower) that doesn't have the channel and sample names in the same place, change the rows below.
+# if you make your own export method (in empower) that doesn't have the channel
+# and sample names in the same place, change the rows below.
 #
 # don't forget that python is zero-indexed
-# i.e., if you want to select the upper-left-most cell, that's column 0, row 0. cell B1 is column 1, row 0, etc.
+# i.e., if you want to select the upper-left-most cell, that's column 0, row 0.
+# cell B1 is column 1, row 0, etc.
 
 name_column = 0
 name_row = 1
@@ -40,14 +42,14 @@ def get_headers(file_list):                                  # get_headers() and
 	header_list = ["Time (minutes)"]                         # if you ever want to rewrite something, these are probably the first things
 	for file in file_list:
 		df = pd.read_csv(file, delim_whitespace = True, nrows = header_rows, header = None)
-		header = [str(df.iloc[name_row,name_column]) + " " + str(df.iloc[channel_row,channel_column])]      
-		header_list.append(header[0])                               
+		header = [str(df.iloc[name_row,name_column]) + " " + str(df.iloc[channel_row,channel_column])]
+		header_list.append(header[0])
 	return(header_list)
 
 def get_chroms(file_list, header_list):                     # pull traces from .arw files
 	# get the time column from the first trace
 	first_trace = pd.read_csv(file_list[1], delim_whitespace = True, skiprows = header_rows, names = ["Time", "Trace"], header = None)
-	
+
 	chroms = first_trace[["Time"]].copy()
 
 	for file in file_list:
