@@ -107,8 +107,4 @@ if __name__ == '__main__':
 		file_name = directory + "long_chromatograms.csv"
 		chroms.to_csv(file_name, index = False)
 
-		#rename_traces(directory, directory_renamed, file_list)
-
-		with open("temp.txt", "w") as text_file:
-			rename_command = filename_human_readable(directory, file_list[0])
-			text_file.write(rename_command)
+		print(filename_human_readable(directory, file_list[0]))
