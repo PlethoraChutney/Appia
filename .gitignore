@@ -1,0 +1,7 @@
+*.RData
+*.Rproj
+*_processed
+Old/
+*.swp
+.Rhistory
+.rproj.user/
