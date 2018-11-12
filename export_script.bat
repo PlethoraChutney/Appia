@@ -1,12 +1,11 @@
 @echo off
+
 set date_filename=results_%DATE:~10,4%-%DATE:~4,2%-%DATE:~7,2%
 mkdir %date_filename%
 move *.arw .\%date_filename% >nul
 
-python assemble_rename_traces.py .\%date_filename%\
-set /p descriptive_filename=<temp.txt
-ren %date_filename% %descriptive_filename% >nul
-del temp.txt
+for /f "delims=" %%A in ('python assemble_rename_traces.py .\%date_filename%\') do set "descriptive_filename=%%A"
+ren %date_filename% %descriptive_filename%
 
 if exist %descriptive_filename% (
   copy auto_graph.R .\%descriptive_filename% >nul
