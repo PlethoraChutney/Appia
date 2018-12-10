@@ -43,22 +43,31 @@ rp.trace.plot <- function(dataframe) {
 }
 
 rp.trace.dir <- function(directory) {
+  
+  already.processed <- file.path(directory, 'long_chromatograms.csv')
+  
+  if (file.exists(already.processed)) {
+    collected.traces <- read_csv(already.processed, col_types = 'nncc') %>% 
+      mutate(Sample = factor(Sample), Channel = factor(Channel))
+    return(collected.traces)
+  }
+  
+  
   file.list <- list.files(path = directory, pattern = '*.arw', full.names = TRUE)
-  paste0(file.list)
   trace.data <- rp.collect.traces(file.list)
   
   return(trace.data)
 }
 
 trace.data <- NULL
-file.list <- list.dirs() %>% as.tibble() %>% filter(value != '.')
-file.list <- file.list$value
+file.list <- list.dirs('..')
+file.list <- file.list[!str_detect(file.list, pattern = '^../\\.')]
 
 ui <- fluidPage(
   titlePanel('Trace Viewer', windowTitle = 'Baconguis Lab HPLC'),
   sidebarLayout(
     sidebarPanel(
-      radioButtons('runPicker', 'Pick a sample set', file.list),
+      selectInput('runPicker', 'Pick a sample set', file.list),
       actionButton('loadData', 'Load data'),
       checkboxGroupInput('tracePicker', 'Pick samples',
                          levels(trace.data$Sample), selected = trace.data$Sample
@@ -68,7 +77,7 @@ ui <- fluidPage(
       )
     ),
     mainPanel(
-      plotOutput('tracePlot')
+      plotOutput('tracePlot', height = '800px')
     )
   )
 )
