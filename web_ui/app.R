@@ -27,19 +27,12 @@ rp.collect.traces <- function(file.list) {
   trace.list <- map(file.list, rp.tidy.trace)
   collected.traces <- trace.list %>% 
     bind_rows() %>% 
-    mutate(Sample = factor(Sample), Channel = factor(Channel))
+    mutate(Sample = factor(Sample), Channel = factor(Channel)) %>% 
+    group_by(Sample, Channel) %>% 
+    mutate(Normalized = (Signal - min(Signal))/(max(Signal) - min(Signal))) %>% 
+    ungroup()
   
   return(collected.traces)
-}
-
-rp.trace.plot <- function(dataframe) {
-  ggplot(data = dataframe, aes(x = Time, y = Signal)) +
-    theme_light() +
-    scale_color_viridis_d() +
-    geom_line(aes(color = Sample)) +
-    facet_grid(Channel ~ ., scales = "free") +
-    xlab("Time (minutes)") +
-    ggtitle("FSEC Traces")
 }
 
 rp.trace.dir <- function(directory) {
@@ -48,7 +41,10 @@ rp.trace.dir <- function(directory) {
   
   if (file.exists(already.processed)) {
     collected.traces <- read_csv(already.processed, col_types = 'nncc') %>% 
-      mutate(Sample = factor(Sample), Channel = factor(Channel))
+      mutate(Sample = factor(Sample), Channel = factor(Channel)) %>% 
+      group_by(Sample, Channel) %>% 
+      mutate(Normalized = (Signal - min(Signal))/(max(Signal) - min(Signal))) %>% 
+      ungroup()
     return(collected.traces)
   }
   
@@ -57,6 +53,30 @@ rp.trace.dir <- function(directory) {
   trace.data <- rp.collect.traces(file.list)
   
   return(trace.data)
+}
+
+rp.trace.plot <- function(dataframe, normalized) {
+  if (!normalized) {
+    return(
+    ggplot(data = dataframe, aes(x = Time, y = Signal)) +
+      theme_light() +
+      scale_color_viridis_d() +
+      geom_line(aes(color = Sample)) +
+      facet_grid(Channel ~ ., scales = "free") +
+      xlab("Time (minutes)") +
+      ggtitle("FSEC Traces")
+    )
+  }
+
+  return(
+    ggplot(data = dataframe, aes(x = Time, y = Normalized)) +
+      theme_light() +
+      scale_color_viridis_d() +
+      geom_line(aes(color = Sample)) +
+      facet_grid(Channel ~ ., scales = "free") +
+      xlab("Time (minutes)") +
+      ggtitle("FSEC Traces")
+  )
 }
 
 trace.data <- NULL
@@ -69,6 +89,7 @@ ui <- fluidPage(
     sidebarPanel(
       selectInput('runPicker', 'Pick a sample set', file.list),
       actionButton('loadData', 'Load data'),
+      checkboxInput('normalized', 'Normalized'),
       checkboxGroupInput('tracePicker', 'Pick samples',
                          levels(trace.data$Sample), selected = trace.data$Sample
       ), 
@@ -94,12 +115,13 @@ server <- function(input, output, session) {
   
   output$tracePlot <- renderPlot({
     input$loadData
+    input$normalized
     
     trace.data %>% 
       filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>% 
-      rp.trace.plot()
+      rp.trace.plot(., input$normalized)
   })
-  })  
+  })
 }
 
 shinyApp(ui = ui, server = server)
