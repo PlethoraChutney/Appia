@@ -55,12 +55,13 @@ rp.trace.dir <- function(directory) {
   return(trace.data)
 }
 
-rp.trace.plot <- function(dataframe, normalized) {
+rp.trace.plot <- function(dataframe, normalized, x_range = NULL, y_range = NULL) {
   if (!normalized) {
     return(
     ggplot(data = dataframe, aes(x = Time, y = Signal)) +
       theme_light() +
       scale_color_viridis_d() +
+      coord_cartesian(xlim = x_range, ylim = y_range) +
       geom_line(aes(color = Sample)) +
       facet_grid(Channel ~ ., scales = "free") +
       xlab("Time (minutes)") +
@@ -72,6 +73,7 @@ rp.trace.plot <- function(dataframe, normalized) {
     ggplot(data = dataframe, aes(x = Time, y = Normalized)) +
       theme_light() +
       scale_color_viridis_d() +
+      coord_cartesian(xlim = x_range, ylim = y_range) +
       geom_line(aes(color = Sample)) +
       facet_grid(Channel ~ ., scales = "free") +
       xlab("Time (minutes)") +
@@ -95,7 +97,10 @@ ui <- fluidPage(
       ), 
       checkboxGroupInput('channelPicker', 'Pick channel(s)',
                          levels(trace.data$Channel), selected = trace.data$Channel
-      )
+      ),
+      checkboxInput('free_scales', 'Free Scales (disable y-axis slider)'),
+      uiOutput('time_range'),
+      uiOutput('signal_range')
     ),
     mainPanel(
       plotOutput('tracePlot', height = '800px')
@@ -111,15 +116,47 @@ server <- function(input, output, session) {
                              choices = levels(trace.data$Sample), selected = trace.data$Sample)
     updateCheckboxGroupInput(session, 'channelPicker', 'Pick channel(s)',
                              choices = levels(trace.data$Channel), selected = trace.data$Channel)
+    output$time_range <- renderUI({
+      minimum <- min(trace.data$Time)
+      maximum <- max(trace.data$Time)
+      sliderInput('x_range', 'Time (min)', min = minimum, max = maximum, value = c(minimum, maximum), step = 0.1)
+    })
+    output$signal_range <- renderUI({
+      if (!input$normalized) {
+        minimum <- min(trace.data$Signal)
+        maximum <- max(trace.data$Signal)
+        sliderInput('y_range', 'Signal', min = minimum, max = maximum, value = c(minimum, maximum), step = 10)
+      }
+      
+      if (input$normalized) {
+      minimum <- min(trace.data$Normalized)
+      maximum <- max(trace.data$Normalized)
+      }
+      
+      sliderInput('y_range', 'Signal', min = minimum, max = maximum, value = c(minimum, maximum), step = 0.1)
+    })
 
   
   output$tracePlot <- renderPlot({
     input$loadData
     input$normalized
+    input$free_scales
     
+    if (!input$free_scales) {
+    return(
     trace.data %>% 
       filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>% 
-      rp.trace.plot(., input$normalized)
+      rp.trace.plot(., input$normalized, input$x_range, input$y_range)
+    )
+    }
+    
+    if (input$free_scales) {
+      return(
+        trace.data %>% 
+          filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>% 
+          rp.trace.plot(., input$normalized, input$x_range)
+      )
+    }
   })
   })
 }
