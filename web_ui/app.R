@@ -11,7 +11,7 @@ rp.get.header <- function(arw) {
 }
 
 rp.get.trace <- function(arw) {
-  trace <- read_delim(arw, '\t', skip = header.rows,col_names = c('Time', 'Signal'), col_types = 'nn')
+  trace <- read_delim(arw, '\t', skip = header.rows,col_names = c('Time', 'Signal'), col_types = 'nd')
 }
 
 rp.tidy.trace <- function(arw) {
@@ -40,7 +40,7 @@ rp.trace.dir <- function(directory) {
   already.processed <- file.path(directory, 'long_chromatograms.csv')
   
   if (file.exists(already.processed)) {
-    collected.traces <- read_csv(already.processed, col_types = 'nncc') %>% 
+    collected.traces <- read_csv(already.processed, col_types = 'ndcc') %>% 
       mutate(Sample = factor(Sample), Channel = factor(Channel)) %>% 
       group_by(Sample, Channel) %>% 
       mutate(Normalized = (Signal - min(Signal))/(max(Signal) - min(Signal))) %>% 
@@ -77,7 +77,7 @@ rp.trace.plot <- function(dataframe, normalized, x_range = NULL, y_range = NULL)
       geom_line(aes(color = Sample)) +
       facet_grid(Channel ~ ., scales = "free") +
       xlab("Time (minutes)") +
-      ggtitle("FSEC Traces")
+      ggtitle("Normalized FSEC Traces")
   )
 }
 
@@ -98,8 +98,8 @@ ui <- fluidPage(
       checkboxGroupInput('channelPicker', 'Pick channel(s)',
                          levels(trace.data$Channel), selected = trace.data$Channel
       ),
-      checkboxInput('free_scales', 'Free Scales (disable y-axis slider)'),
       uiOutput('time_range'),
+      checkboxInput('free_scales', 'Free Scales (disable y-axis slider)', value = TRUE),
       uiOutput('signal_range')
     ),
     mainPanel(
@@ -121,19 +121,22 @@ server <- function(input, output, session) {
       maximum <- max(trace.data$Time)
       sliderInput('x_range', 'Time (min)', min = minimum, max = maximum, value = c(minimum, maximum), step = 0.1)
     })
+    
     output$signal_range <- renderUI({
-      if (!input$normalized) {
-        minimum <- min(trace.data$Signal)
-        maximum <- max(trace.data$Signal)
-        sliderInput('y_range', 'Signal', min = minimum, max = maximum, value = c(minimum, maximum), step = 10)
+      if (!input$free_scales) {
+        if (!input$normalized) {
+          minimum <- min(trace.data$Signal)
+          maximum <- max(trace.data$Signal)
+          sliderInput('y_range', 'Signal', min = minimum, max = maximum, value = c(minimum, maximum), step = 10)
+        }
+        
+        if (input$normalized) {
+        minimum <- min(trace.data$Normalized)
+        maximum <- max(trace.data$Normalized)
+        }
+        
+        sliderInput('y_range', 'Signal', min = minimum, max = maximum, value = c(minimum, maximum), step = 0.1)
       }
-      
-      if (input$normalized) {
-      minimum <- min(trace.data$Normalized)
-      maximum <- max(trace.data$Normalized)
-      }
-      
-      sliderInput('y_range', 'Signal', min = minimum, max = maximum, value = c(minimum, maximum), step = 0.1)
     })
 
   
