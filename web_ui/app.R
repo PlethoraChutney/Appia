@@ -84,8 +84,8 @@ rp.trace.plot <- function(dataframe, normalized, x_range = NULL, y_range = NULL)
 }
 
 trace.data <- NULL
-file.list <- list.dirs('..')
-file.list <- file.list[!str_detect(file.list, pattern = '^../\\.')]
+file.list <- list.dirs()
+file.list <- file.list[!str_detect(file.list, pattern = '^\\./\\.')]
 
 ui <- fluidPage(
   titlePanel('Trace Viewer', windowTitle = 'Baconguis Lab HPLC'),
@@ -118,8 +118,10 @@ server <- function(input, output, session) {
     trace.data <- rp.trace.dir(input$runPicker)
     updateCheckboxGroupInput(session, 'tracePicker', 'Pick Sample(s)',
                              choices = levels(trace.data$Sample), selected = trace.data$Sample)
+    
     updateCheckboxGroupInput(session, 'channelPicker', 'Pick channel(s)',
                              choices = levels(trace.data$Channel), selected = trace.data$Channel)
+    
     output$time_range <- renderUI({
       minimum <- min(trace.data$Time)
       maximum <- max(trace.data$Time)
@@ -131,12 +133,11 @@ server <- function(input, output, session) {
         if (!input$normalized) {
           minimum <- min(trace.data$Signal)
           maximum <- max(trace.data$Signal)
-          sliderInput('y_range', 'Signal', min = minimum, max = maximum, value = c(minimum, maximum), step = 10)
         }
 
         if (input$normalized) {
-        minimum <- min(trace.data$Normalized)
-        maximum <- max(trace.data$Normalized)
+          minimum <- min(trace.data$Normalized)
+          maximum <- max(trace.data$Normalized)
         }
 
         sliderInput('y_range', 'Signal', min = minimum, max = maximum, value = c(minimum, maximum), step = 0.1)
@@ -150,11 +151,11 @@ server <- function(input, output, session) {
     input$free_scales
 
     if (!input$free_scales) {
-    return(
-    trace.data %>%
-      filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>%
-      rp.trace.plot(., input$normalized, input$x_range, input$y_range)
-    )
+      return(
+        trace.data %>%
+          filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>%
+          rp.trace.plot(., input$normalized, input$x_range, input$y_range)
+      )
     }
 
     if (input$free_scales) {
