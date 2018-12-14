@@ -13,7 +13,7 @@ rp.get.header <- function(arw) {
 }
 
 rp.get.trace <- function(arw) {
-  trace <- read_delim(arw, '\t', skip = header.rows,col_names = c('Time', 'Signal'), col_types = 'nn')
+  trace <- read_delim(arw, '\t', skip = header.rows,col_names = c('Time', 'Signal'), col_types = 'nd')
 }
 
 rp.tidy.trace <- function(arw) {
@@ -21,47 +21,67 @@ rp.tidy.trace <- function(arw) {
   trace <- rp.get.trace(arw)
   trace$Sample <- header[[1]]
   trace$Channel <- header[[2]]
-  
+
   return(trace)
 }
 
 rp.collect.traces <- function(file.list) {
   trace.list <- map(file.list, rp.tidy.trace)
-  collected.traces <- trace.list %>% 
-    bind_rows() %>% 
-    mutate(Sample = factor(Sample), Channel = factor(Channel))
-  
-  return(collected.traces)
-}
+  collected.traces <- trace.list %>%
+    bind_rows() %>%
+    mutate(Sample = factor(Sample), Channel = factor(Channel)) %>%
+    group_by(Sample, Channel) %>%
+    mutate(Normalized = (Signal - min(Signal))/(max(Signal) - min(Signal))) %>%
+    ungroup()
 
-rp.trace.plot <- function(dataframe) {
-  ggplot(data = dataframe, aes(x = Time, y = Signal)) +
-    theme_light() +
-    scale_color_viridis_d() +
-    geom_line(aes(color = Sample)) +
-    facet_grid(Channel ~ ., scales = "free") +
-    xlab("Time (minutes)") +
-    ggtitle("FSEC Traces")
+  return(collected.traces)
 }
 
 rp.trace.dir <- function(directory) {
   
   already.processed <- file.path(directory, 'long_chromatograms.csv')
-  
+
   if (file.exists(already.processed)) {
-    collected.traces <- read_csv(already.processed, col_types = 'nncc') %>% 
-      mutate(Sample = factor(Sample), Channel = factor(Channel))
+    collected.traces <- read_csv(already.processed, col_types = 'ndcc') %>%
+      mutate(Sample = factor(Sample), Channel = factor(Channel)) %>%
+      group_by(Sample, Channel) %>%
+      mutate(Normalized = (Signal - min(Signal))/(max(Signal) - min(Signal))) %>%
+      ungroup()
     return(collected.traces)
   }
-  
-  
+
+
   file.list <- list.files(path = directory, pattern = '*.arw', full.names = TRUE)
   trace.data <- rp.collect.traces(file.list)
-  
+
   return(trace.data)
 }
 
-##### Shiny UI #####
+rp.trace.plot <- function(dataframe, normalized, x_range = NULL, y_range = NULL) {
+  if (!normalized) {
+    return(
+    ggplot(data = dataframe, aes(x = Time, y = Signal)) +
+      theme_light() +
+      scale_color_viridis_d() +
+      coord_cartesian(xlim = x_range, ylim = y_range) +
+      geom_line(aes(color = Sample)) +
+      facet_grid(Channel ~ ., scales = "free") +
+      xlab("Time (minutes)") +
+      ggtitle("FSEC Traces")
+    )
+  }
+
+  return(
+    ggplot(data = dataframe, aes(x = Time, y = Normalized)) +
+      theme_light() +
+      scale_color_viridis_d() +
+      coord_cartesian(xlim = x_range, ylim = y_range) +
+      geom_line(aes(color = Sample)) +
+      facet_grid(Channel ~ ., scales = "free") +
+      xlab("Time (minutes)") +
+      ggtitle("Normalized FSEC Traces")
+  )
+}
 
 trace.data <- NULL
 file.list <- list.dirs('..')
@@ -73,12 +93,16 @@ ui <- fluidPage(
     sidebarPanel(
       selectInput('runPicker', 'Pick a sample set', file.list),
       actionButton('loadData', 'Load data'),
+      checkboxInput('normalized', 'Normalized'),
       checkboxGroupInput('tracePicker', 'Pick samples',
                          levels(trace.data$Sample), selected = trace.data$Sample
-      ), 
+      ),
       checkboxGroupInput('channelPicker', 'Pick channel(s)',
                          levels(trace.data$Channel), selected = trace.data$Channel
-      )
+      ),
+      uiOutput('time_range'),
+      checkboxInput('free_scales', 'Free Scales (disable y-axis slider)', value = TRUE),
+      uiOutput('signal_range')
     ),
     mainPanel(
       plotOutput('tracePlot', height = '800px'),
@@ -96,26 +120,52 @@ server <- function(input, output, session) {
                              choices = levels(trace.data$Sample), selected = trace.data$Sample)
     updateCheckboxGroupInput(session, 'channelPicker', 'Pick channel(s)',
                              choices = levels(trace.data$Channel), selected = trace.data$Channel)
-
-    output$tracePlot <- renderPlot({
-      input$loadData
-      
-      trace.data %>% 
-        filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>% 
-        rp.trace.plot()
+    output$time_range <- renderUI({
+      minimum <- min(trace.data$Time)
+      maximum <- max(trace.data$Time)
+      sliderInput('x_range', 'Time (min)', min = minimum, max = maximum, value = c(minimum, maximum), step = 0.1)
     })
-  })
-  
-  output$downloadPlotButton <- downloadHandler(
-    filename = function() {
-      paste('downloaded.plot', '.pdf')
-    },
-    content = function() {
-      cairo_pdf(filename)
-      last_plot()
-      dev.off()
+
+    output$signal_range <- renderUI({
+      if (!input$free_scales) {
+        if (!input$normalized) {
+          minimum <- min(trace.data$Signal)
+          maximum <- max(trace.data$Signal)
+          sliderInput('y_range', 'Signal', min = minimum, max = maximum, value = c(minimum, maximum), step = 10)
+        }
+
+        if (input$normalized) {
+        minimum <- min(trace.data$Normalized)
+        maximum <- max(trace.data$Normalized)
+        }
+
+        sliderInput('y_range', 'Signal', min = minimum, max = maximum, value = c(minimum, maximum), step = 0.1)
+      }
+    })
+
+
+  output$tracePlot <- renderPlot({
+    input$loadData
+    input$normalized
+    input$free_scales
+
+    if (!input$free_scales) {
+    return(
+    trace.data %>%
+      filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>%
+      rp.trace.plot(., input$normalized, input$x_range, input$y_range)
+    )
     }
-  )
+
+    if (input$free_scales) {
+      return(
+        trace.data %>%
+          filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>%
+          rp.trace.plot(., input$normalized, input$x_range)
+      )
+    }
+  })
+  })
 }
 
 shinyApp(ui = ui, server = server)
