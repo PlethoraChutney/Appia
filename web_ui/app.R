@@ -87,6 +87,8 @@ trace.data <- NULL
 file.list <- list.dirs()
 file.list <- file.list[!str_detect(file.list, pattern = '^\\./\\.')]
 
+##### Shiny UI #####
+
 ui <- fluidPage(
   titlePanel('Trace Viewer', windowTitle = 'Baconguis Lab HPLC'),
   sidebarLayout(
@@ -195,6 +197,31 @@ server <- function(input, output, session) {
     }
   })
   })
+  
+  rp.plot.downloader <- reactive({
+    # data <- tibble(x = rnorm(100,100))
+    # p <- ggplot(data = data, aes(x = x)) + geom_histogram()
+    trace.data <- rp.trace.dir(input$runPicker)
+    if (!input$free_scales) {
+      p <- trace.data %>%
+        filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>%
+        rp.trace.plot(., input$normalized, input$x_range, input$y_range)
+    }
+    
+    if (input$free_scales) {
+     trace.data %>%
+        filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>%
+        rp.trace.plot(., input$normalized, input$x_range)
+    }
+  })
+  
+  output$downloadPlotButton <- downloadHandler(
+    filename = 'downloaded_plot.pdf',
+    content = function(file) {
+      ggsave(file, rp.plot.downloader(), 'pdf')
+    }
+  )
+  
 }
 
 shinyApp(ui = ui, server = server)
