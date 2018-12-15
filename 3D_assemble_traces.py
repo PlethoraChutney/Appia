@@ -32,6 +32,7 @@ directory_renamed = "renamed_traces"
 # preceeded by 'ScanEx'. Please include this phrase in your methods if you want
 # to use this script.
 excitation_regex = '(?<=ScanEx).{3}'
+emission_regex = '(?<=ScanEm).{3}'
 
 ##### Chromatogram Consolidation Functions #####
 # make a list of all paths to *.arw files in the given directory
@@ -53,6 +54,7 @@ def append_chroms(file_list) :
 
 		method_name = str(sample_info.iloc[method_name_row, method_name_column])
 		excitation = re.search(excitation_regex, method_name).group(0)
+		emission = re.search(emission_regex, method_name).group(0)
 
 		to_append['Excitation'] = excitation
 		to_append['Sample'] = sample_name
