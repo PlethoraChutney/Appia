@@ -38,7 +38,7 @@ rp.collect.traces <- function(file.list) {
 }
 
 rp.trace.dir <- function(directory) {
-  
+
   already.processed <- file.path(directory, 'long_chromatograms.csv')
 
   if (file.exists(already.processed)) {
@@ -84,8 +84,8 @@ rp.trace.plot <- function(dataframe, normalized, x_range = NULL, y_range = NULL)
 }
 
 trace.data <- NULL
-file.list <- list.dirs()
-file.list <- file.list[!str_detect(file.list, pattern = '^\\./\\.')]
+file.list <- list.dirs('..')
+file.list <- file.list[!str_detect(file.list, pattern = '^\\../\\.')]
 
 ##### Shiny UI #####
 
@@ -120,38 +120,38 @@ server <- function(input, output, session) {
   dirPicker <- function() {
     available_dirs <- list.dirs('../..')
     available_dirs <- available_dirs[!str_detect(available_dirs, '/\\.[a-z, A-Z, 0-9]')]
-    
+
     modalDialog(
       selectInput('upperDirs', 'Pick a directory', available_dirs),
-      
+
       footer = tagList(
         modalButton("Cancel"),
         actionButton("loadNewDir", "Load directory")
       )
     )
   }
-  
-  
+
+
   observeEvent(input$newDir, {
     showModal(dirPicker())
   })
-  
+
   observeEvent(input$loadNewDir, {
     file.list <- list.dirs(input$upperDirs)
     file.list <- file.list[!str_detect(file.list, '/\\.[a-z, A-Z, 0-9]')]
     updateSelectInput(session, 'runPicker', 'Pick a sample set', file.list)
     removeModal()
   })
-  
-  
+
+
   observeEvent(input$loadData, {
     trace.data <- rp.trace.dir(input$runPicker)
     updateCheckboxGroupInput(session, 'tracePicker', 'Pick Sample(s)',
                              choices = levels(trace.data$Sample), selected = trace.data$Sample)
-    
+
     updateCheckboxGroupInput(session, 'channelPicker', 'Pick channel(s)',
                              choices = levels(trace.data$Channel), selected = trace.data$Channel)
-    
+
     output$time_range <- renderUI({
       minimum <- min(trace.data$Time)
       maximum <- max(trace.data$Time)
@@ -197,7 +197,7 @@ server <- function(input, output, session) {
     }
   })
   })
-  
+
   rp.plot.downloader <- reactive({
     # data <- tibble(x = rnorm(100,100))
     # p <- ggplot(data = data, aes(x = x)) + geom_histogram()
@@ -207,21 +207,21 @@ server <- function(input, output, session) {
         filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>%
         rp.trace.plot(., input$normalized, input$x_range, input$y_range)
     }
-    
+
     if (input$free_scales) {
      trace.data %>%
         filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>%
         rp.trace.plot(., input$normalized, input$x_range)
     }
   })
-  
+
   output$downloadPlotButton <- downloadHandler(
     filename = 'downloaded_plot.pdf',
     content = function(file) {
       ggsave(file, rp.plot.downloader(), 'pdf')
     }
   )
-  
+
 }
 
 shinyApp(ui = ui, server = server)
