@@ -91,6 +91,7 @@ ui <- fluidPage(
   titlePanel('Trace Viewer', windowTitle = 'Baconguis Lab HPLC'),
   sidebarLayout(
     sidebarPanel(
+      actionButton('newDir', 'Pick a different directory'),
       selectInput('runPicker', 'Pick a sample set', file.list),
       actionButton('loadData', 'Load data'),
       checkboxInput('normalized', 'Normalized'),
@@ -114,6 +115,33 @@ ui <- fluidPage(
 ##### Shiny Server #####
 
 server <- function(input, output, session) {
+  dirPicker <- function() {
+    available_dirs <- list.dirs('../..')
+    available_dirs <- available_dirs[!str_detect(available_dirs, '/\\.[a-z, A-Z, 0-9]')]
+    
+    modalDialog(
+      selectInput('upperDirs', 'Pick a directory', available_dirs),
+      
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("loadNewDir", "Load directory")
+      )
+    )
+  }
+  
+  
+  observeEvent(input$newDir, {
+    showModal(dirPicker())
+  })
+  
+  observeEvent(input$loadNewDir, {
+    file.list <- list.dirs(input$upperDirs)
+    file.list <- file.list[!str_detect(file.list, '/\\.[a-z, A-Z, 0-9]')]
+    updateSelectInput(session, 'runPicker', 'Pick a sample set', file.list)
+    removeModal()
+  })
+  
+  
   observeEvent(input$loadData, {
     trace.data <- rp.trace.dir(input$runPicker)
     updateCheckboxGroupInput(session, 'tracePicker', 'Pick Sample(s)',
