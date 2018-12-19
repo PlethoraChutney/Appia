@@ -3,14 +3,16 @@ library(ggplot2)
 
 data <- read_csv('3D_chromatograms.csv')
 
-tidy.emission.scan <- data %>% 
-  filter(Scan_Type == 'emission_scan') %>% 
-  gather(key = 'Emission', value = 'Signal', -Time, -Excitation, -Sample) %>%
-  mutate(Emission = as.numeric(Emission), Signal = as.double(Signal), Excitation = as.factor(Excitation), Sample = as.factor(Sample)) %>% 
-  group_by(Excitation, Sample) %>% 
-  drop_na(Signal) %>%
-  mutate(Normalized = ((Signal-min(Signal))/(max(Signal) - min(Signal)))) %>% 
-  ungroup()
+try(  
+  tidy.emission.scan <- data %>% 
+    filter(Scan_Type == 'emission_scan') %>% 
+    gather(key = 'Emission', value = 'Signal', -Time, -Excitation, -Sample) %>%
+    mutate(Emission = as.numeric(Emission), Signal = as.double(Signal), Excitation = as.factor(Excitation), Sample = as.factor(Sample)) %>% 
+    group_by(Excitation, Sample) %>% 
+    drop_na(Signal) %>%
+    mutate(Normalized = ((Signal-min(Signal))/(max(Signal) - min(Signal)))) %>% 
+    ungroup()
+)
 
 if(exists('tidy.emission.scan')){
   em.plot <- tidy.emission.scan %>% 
@@ -28,8 +30,12 @@ if(exists('tidy.emission.scan')){
     scale_fill_viridis_c(option = 'magma') +
     ggtitle('Normalized emission scan') +
     facet_grid(Sample ~ Excitation, scales = 'free')
+  
+  ggsave('3D_em_plot.pdf', plot = em.plot, width = 8, height = 8, units = 'in')
+  ggsave('norm_3D_em_plot.pdf', plot = norm.em.plot, width = 8, height = 8, units = 'in')
 }
 
+try(
 tidy.excitation.scan <- data %>% 
   filter(Scan_Type == 'excitation_scan') %>% 
   gather(key = 'Excitation', value = 'Signal', -Time, -Emission, -Sample) %>% 
@@ -38,6 +44,7 @@ tidy.excitation.scan <- data %>%
   group_by(Emission, Sample) %>% 
   mutate(Normalized = (Signal-min(Signal))/(max(Signal) - min(Signal))) %>% 
   ungroup()
+)
 
 if (exists('tidy.excitation.scan')) {
   ex.plot <- tidy.excitation.scan %>% 
@@ -55,20 +62,7 @@ if (exists('tidy.excitation.scan')) {
     scale_fill_viridis_c() +
     ggtitle('Normalized excitation scan') +
     facet_grid(Sample ~ Emission, scales = 'free')
+  
+  ggsave('3D_ex_plot.pdf', plot = ex.plot, width = 8, height = 8, units = 'in')
+  ggsave('norm_3D_ex_plot.pdf', plot = norm.ex.plot, width = 8, height = 8, units = 'in')
 }
-
-cairo_pdf(filename = '3D_em_plot.pdf', width = 8, height = 8)
-em.plot
-dev.off()
-
-cairo_pdf(filename = 'normalized_3D_em_plot.pdf', width = 8, height = 8)
-norm.em.plot
-dev.off()
-
-cairo_pdf(filename = '3D_ex_plot.pdf', width = 8, height = 8)
-ex.plot
-dev.off()
-
-cairo_pdf(filename = 'normalized_3D_ex_plot.pdf', width = 8, height = 8)
-norm.ex.plot
-dev.off()
