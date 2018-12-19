@@ -1,34 +1,47 @@
 library(tidyverse)
 library(ggplot2)
 
-data <- read_csv('long_chromatograms.csv') 
+data <- read_csv('3D_chromatograms.csv')
 
-tidy.data <- data %>% 
+tidy.emission.scan <- data %>% 
+  filter(Scan_Type == 'emission_scan') %>% 
   gather(key = 'Emission', value = 'Signal', -Time, -Excitation, -Sample) %>% 
   drop_na(Signal) %>%
-  mutate(Emission = as.numeric(Emission), Signal = as.numeric(Signal), Excitation = as.factor(Excitation), Sample = as.factor(Sample)) %>% 
+  mutate(Emission = as.numeric(Emission), Signal = as.double(Signal), Excitation = as.factor(Excitation), Sample = as.factor(Sample)) %>% 
   group_by(Excitation, Sample) %>% 
   mutate(Normalized = (Signal-min(Signal))/(max(Signal) - min(Signal))) %>% 
   ungroup()
 
-plot <- tidy.data %>% 
-  ggplot(aes(x = Time, y = Emission, z = Signal, fill = Signal)) +
-  theme_dark() +
-  geom_raster() +
-  scale_fill_viridis_c(option = 'magma') +
-  facet_grid(Sample ~ Excitation, scales = 'free')
+if(tidy.emission.scan){
+  em.plot <- tidy.emission.scan %>% 
+    ggplot(aes(x = Time, y = Emission, z = Signal, fill = Signal)) +
+    theme_dark() +
+    geom_raster() +
+    scale_fill_viridis_c(option = 'magma') +
+    ggtitle('Emission scan') +
+    facet_grid(Sample ~ Excitation, scales = 'free')
+    
+  norm.em.plot <- tidy.emission.scan %>% 
+    ggplot(aes(x = Time, y = Emission, z = Normalized, fill = Normalized)) +
+    theme_dark() +
+    geom_raster() +
+    scale_fill_viridis_c(option = 'magma') +
+    facet_grid(Sample ~ Excitation, scales = 'free')
   
-norm.plot <- tidy.data %>% 
-  ggplot(aes(x = Time, y = Emission, z = Normalized, fill = Normalized)) +
-  theme_dark() +
-  geom_raster() +
-  scale_fill_viridis_c(option = 'magma') +
-  facet_grid(Sample ~ Excitation, scales = 'free')
+  cairo_pdf(filename = '3D_em_plot.pdf', width = 8, height = 8)
+  em.plot
+  dev.off()
+  
+  cairo_pdf(filename = 'normalized_3D_plot.pdf', width = 8, height = 8)
+  norm.em.plot
+  dev.off()
+}
 
-cairo_pdf(filename = '3D_plot.pdf', width = 8, height = 8)
-plot
-dev.off()
-
-cairo_pdf(filename = 'normalized_3D_plot.pdf', width = 8, height = 8)
-norm.plot
-dev.off()
+tidy.excitation.scan <- data %>% 
+  filter(Scan_Type == 'excitation_scan') %>% 
+  gather(key = 'Excitation', value = 'Signal', -Time, -Emission, -Sample) %>% 
+  drop_na(Signal) %>%
+  mutate(Excitation = as.numeric(Excitation), Signal = as.double(Signal), Emission = as.factor(Emission), Sample = as.factor(Sample)) %>% 
+  group_by(Emission, Sample) %>% 
+  mutate(Normalized = (Signal-min(Signal))/(max(Signal) - min(Signal))) %>% 
+  ungroup()
