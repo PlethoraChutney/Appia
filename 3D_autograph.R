@@ -5,14 +5,14 @@ data <- read_csv('3D_chromatograms.csv')
 
 tidy.emission.scan <- data %>% 
   filter(Scan_Type == 'emission_scan') %>% 
-  gather(key = 'Emission', value = 'Signal', -Time, -Excitation, -Sample) %>% 
-  drop_na(Signal) %>%
+  gather(key = 'Emission', value = 'Signal', -Time, -Excitation, -Sample) %>%
   mutate(Emission = as.numeric(Emission), Signal = as.double(Signal), Excitation = as.factor(Excitation), Sample = as.factor(Sample)) %>% 
   group_by(Excitation, Sample) %>% 
-  mutate(Normalized = (Signal-min(Signal))/(max(Signal) - min(Signal))) %>% 
+  drop_na(Signal) %>%
+  mutate(Normalized = ((Signal-min(Signal))/(max(Signal) - min(Signal)))) %>% 
   ungroup()
 
-if(tidy.emission.scan){
+if(exists('tidy.emission.scan')){
   em.plot <- tidy.emission.scan %>% 
     ggplot(aes(x = Time, y = Emission, z = Signal, fill = Signal)) +
     theme_dark() +
@@ -26,22 +26,49 @@ if(tidy.emission.scan){
     theme_dark() +
     geom_raster() +
     scale_fill_viridis_c(option = 'magma') +
+    ggtitle('Normalized emission scan') +
     facet_grid(Sample ~ Excitation, scales = 'free')
-  
-  cairo_pdf(filename = '3D_em_plot.pdf', width = 8, height = 8)
-  em.plot
-  dev.off()
-  
-  cairo_pdf(filename = 'normalized_3D_plot.pdf', width = 8, height = 8)
-  norm.em.plot
-  dev.off()
 }
 
 tidy.excitation.scan <- data %>% 
   filter(Scan_Type == 'excitation_scan') %>% 
   gather(key = 'Excitation', value = 'Signal', -Time, -Emission, -Sample) %>% 
-  drop_na(Signal) %>%
   mutate(Excitation = as.numeric(Excitation), Signal = as.double(Signal), Emission = as.factor(Emission), Sample = as.factor(Sample)) %>% 
+  drop_na(Signal) %>%
   group_by(Emission, Sample) %>% 
   mutate(Normalized = (Signal-min(Signal))/(max(Signal) - min(Signal))) %>% 
   ungroup()
+
+if (exists('tidy.excitation.scan')) {
+  ex.plot <- tidy.excitation.scan %>% 
+    ggplot(aes(x = Time, y = Excitation, z = Signal, fill = Signal)) +
+    theme_dark() +
+    geom_raster() +
+    scale_fill_viridis_c() +
+    ggtitle('Excitation scan') +
+    facet_grid(Sample ~ Emission, scales = 'free')
+  
+  norm.ex.plot <- tidy.excitation.scan %>% 
+    ggplot(aes(x = Time, y = Excitation, z = Normalized, fill = Normalized)) +
+    theme_dark() +
+    geom_raster() +
+    scale_fill_viridis_c() +
+    ggtitle('Normalized excitation scan') +
+    facet_grid(Sample ~ Emission, scales = 'free')
+}
+
+cairo_pdf(filename = '3D_em_plot.pdf', width = 8, height = 8)
+em.plot
+dev.off()
+
+cairo_pdf(filename = 'normalized_3D_em_plot.pdf', width = 8, height = 8)
+norm.em.plot
+dev.off()
+
+cairo_pdf(filename = '3D_ex_plot.pdf', width = 8, height = 8)
+ex.plot
+dev.off()
+
+cairo_pdf(filename = 'normalized_3D_ex_plot.pdf', width = 8, height = 8)
+norm.ex.plot
+dev.off()
