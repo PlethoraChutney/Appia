@@ -36,6 +36,12 @@ in terms of data but basically identical in terms of process. The output is
 obviously different, but the differences should be clear if you have a passing
 understanding of what's going on with the data.
 
+The 3D scripts will automatically determine if your samle was run with an excitation
+or emission scan, separate the data into two groups, and plot each group independently.
+This all relies on your instrument method containing _exactly one_ instance of the
+pattern (without braces) `{Ex|Em}{###}` where Ex or Em stands for excitation or
+emission scan, and ### is the wavelength.
+
 ## Web UI
 The web ui (a [Shiny](https://shiny.rstudio.com/) app) provides a simpler way
 to analyze the processed traces. Right now, only 2D data can be visualized with
@@ -50,3 +56,6 @@ plot will update in real time. The time slider sets min and max of the x-axis.
 There is a y-slider, but it's hidden by default since typically
 each channel has different relevant signal levels. Uncheck `Free Scales
 (disable y-axis slider)` to set both y-axes equal and gain control of the scale.
+
+You can export plots made with the Shiny app using the download plots button at
+the bottom of the main panel.
