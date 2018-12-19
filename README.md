@@ -5,19 +5,14 @@ batch file from the same directory as the python and R scripts, as
 well as your raw data (which are .arw files).
 
 ## How to format your Waters export method
-The scripts in the repo are set up to parse my Waters files, which
-are exported with the following headers in the following order:
+I have dropped support for Waters data exported with long headers (i.e., two
+  columns and multiple rows). These scripts now require your data to be formatted
+  with a single pair of rows, with the columns deliniating what header goes where.
 
-| Column | 2D                     | 3D                     |
-|--------|------------------------|------------------------|
-| 1      | Sample Name            | Sample Set Name        |
-| 2      | Channel                | Sample Set Start Date  |
-| 3      | Sample Set Finish Date | Sample Name            |
-| 4      | Sample Set Name        | Instrument Method Name |
-
-Feel free to include more information, or put yours in a different order or layout,
-in your header. Just be sure to update the position information in the preamble
-to the appropriate python script.
+The 2D script requires `SampleName`, `Channel`, and `Sample Set Name`. The
+3D script requires `SampleName`, `Instrument Method Name`, and `Sample Set Name`.
+The order is not important, so long as the required headers are present in the .arw
+file.
 
 ## What the scripts do
 `export_script.bat` moves all .arw files into a directory, runs `assemble_rename_traces.py`,

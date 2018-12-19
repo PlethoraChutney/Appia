@@ -6,27 +6,17 @@ import sys
 import os
 import re
 
-# if you make your own export method (in empower) that doesn't have the channel
-# and sample names in the same place, change the rows below.
-#
-# don't forget that python is zero-indexed
-# i.e., if you want to select the upper-left-most cell, that's column 0, row 0.
-# cell B1 is column 1, row 0, etc.
+# This script only supports sample headers in the wide format
 
-name_column = 2
-name_row = 1
-
-date_column = 1
-date_row = 1
-
-sample_set_column = 0
-sample_set_row = 1
-
-method_name_column = 3
-method_name_row = 1
-
+# header_rows should include the header AND the information of that header
+# i.e., if your first row is "SampleName ..." and your second is "Buffer ..."
+# header_rows is 2
 header_rows = 2
 directory_renamed = "renamed_traces"
+
+# data_row is the row, *ignoring headers* in which values are stored. In the
+# above example, data_row is 0
+data_row = 0
 
 # This is a positive lookbehind assertion, meaning it'll only match 3 characters
 # preceeded by 'ScanEx' or 'ScanEm'. Please include this phrase in your methods if you want
@@ -35,7 +25,6 @@ excitation_regex = '(?<=ScanEx).{3}'
 emission_regex = '(?<=ScanEm).{3}'
 
 ##### Chromatogram Consolidation Functions #####
-# make a list of all paths to *.arw files in the given directory
 def get_file_list(directory):
 	file_list = []
 	for file in os.listdir(directory):
@@ -49,10 +38,9 @@ def append_chroms(file_list) :
 
 	for file in file_list:
 		to_append = pd.read_csv(file, delim_whitespace = True, skiprows = header_rows)
-		sample_info = pd.read_csv(file, delim_whitespace = True, nrows = header_rows, header = None)
-		sample_name = str(sample_info.iloc[name_row,name_column])
-
-		method_name = str(sample_info.iloc[method_name_row, method_name_column])
+		sample_info = pd.read_csv(file, delim_whitespace = True, nrows = header_rows - 1)
+		sample_name = str(sample_info.loc[data_row]['SampleName'])
+		method_name = str(sample_info.loc[data_row]['Instrument Method Name'])
 
 		excitation = re.search(excitation_regex, method_name)
 		if (excitation):
@@ -80,8 +68,8 @@ def append_chroms(file_list) :
 	return chroms
 
 def filename_human_readable(directory, file_name):
-	headers = pd.read_csv(file_name, delim_whitespace = True, nrows = header_rows, header = None)
-	readable_dir_name = str(headers.iloc[sample_set_row, sample_set_column]).replace('/', '-').replace(" ", "_") + "_processed" #+ "_[" + str(headers.iloc[date_row, date_column]).replace('/', '-').replace(" ", "_") + "]_processed"
+	headers = pd.read_csv(file_name, delim_whitespace = True, nrows = header_rows - 1)
+	readable_dir_name = str(headers.loc[data_row]['Sample Set Name']).replace('/', '-').replace(" ", "_") + "_processed"
 	return readable_dir_name
 
 ##### Main #####
