@@ -26,8 +26,6 @@ directory. It also produces a wide-format table for use in non-R programs.
 `auto_graph.R` produces the graphs. It produces a raw and normalized trace
 for each channel, colored by sample.
 
-![Example 2D plot]{../master/test_traces/2d_example_plot.png}
-
 Each of these three scripts has a 3D version, which are fundamentally different
 in terms of data but basically identical in terms of process. The output is
 obviously different, but the differences should be clear if you have a passing
@@ -38,8 +36,6 @@ or emission scan, separate the data into two groups, and plot each group indepen
 This all relies on your instrument method containing _exactly one_ instance of the
 pattern (without braces) `{Ex|Em}{###}` where Ex or Em stands for excitation or
 emission scan, and ### is the wavelength.
-
-![Example 3D plot]{../master/3D_test_traces/example_3D_plot.png}
 
 ## Web UI
 The web ui (a [Shiny](https://shiny.rstudio.com/) app) provides a simpler way
