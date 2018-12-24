@@ -34,8 +34,10 @@ understanding of what's going on with the data.
 The 3D scripts will automatically determine if your samle was run with an excitation
 or emission scan, separate the data into two groups, and plot each group independently.
 This all relies on your instrument method containing _exactly one_ instance of the
-pattern (without braces) `{Ex|Em}{###}` where Ex or Em stands for excitation or
-emission scan, and ### is the wavelength.
+pattern (without braces) `Scan{Ex|Em}{###}` where Ex or Em stands for excitation or
+emission scan, and ### is the constant wavelength. So for example, if you
+were scanning the emission while holding excitation constant at 540nm, your
+instrument method needs the pattern `ScanEm540`.
 
 ## Web UI
 The web ui (a [Shiny](https://shiny.rstudio.com/) app) provides a simpler way
