@@ -1,7 +1,7 @@
 library(tidyverse)
 library(ggplot2)
 
-data <- read_csv('3D_chromatograms.csv')
+data <- read_csv('3D_chromatograms.csv', na = '')
 
 try(  
   tidy.emission.scan <- data %>% 
