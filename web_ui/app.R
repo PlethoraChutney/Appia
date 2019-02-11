@@ -58,7 +58,7 @@ rp.trace.dir <- function(directory) {
 }
 
 rp.trace.plot <- function(dataframe, normalized, x_range = NULL, y_range = NULL) {
-  if (!normalized) {
+  if (normalized == 'Unnormalized') {
     return(
     ggplot(data = dataframe, aes(x = Time, y = Signal)) +
       theme_light() +
@@ -70,9 +70,10 @@ rp.trace.plot <- function(dataframe, normalized, x_range = NULL, y_range = NULL)
       ggtitle("FSEC Traces")
     )
   }
-
-  return(
-    ggplot(data = dataframe, aes(x = Time, y = Normalized)) +
+  
+  if (normalized == 'Whole trace') {
+    return (
+    ggplot(dataframe, aes(x = Time, y = Normalized)) +
       theme_light() +
       scale_color_viridis_d() +
       coord_cartesian(xlim = x_range, ylim = y_range) +
@@ -80,7 +81,26 @@ rp.trace.plot <- function(dataframe, normalized, x_range = NULL, y_range = NULL)
       facet_grid(Channel ~ ., scales = "free") +
       xlab("Time (minutes)") +
       ggtitle("Normalized FSEC Traces")
-  )
+    )
+  }
+  
+  if (normalized == 'What\'s on screen') {
+    return(
+      dataframe %>% 
+        filter(Time > x_range[1] & Time < x_range[2]) %>% 
+        group_by(Sample, Channel) %>% 
+        mutate(Normalized = (Signal - min(Signal))/(max(Signal) - min(Signal))) %>%
+        ungroup() %>% 
+        ggplot(aes(x = Time, y = Normalized)) +
+          theme_light() +
+          scale_color_viridis_d() +
+          coord_cartesian(xlim = x_range, ylim = y_range) +
+          geom_line(aes(color = Sample)) +
+          facet_grid(Channel ~ ., scales = "free") +
+          xlab("Time (minutes)") +
+          ggtitle("Normalized FSEC Traces")
+    )
+  }
 }
 
 trace.data <- NULL
@@ -96,7 +116,8 @@ ui <- fluidPage(
       actionButton('newDir', 'Pick a different directory'),
       selectInput('runPicker', 'Pick a sample set', file.list),
       actionButton('loadData', 'Load data'),
-      checkboxInput('normalized', 'Normalized'),
+      #checkboxInput('normalized', 'Normalized'),
+      radioButtons('normalized', label = 'Normalization', choices = c('Unnormalized', 'Whole trace', 'What\'s on screen')),
       checkboxGroupInput('tracePicker', 'Pick samples',
                          levels(trace.data$Sample), selected = trace.data$Sample
       ),
@@ -160,12 +181,12 @@ server <- function(input, output, session) {
 
     output$signal_range <- renderUI({
       if (!input$free_scales) {
-        if (!input$normalized) {
+        if (input$normalized == 'Unnormalized') {
           minimum <- min(trace.data$Signal)
           maximum <- max(trace.data$Signal)
         }
 
-        if (input$normalized) {
+        if (input$normalized %in% c('Whole trace', 'What\'s on screen')) {
           minimum <- min(trace.data$Normalized)
           maximum <- max(trace.data$Normalized)
         }
@@ -199,8 +220,6 @@ server <- function(input, output, session) {
   })
 
   rp.plot.downloader <- reactive({
-    # data <- tibble(x = rnorm(100,100))
-    # p <- ggplot(data = data, aes(x = x)) + geom_histogram()
     trace.data <- rp.trace.dir(input$runPicker)
     if (!input$free_scales) {
       p <- trace.data %>%
