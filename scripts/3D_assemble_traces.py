@@ -5,6 +5,8 @@ import pandas as pd
 import sys
 import os
 import re
+import shutil
+import subprocess
 
 # This script only supports sample headers in the wide format
 
@@ -67,7 +69,7 @@ def append_chroms(file_list) :
 
 	return chroms
 
-def filename_human_readable(directory, file_name):
+def filename_human_readable(file_name):
 	headers = pd.read_csv(file_name, delim_whitespace = True, nrows = header_rows - 1)
 	readable_dir_name = str(headers.loc[data_row]['Sample Set Name']).replace('/', '-').replace(" ", "_") + "_processed"
 	return readable_dir_name
@@ -80,10 +82,16 @@ if __name__ == '__main__':
 	else:
 		directory = sys.argv[1]
 		file_list = get_file_list(directory)
-		print(file_list)
+		readable_dir = filename_human_readable(file_list[0])
+		os.makedirs(os.path.join(directory, readable_dir))
+		new_fullpath = os.path.join(directory, readable_dir)
 
+		for file in file_list:
+			shutil.move(file, os.path.join(new_fullpath, file))
+
+		file_list = get_file_list(new_fullpath)
 		chroms = append_chroms(file_list)
-		file_name = directory + "3D_chromatograms.csv"
+		file_name = os.path.join(new_fullpath, "3D_chromatograms.csv")
 		chroms.to_csv(file_name, index = False)
 
-		print(filename_human_readable(directory, file_list[0]))
+		subprocess.run(['Rscript', os.path.join('scripts', '3D_autograph.R'), os.path.normpath(new_fullpath)])

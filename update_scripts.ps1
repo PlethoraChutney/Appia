@@ -8,6 +8,7 @@ foreach($labmember in $userDirectories)
     Copy-Item -path Script_repos\HPLC_Scripts\*.bat -destination $labmember -recurse -force -PassThru
     Copy-Item -path Script_repos\HPLC_Scripts\*.command -destination $labmember -recurse -force -PassThru
     Copy-Item -path Script_repos\HPLC_Scripts\web_ui -destination $labmember -recurse -force -PassThru
+    Copy-Item -path Script_repos\HPLC_Scripts\scripts -destination $labmember -recurse -force -PassThru
   }
 write-host "Files copied."
 [void][System.Console]::ReadKey($true)

@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import sys
 import os
+import shutil
+import subprocess
 
 # This script only works if you have your Empower method export the headers in
 # wide format.
@@ -64,7 +66,7 @@ def append_chroms(file_list) :
 
 	return chroms
 
-def filename_human_readable(directory, file_name):
+def filename_human_readable(file_name):
 	headers = pd.read_csv(file_name, delim_whitespace = True, nrows = header_rows)
 	readable_dir_name = str(headers.loc[data_row]['Sample Set Name']).replace('/', '-').replace(" ", "_") + "_processed"
 	return readable_dir_name
@@ -77,13 +79,21 @@ if __name__ == '__main__':
 	else:
 		directory = sys.argv[1]
 		file_list = get_file_list(directory)
+		readable_dir = filename_human_readable(file_list[0])
+
+		new_fullpath = os.path.join(directory, readable_dir)
+		os.makedirs(new_fullpath)
+		for file in file_list:
+			shutil.move(file, os.path.join(readable_dir, file))
+
+		file_list = get_file_list(new_fullpath)
 		header_list = get_headers(file_list)
 		chroms = get_chroms(file_list, header_list)
-		file_name = directory + "wide_chromatograms.csv"
+		file_name = os.path.join(new_fullpath, 'wide_chromatograms.csv')
 		chroms.to_csv(file_name, index = False)
 
 		chroms = append_chroms(file_list)
-		file_name = directory + "long_chromatograms.csv"
+		file_name = os.path.join(new_fullpath, 'long_chromatograms.csv')
 		chroms.to_csv(file_name, index = False)
 
-		print(filename_human_readable(directory, file_list[0]))
+		subprocess.run(['Rscript', os.path.join('scripts', 'auto_graph.R'), os.path.normpath(new_fullpath)])

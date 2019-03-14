@@ -3,13 +3,15 @@ suppressWarnings(suppressMessages(library(dplyr)))
 suppressWarnings(suppressMessages(library(ggplot2)))
 
 long_trace_filename = "long_chromatograms.csv"
+args = commandArgs(trailingOnly = TRUE)
+setwd(args[1])
 
 ###### Make Graphs ######
 data <- read.csv(file = long_trace_filename, header = TRUE) %>%
   group_by(Channel, Sample) %>%                                             # group_by lets us keep channels separate
   mutate(Normalized = (Signal-min(Signal))/(max(Signal) - min(Signal))) %>% # when we normalize with this function
-  ungroup() %>% 
-  mutate(Channel = if_else(grepl('ex280/em350', Channel), 'Trp', 
+  ungroup() %>%
+  mutate(Channel = if_else(grepl('ex280/em350', Channel), 'Trp',
                            if_else(grepl('ex488/em509', Channel), 'GFP', as.character(Channel))))
 
 
