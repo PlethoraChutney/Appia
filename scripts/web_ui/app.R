@@ -3,6 +3,7 @@ library(shiny)
 library(ggplot2)
 
 header.rows <- 2
+setwd('../..')
 
 ##### Function Definitions #####
 
@@ -104,8 +105,8 @@ rp.trace.plot <- function(dataframe, normalized, x_range = NULL, y_range = NULL)
 }
 
 trace.data <- NULL
-file.list <- list.dirs('..')
-file.list <- file.list[!str_detect(file.list, pattern = '^\\../\\.')]
+file.list <- list.dirs()
+file.list <- file.list[!str_detect(file.list, pattern = '^\\./\\.')]
 
 ##### Shiny UI #####
 
@@ -139,7 +140,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   dirPicker <- function() {
-    available_dirs <- list.dirs('../..')
+    available_dirs <- list.dirs('..')
     available_dirs <- available_dirs[!str_detect(available_dirs, '/\\.[a-z, A-Z, 0-9]')]
 
     modalDialog(

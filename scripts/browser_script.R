@@ -1,5 +1,5 @@
 library(shiny)
 options(browser = 'C:/Program Files/Mozilla Firefox/firefox.exe')
-runApp('./web_ui/app.R', host = '127.0.0.1', port = 42000, launch.browser = TRUE)
+runApp('./scripts/web_ui/app.R', host = '127.0.0.1', port = 42000, launch.browser = TRUE)
 print("Hope the traces looked good")
 quit('no')

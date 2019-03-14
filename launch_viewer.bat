@@ -1,1 +1,2 @@
-Rscript browser_script.R
+Rscript scripts\\browser_script.R
+PAUSE
