@@ -6,8 +6,8 @@ well as your raw data (which are .arw files).
 
 ## How to format your Waters export method
 I have dropped support for Waters data exported with long headers (i.e., two
-  columns and multiple rows). These scripts now require your data to be formatted
-  with a single pair of rows, with the columns deliniating what header goes where.
+columns and multiple rows). These scripts now require your data to be formatted
+with a single pair of rows, with the columns deliniating what header goes where.
 
 The 2D script requires `SampleName`, `Channel`, and `Sample Set Name`. The
 3D script requires `SampleName`, `Instrument Method Name`, and `Sample Set Name`.
@@ -15,16 +15,18 @@ The order is not important, so long as the required headers are present in the .
 file.
 
 ## What the scripts do
-`export_script.bat` moves all .arw files into a directory, runs `assemble_rename_traces.py`,
-renames the file to the date of the sample set, then runs the `auto_graph.R`.
-Note that 3D files are also exported as .arw files, and this will not process them
-correctly (or at all).
+`export_script.bat` simply runs `assemble_rename_traces.py`, which does all the
+heavy lifting. This is to get around the fact that you can't make python scripts
+executable in Windows.
 
-`assemble_rename_traces.py` produces a long-format table of all runs in the
-directory. It also produces a wide-format table for use in non-R programs.
+`assemble_rename_traces.py` first moves all of the 'arw' files into a new directory,
+where it reads them and creates two files: `long_chromatograms.csv` and `wide_chromatograms.csv`.
+Finally, it runs `auto_graph.R` on `long_chromatograms.csv`.
 
 `auto_graph.R` produces the graphs. It produces a raw and normalized trace
 for each channel, colored by sample.
+
+![Example 2D Trace](/test_traces/2d_example_plot.png)
 
 Each of these three scripts has a 3D version, which are fundamentally different
 in terms of data but basically identical in terms of process. The output is
@@ -38,6 +40,8 @@ pattern (without braces) `Scan{Ex|Em}{###}` where Ex or Em stands for excitation
 emission scan, and ### is the constant wavelength. So for example, if you
 were scanning the emission while holding excitation constant at 540nm, your
 instrument method needs the pattern `ScanEm540`.
+
+The batch scripts live in the root directory, everything else is in `/scripts/`.
 
 ## Web UI
 The web ui (a [Shiny](https://shiny.rstudio.com/) app) provides a simpler way
