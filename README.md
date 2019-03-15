@@ -41,6 +41,8 @@ emission scan, and ### is the constant wavelength. So for example, if you
 were scanning the emission while holding excitation constant at 540nm, your
 instrument method needs the pattern `ScanEm540`.
 
+![Example 3D Trace](3D_Test_Traces/example_3D_plot.png)
+
 The batch scripts live in the root directory, everything else is in `/scripts/`.
 
 ## Web UI
