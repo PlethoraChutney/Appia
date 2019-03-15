@@ -26,7 +26,7 @@ Finally, it runs `auto_graph.R` on `long_chromatograms.csv`.
 `auto_graph.R` produces the graphs. It produces a raw and normalized trace
 for each channel, colored by sample.
 
-![Example 2D Trace](/git/Baconguis_Lab/HPLC_Scripts/test_traces/2d_example_plot.png)
+![Example 2D Trace](test_traces/2d_example_plot.png)
 
 Each of these three scripts has a 3D version, which are fundamentally different
 in terms of data but basically identical in terms of process. The output is
