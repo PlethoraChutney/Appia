@@ -50,6 +50,8 @@ The web ui (a [Shiny](https://shiny.rstudio.com/) app) provides a simpler way
 to analyze the processed traces. Right now, only 2D data can be visualized with
 this app. To launch it, run `launch_viewer.bat`.
 
+![View of WebUI](test_traces/web_ui_example.png)
+
 Pick a trace folder from the dropdown menu (Simply a list of directories in the
 parent directory), and hit `Load data`. A plot (or plots) will show up, basically
 identical to the 2D exported plots. However, you can check or uncheck each sample
