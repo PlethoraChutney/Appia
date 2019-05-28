@@ -77,6 +77,7 @@ if __name__ == '__main__':
 	if len(sys.argv) != 2:
 		print("This script assembles Waters chromatograms.\nUsage: python assemble_rename_traces.py [trace_directory]")
 	else:
+		script_location = os.path.dirname(os.path.realpath(__file__))
 		directory = sys.argv[1]
 		file_list = get_file_list(directory)
 		readable_dir = filename_human_readable(file_list[0])
@@ -96,4 +97,4 @@ if __name__ == '__main__':
 		file_name = os.path.join(new_fullpath, 'long_chromatograms.csv')
 		chroms.to_csv(file_name, index = False)
 
-		subprocess.run(['Rscript', os.path.join('scripts', 'auto_graph.R'), os.path.normpath(new_fullpath)])
+		subprocess.run(['Rscript', os.path.join(script_location, 'auto_graph.R'), os.path.normpath(new_fullpath)])

@@ -81,17 +81,18 @@ if __name__ == '__main__':
 		print("Assemble 3D chromatography data.\nUsage: python 3D_assemble_traces.py [trace_directory]")
 	else:
 		directory = sys.argv[1]
+		script_location = os.path.dirname(os.path.realpath(__file__))
 		file_list = get_file_list(directory)
 		readable_dir = filename_human_readable(file_list[0])
 		os.makedirs(os.path.join(directory, readable_dir))
 		new_fullpath = os.path.join(directory, readable_dir)
 
 		for file in file_list:
-			shutil.move(file, os.path.join(new_fullpath, file))
+			shutil.move(file, new_fullpath)
 
 		file_list = get_file_list(new_fullpath)
 		chroms = append_chroms(file_list)
 		file_name = os.path.join(new_fullpath, "3D_chromatograms.csv")
 		chroms.to_csv(file_name, index = False)
 
-		subprocess.run(['Rscript', os.path.join('scripts', '3D_autograph.R'), os.path.normpath(new_fullpath)])
+		subprocess.run(['Rscript', os.path.join(script_location, '3D_autograph.R'), os.path.normpath(new_fullpath)])
