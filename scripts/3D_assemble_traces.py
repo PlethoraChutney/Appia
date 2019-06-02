@@ -7,6 +7,7 @@ import os
 import re
 import shutil
 import subprocess
+import argparse
 
 # This script only supports sample headers in the wide format
 
@@ -67,7 +68,12 @@ def append_chroms(file_list) :
 
 		chroms = chroms.append(to_append, ignore_index = False, sort = False)
 
-	return chroms
+	# move non-double columns up to the front using list comprehension
+	chroms = chroms[[c for c in chroms if c in ['Time', 'Wavelength', 'Excitation', 'Emission', 'Sample', 'Scan_Type']] + [c for c in chroms if c not in ['Time', 'Wavelength', 'Excitation', 'Emission', 'Sample', 'Scan_Type']]]
+
+	# column_spec will be used by R to explicitely declare which columns are what type of data
+	column_spec = 'dccc' + 'd'*(len(chroms.columns)-4)
+	return [chroms, column_spec]
 
 def filename_human_readable(file_name):
 	headers = pd.read_csv(file_name, delim_whitespace = True, nrows = header_rows - 1)
@@ -77,22 +83,38 @@ def filename_human_readable(file_name):
 ##### Main #####
 
 if __name__ == '__main__':
-	if len(sys.argv) != 2:
-		print("Assemble 3D chromatography data.\nUsage: python 3D_assemble_traces.py [trace_directory]")
-	else:
-		directory = sys.argv[1]
-		script_location = os.path.dirname(os.path.realpath(__file__))
-		file_list = get_file_list(directory)
-		readable_dir = filename_human_readable(file_list[0])
-		os.makedirs(os.path.join(directory, readable_dir))
-		new_fullpath = os.path.join(directory, readable_dir)
+	parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters 3D HPLC traces.')
+	parser.add_argument('directory', default = os.getcwd(), help = 'Which directory to pull all .arw files from')
+	parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true', default = False)
 
-		for file in file_list:
-			shutil.move(file, new_fullpath)
+	args = parser.parse_args()
 
-		file_list = get_file_list(new_fullpath)
-		chroms = append_chroms(file_list)
-		file_name = os.path.join(new_fullpath, "3D_chromatograms.csv")
-		chroms.to_csv(file_name, index = False)
+	script_location = os.path.dirname(os.path.realpath(__file__))
+	directory = os.path.normpath(args.directory)
+	quiet = args.quiet
 
-		subprocess.run(['Rscript', os.path.join(script_location, '3D_autograph.R'), os.path.normpath(new_fullpath)])
+	script_location = os.path.dirname(os.path.realpath(__file__))
+
+	if not quiet:
+		print(f'Checking {directory} for .arw files...')
+	file_list = get_file_list(directory)
+	readable_dir = filename_human_readable(file_list[0])
+	if not quiet:
+		print(f'Found {len(file_list)} files. Moving to {readable_dir}...')
+
+	os.makedirs(os.path.join(directory, readable_dir))
+	new_fullpath = os.path.join(directory, readable_dir)
+
+	for file in file_list:
+		shutil.move(file, new_fullpath)
+
+	if not quiet:
+		print('Assembling traces...')
+	file_list = get_file_list(new_fullpath)
+	chroms, column_spec = append_chroms(file_list)
+	file_name = os.path.join(new_fullpath, "3D_chromatograms.csv")
+	chroms.to_csv(file_name, index = False)
+
+	if not quiet:
+		print('Making plots...')
+	subprocess.run(['Rscript', os.path.join(script_location, '3D_autograph.R'), os.path.normpath(new_fullpath), column_spec])

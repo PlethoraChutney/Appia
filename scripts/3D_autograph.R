@@ -3,8 +3,9 @@ library(ggplot2)
 
 args = commandArgs(trailingOnly = TRUE)
 setwd(args[1])
+column_spec = args[2]
 
-data <- read_csv('3D_chromatograms.csv', na = '')
+data <- read_csv('3D_chromatograms.csv', na = 'NA')
 
 try(
   tidy.emission.scan <- data %>%
