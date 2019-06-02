@@ -1,11 +1,11 @@
 ##### Preamble #####
-
 import numpy as np
 import pandas as pd
 import sys
 import os
 import shutil
 import subprocess
+import argparse
 
 # This script only works if you have your Empower method export the headers in
 # wide format.
@@ -74,27 +74,50 @@ def filename_human_readable(file_name):
 ##### Main #####
 
 if __name__ == '__main__':
-	if len(sys.argv) != 2:
-		print("This script assembles Waters chromatograms.\nUsage: python assemble_rename_traces.py [trace_directory]")
-	else:
-		script_location = os.path.dirname(os.path.realpath(__file__))
-		directory = sys.argv[1]
-		file_list = get_file_list(directory)
-		readable_dir = filename_human_readable(file_list[0])
+	parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters HPLC traces.')
+	parser.add_argument('directory', default = os.getcwd(), help = 'Which directory to pull all .arw files from')
+	parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true', default = False)
 
-		new_fullpath = os.path.join(directory, readable_dir)
-		os.makedirs(new_fullpath)
-		for file in file_list:
-			shutil.move(file, os.path.join(readable_dir, file))
+	args = parser.parse_args()
 
-		file_list = get_file_list(new_fullpath)
-		header_list = get_headers(file_list)
-		chroms = get_chroms(file_list, header_list)
-		file_name = os.path.join(new_fullpath, 'wide_chromatograms.csv')
-		chroms.to_csv(file_name, index = False)
+	script_location = os.path.dirname(os.path.realpath(__file__))
+	directory = os.path.normpath(args.directory)
+	quiet = args.quiet
 
-		chroms = append_chroms(file_list)
-		file_name = os.path.join(new_fullpath, 'long_chromatograms.csv')
-		chroms.to_csv(file_name, index = False)
+	if not quiet:
+		print(f'Checking {directory} for .arw files...')
 
-		subprocess.run(['Rscript', os.path.join(script_location, 'auto_graph.R'), os.path.normpath(new_fullpath)])
+	file_list = get_file_list(directory)
+
+	if len(file_list) == 0 and not quiet:
+		print('No .arw files found. Exiting...')
+		sys.exit(1)
+
+	readable_dir = os.path.join(directory, filename_human_readable(file_list[0]))
+	if not quiet:
+		print(f'Found {len(file_list)} files. Moving to {readable_dir}...')
+
+	new_fullpath = readable_dir
+	os.makedirs(new_fullpath)
+
+	for file in file_list:
+		shutil.move(file, os.path.join(readable_dir, os.path.basename(file)))
+
+	if not quiet:
+		print('Assembling traces...')
+	file_list = get_file_list(new_fullpath)
+	header_list = get_headers(file_list)
+	chroms = get_chroms(file_list, header_list)
+	file_name = os.path.join(new_fullpath, 'wide_chromatograms.csv')
+	chroms.to_csv(file_name, index = False)
+
+	chroms = append_chroms(file_list)
+	file_name = os.path.join(new_fullpath, 'long_chromatograms.csv')
+	chroms.to_csv(file_name, index = False)
+
+	if not quiet:
+		print('Making plots...')
+	subprocess.run(['Rscript', os.path.join(script_location, 'auto_graph.R'), os.path.normpath(new_fullpath)])
+
+	if not quiet:
+		print('Done!')
