@@ -43,7 +43,7 @@ rp.trace.dir <- function(directory) {
   already.processed <- file.path(directory, 'long_chromatograms.csv')
 
   if (file.exists(already.processed)) {
-    collected.traces <- read_csv(already.processed, col_types = 'ndcc') %>%
+    collected.traces <- read_csv(already.processed, col_types = 'ddcc') %>%
       mutate(Sample = factor(Sample), Channel = factor(Channel)) %>%
       group_by(Sample, Channel) %>%
       mutate(Normalized = (Signal - min(Signal))/(max(Signal) - min(Signal))) %>%
@@ -117,7 +117,6 @@ ui <- fluidPage(
       actionButton('newDir', 'Pick a different directory'),
       selectInput('runPicker', 'Pick a sample set', file.list),
       actionButton('loadData', 'Load data'),
-      #checkboxInput('normalized', 'Normalized'),
       radioButtons('normalized', label = 'Normalization', choices = c('Unnormalized', 'Whole trace', 'What\'s on screen')),
       checkboxGroupInput('tracePicker', 'Pick samples',
                          levels(trace.data$Sample), selected = trace.data$Sample
