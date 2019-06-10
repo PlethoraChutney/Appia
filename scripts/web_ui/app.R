@@ -1,6 +1,7 @@
 library(tidyverse)
 library(shiny)
 library(ggplot2)
+library(plotly)
 
 header.rows <- 2
 setwd('../..')
@@ -61,27 +62,27 @@ rp.trace.dir <- function(directory) {
 rp.trace.plot <- function(dataframe, normalized, x_range = NULL, y_range = NULL) {
   if (normalized == 'Unnormalized') {
     return(
-    ggplot(data = dataframe, aes(x = Time, y = Signal)) +
-      theme_light() +
-      scale_color_viridis_d() +
-      coord_cartesian(xlim = x_range, ylim = y_range) +
-      geom_line(aes(color = Sample)) +
-      facet_grid(Channel ~ ., scales = "free") +
-      xlab("Time (minutes)") +
-      ggtitle("FSEC Traces")
+      ggplot(data = dataframe, aes(x = Time, y = Signal)) +
+        theme_light() +
+        scale_color_viridis_d() +
+        coord_cartesian(xlim = x_range, ylim = y_range) +
+        geom_line(aes(color = Sample)) +
+        facet_grid(Channel ~ ., scales = "free") +
+        xlab("Time (minutes)") +
+        ggtitle("FSEC Traces")
     )
   }
   
   if (normalized == 'Whole trace') {
     return (
-    ggplot(dataframe, aes(x = Time, y = Normalized)) +
-      theme_light() +
-      scale_color_viridis_d() +
-      coord_cartesian(xlim = x_range, ylim = y_range) +
-      geom_line(aes(color = Sample)) +
-      facet_grid(Channel ~ ., scales = "free") +
-      xlab("Time (minutes)") +
-      ggtitle("Normalized FSEC Traces")
+      ggplot(dataframe, aes(x = Time, y = Normalized)) +
+        theme_light() +
+        scale_color_viridis_d() +
+        coord_cartesian(xlim = x_range, ylim = y_range) +
+        geom_line(aes(color = Sample)) +
+        facet_grid(Channel ~ ., scales = "free") +
+        xlab("Time (minutes)") +
+        ggtitle("Normalized FSEC Traces")
     )
   }
   
@@ -129,7 +130,7 @@ ui <- fluidPage(
       uiOutput('signal_range')
     ),
     mainPanel(
-      plotOutput('tracePlot', height = '800px'),
+      plotlyOutput('tracePlot', height = '800px'),
       downloadButton('downloadPlotButton', 'Download Plot')
     )
   )
@@ -196,24 +197,28 @@ server <- function(input, output, session) {
     })
 
 
-  output$tracePlot <- renderPlot({
+  output$tracePlot <- renderPlotly({
     input$loadData
     input$normalized
     input$free_scales
 
     if (!input$free_scales) {
       return(
-        trace.data %>%
-          filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>%
-          rp.trace.plot(., input$normalized, input$x_range, input$y_range)
+          ggplotly(trace.data %>%
+            filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>%
+            rp.trace.plot(., input$normalized, input$x_range, input$y_range)) %>% 
+            config(displayModeBar = F) %>%
+            layout(xaxis=list(fixedrange=TRUE), yaxis=list(fixedrange=TRUE))
       )
     }
 
     if (input$free_scales) {
       return(
-        trace.data %>%
-          filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>%
-          rp.trace.plot(., input$normalized, input$x_range)
+          ggplotly(trace.data %>%
+            filter(Sample %in% input$tracePicker & Channel %in% input$channelPicker) %>%
+            rp.trace.plot(., input$normalized, input$x_range)) %>% 
+            config(displayModeBar = F) %>%
+            layout(xaxis=list(fixedrange=TRUE), yaxis=list(fixedrange=TRUE), dragmode = FALSE)
       )
     }
   })
