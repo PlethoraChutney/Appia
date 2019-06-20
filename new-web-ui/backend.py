@@ -90,9 +90,10 @@ class Experiment:
 def collect_experiments(directory, db):
     list_of_dirs = []
     list_of_experiments = []
-    for sub_dir in os.listdir(directory):
-        if os.path.isfile(os.path.join(directory, sub_dir, 'long_chromatograms.csv')):
+    for sub_dir in [os.path.abspath(x[0]) for x in os.walk(directory) if x != directory]:
+        if os.path.isfile(os.path.join(sub_dir, 'long_chromatograms.csv')):
             list_of_dirs.append(os.path.abspath(os.path.join(directory, sub_dir)))
+    print(list_of_dirs)
     for experiment in list_of_dirs:
         list_of_experiments.append(Experiment(experiment))
 
