@@ -93,9 +93,14 @@ def collect_experiments(directory, db):
     for sub_dir in [os.path.abspath(x[0]) for x in os.walk(directory) if x != directory]:
         if os.path.isfile(os.path.join(sub_dir, 'long_chromatograms.csv')):
             list_of_dirs.append(os.path.abspath(os.path.join(directory, sub_dir)))
-    print(list_of_dirs)
     for experiment in list_of_dirs:
         list_of_experiments.append(Experiment(experiment))
 
     for experiment in list_of_experiments:
         experiment.add_to_db(db)
+
+def update_experiment_list(db):
+    list_of_experiments = []
+    for docid in db.view('_all_docs'):
+        list_of_experiments.append(docid['id'])
+    return list_of_experiments
