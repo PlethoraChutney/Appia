@@ -63,7 +63,7 @@ class Experiment:
 
     def get_plotly(self):
         df = self.as_pandas_df()
-        graphs = []
+        graphs = {}
         for channel in df['Channel'].unique():
             data = []
             df_channel = df[df.Channel == channel]
@@ -71,8 +71,11 @@ class Experiment:
                 df_level = df_channel[df_channel.Sample == level]
                 trace = {'x': df_level['Time'], 'y': df_level['Signal'], 'name': level, 'type': 'scatter'}
                 data.append(trace)
-            graphs.append(data)
+            graphs[channel] = data
         return(graphs)
+
+    def __repr__(self):
+        self.as_pandas_df()
 
 def collect_experiments(directory, db):
     list_of_dirs = []

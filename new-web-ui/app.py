@@ -7,11 +7,8 @@ from backend import Experiment, collect_experiments, init_db
 
 ##### Web app #####
 
-db = init_db()
-
-trace_exp = Experiment(db['test1'])
-trace_df = trace_exp.as_pandas_df()
-trace_data = trace_exp.get_plotly()
+test_experiment = Experiment('test1/')
+trace_data = test_experiment.get_plotly()
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -23,24 +20,19 @@ colors = {
 }
 
 graphs = []
-i = 1
-for graph in trace_data:
+for channel in trace_data.keys():
     graphs.append(dcc.Graph(
-        id=f'example-graph-{i}',
+        id=f'channel-{channel}',
         figure={
-            # 'data': [
-            #     {'x': trace_df['Time'], 'y': trace_df['Signal'], 'name': trace_df['Sample'], 'type': 'scatter'},
-            # ],
-            'data': graph,
+            'data': trace_data[channel],
             'layout': {
-                'title': graph['Channel'],
+                'title': f'{channel}',
                 'plot_bgcolor': colors['background'],
                 'paper_bgcolor': colors['background'],
                 'font': {'color': colors['text']}
             }
         }
     ))
-    i += 1
 
 app.layout = html.Div(
     style = {
