@@ -28,6 +28,7 @@ class Experiment:
         elif os.path.isdir(input):
             self.id = os.path.split(input)[-1]
             in_df = pd.read_csv(os.path.join(input, 'long_chromatograms.csv'))
+            self.normalized = in_df.groupby(['Sample', 'Channel']).transform(lambda x: ((x - x.min()) / (x.max() - x.min())))['Signal']
             self.time = in_df['Time'].tolist()
             self.signal = in_df['Signal'].tolist()
             self.channel = in_df['Channel'].tolist()
@@ -40,6 +41,7 @@ class Experiment:
             {
                 'Time': self.time,
                 'Signal': self.signal,
+                'Normalized': self.normalized,
                 'Channel': self.channel,
                 'Sample': self.sample
             }
@@ -72,6 +74,14 @@ class Experiment:
                 trace = {'x': df_level['Time'], 'y': df_level['Signal'], 'name': level, 'type': 'scatter'}
                 data.append(trace)
             graphs[channel] = data
+        for channel in df['Channel'].unique():
+            data = []
+            df_channel = df[df.Channel == channel]
+            for level in df_channel['Sample'].unique():
+                df_level = df_channel[df_channel.Sample == level]
+                trace = {'x': df_level['Time'], 'y': df_level['Normalized'], 'name': level, 'type': 'scatter'}
+                data.append(trace)
+            graphs[f'Normalized {channel}'] = data
         return(graphs)
 
     def __repr__(self):

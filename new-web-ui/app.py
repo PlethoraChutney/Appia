@@ -15,8 +15,8 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 colors = {
-    'background': '#EEEEEE',
-    'text': '#000000'
+    'background': '#FFFFFF',
+    'text': '#222222'
 }
 
 graphs = []
@@ -40,7 +40,7 @@ app.layout = html.Div(
     },
     children=[
         html.H1(
-            children='Hello Dash',
+            children='Baconguis HPLC Reader',
             style = {
                 'textAlign': 'center',
                 'color': colors['text']
@@ -48,30 +48,16 @@ app.layout = html.Div(
         ),
 
         html.Div(
-            children='Dash: A web application framework for Python.',
+            children='Simple traces from the comfort of your bench',
             style = {
                 'textAlign': 'center',
                 'color': colors['text']
             }
         ),
         graphs[0],
-        graphs[1]
-        # for graph in trace_data:
-        #     dcc.Graph(
-        #         id='example-graph-2',
-        #         figure={
-        #             # 'data': [
-        #             #     {'x': trace_df['Time'], 'y': trace_df['Signal'], 'name': trace_df['Sample'], 'type': 'scatter'},
-        #             # ],
-        #             'data': graph,
-        #             'layout': {
-        #                 'title': 'Dash Data Visualization',
-        #                 'plot_bgcolor': colors['background'],
-        #                 'paper_bgcolor': colors['background'],
-        #                 'font': {'color': colors['text']}
-        #             }
-        #         }
-        #     )
+        graphs[1],
+        graphs[2],
+        graphs[3]
     ]
 )
 
