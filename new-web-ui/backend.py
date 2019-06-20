@@ -4,15 +4,18 @@ import sys
 import os
 import couchdb
 
-user = 'admin'
-password = 'my_secret_password'
-couchserver = couchdb.Server(f'http://{user}:{password}@127.0.0.1:5984')
+def init_db():
+    user = 'admin'
+    password = 'my_secret_password'
+    couchserver = couchdb.Server(f'http://{user}:{password}@127.0.0.1:5984')
 
-dbname = 'traces'
-if dbname in couchserver:
-    db = couchserver[dbname]
-else:
-    db = couchserver.create(dbname)
+    dbname = 'traces'
+    if dbname in couchserver:
+        db = couchserver[dbname]
+    else:
+        db = couchserver.create(dbname)
+
+    return(db)
 
 class Experiment:
     def __init__(self, input):
@@ -24,7 +27,7 @@ class Experiment:
             self.sample = input['sample']
         elif os.path.isdir(input):
             self.id = os.path.split(input)[-1]
-            in_df = pd.read_csv(os.path.join(directory, 'long_chromatograms.csv'))
+            in_df = pd.read_csv(os.path.join(input, 'long_chromatograms.csv'))
             self.time = in_df['Time'].tolist()
             self.signal = in_df['Signal'].tolist()
             self.channel = in_df['Channel'].tolist()
@@ -57,6 +60,19 @@ class Experiment:
     def add_to_db(self, db):
         if db.get(self.id) is None:
             self.__store_in_db(db)
+
+    def get_plotly(self):
+        df = self.as_pandas_df()
+        graphs = []
+        for channel in df['Channel'].unique():
+            data = []
+            df_channel = df[df.Channel == channel]
+            for level in df_channel['Sample'].unique():
+                df_level = df_channel[df_channel.Sample == level]
+                trace = {'x': df_level['Time'], 'y': df_level['Signal'], 'name': level, 'type': 'scatter'}
+                data.append(trace)
+            graphs.append(data)
+        return(graphs)
 
 def collect_experiments(directory, db):
     list_of_dirs = []
