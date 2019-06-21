@@ -37,23 +37,26 @@
 .container {
   position: relative;
   width: 100%;
-  max-width: 960px;
+  max-width: 1260px;
+  min-width: 600px;
+  min-height: 90vh;
   margin: 0 auto;
   padding: 0 20px;
   box-sizing: border-box;
-  grid-template-columns: [first] 25% [sidebar] 75% [last];
-  grid-template-rows: [top] 100px [title] auto [rest]; }
+  display: grid;
+  grid-template-columns: [first] 20% [sidebar] 60% [graphs] 20% [edge];
+  grid-template-rows: [top] 200px [title] auto [rest];
+  background-color: #FFFFFF;
+  padding: 20px;
+  border: 5px solid #f4d62a;
+  border-radius: 25px;
+}
 .column,
 .columns {
   width: 100%;
   float: left;
   box-sizing: border-box; }
 
-}
-
-.graphs {
-  grid-column-start: sidebar;
-  grid-column-end: last;
 }
 
 /* For devices larger than 400px */
@@ -127,6 +130,34 @@
 
 }
 
+.graphs {
+  grid-column-start: sidebar;
+  grid-column-end: edge;
+  grid-row-start: title;
+  grid-row-end: rest;
+}
+
+.graph-title {
+  grid-column-start: first;
+  grid-column-end: edge;
+  grid-row-start: top;
+  grid-row-end: title;
+}
+
+.sidebar {
+  grid-column-start: first;
+  grid-column-end: sidebar;
+  grid-row-start: title;
+  grid-row-end: rest;
+  background-color: #FEFEFE;
+  border: 2px solid #EEEEEE;
+  border-radius: 25px;
+  padding: 5px;
+}
+
+._dash-undo-redo {
+  display: none;
+}
 
 /* Base Styles
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
@@ -134,13 +165,16 @@
 html is set to 62.5% so that all the REM measurements throughout Skeleton
 are based on 10px sizing. So basically 1.5rem = 15px :) */
 html {
-  font-size: 62.5%; }
+  font-size: 62.5%;
+  background-color: #F8E473;
+}
 body {
   font-size: 1.5em; /* currently ems cause chrome bug misinterpreting rems on body element */
   line-height: 1.6;
   font-weight: 400;
   font-family: "Open Sans", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  color: rgb(50, 50, 50); }
+  color: rgb(50, 50, 50);
+  }
 
 
 /* Typography

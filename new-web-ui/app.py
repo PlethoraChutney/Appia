@@ -5,81 +5,51 @@ import dash_html_components as html
 from backend import Experiment, collect_experiments, init_db, update_experiment_list
 
 db = init_db()
-experiment_list = update_experiment_list(db)
 
 ##### Web app #####
 
-test_experiment = Experiment('test1/')
-trace_data = test_experiment.get_plotly()
-
 app = dash.Dash(__name__)
-
-colors = {
-    'background': '#FFFFFF',
-    'text': '#222222'
-}
-
-graphs = []
-for channel in trace_data.keys():
-    graphs.append(dcc.Graph(
-        id=f'channel-{channel}',
-        figure={
-            'data': trace_data[channel],
-            'layout': {
-                'title': f'{channel}',
-                'plot_bgcolor': colors['background'],
-                'paper_bgcolor': colors['background'],
-                'font': {'color': colors['text']}
-            }
-        }
-    ))
 
 app.layout = html.Div(
     className = 'container',
-    style = {
-        'backgroundColor': colors['background']
-    },
     children=[
-        html.H1(
-            children='Baconguis HPLC Reader',
-            style = {
-                'textAlign': 'center',
-                'color': colors['text']
-            }
-        ),
         html.Div(
-            children=f'Simple traces from the comfort of your bench.',
-            style = {
-                'textAlign': 'center',
-                'color': colors['text']
-            }
+            className = 'graph-title',
+            children = [
+            html.H1(
+                children='Baconguis HPLC Reader',
+                style = {'textAlign': 'center'}
+            ),
+            html.Div(
+                children=f'Simple traces from the comfort of your bench.',
+                style = {'textAlign': 'center'}
+            ),
+            html.Div(
+                children=[html.H4(children=html.Div(id='output-container'))],
+                style = {'textAlign': 'center'}
+            )
+            ]
         ),
         html.Div(
             className = 'sidebar',
             children = [
+                html.H5(
+                    style = {'paddingTop': '10px', 'textAlign': 'center'},
+                    children = 'Pick experiment:'
+                ),
                 html.Div(
+                    style = {'padding-top': '10px', 'padding-bottom': '10px'},
+                    children =
                     [dcc.Dropdown(
                         id = 'experiment_dropdown',
-                        options = [{'label': x, 'value': x} for x in experiment_list]
+                        options = [{'label': x, 'value': x} for x in update_experiment_list(db)]
                     )]
                 )
             ]
         ),
         html.Div(
             className = 'graphs',
-            children = [
-                html.Div(
-                    children=[html.H2(children=html.Div(id='output-container'))],
-                    style = {
-                        'textAlign': 'center',
-                        'color': colors['text']
-                    }
-                ),
-                graphs[0],
-                graphs[1],
-                graphs[2],
-                graphs[3]
-            ]
+            children = html.Div(id = 'main_graphs')
         )
     ]
 )
@@ -89,6 +59,13 @@ app.layout = html.Div(
     [dash.dependencies.Input('experiment_dropdown', 'value')])
 def update_output(value):
     return f'Displaying: {value}'
+
+@app.callback(
+    dash.dependencies.Output('main_graphs', 'children'),
+    [dash.dependencies.Input('experiment_dropdown', 'value')]
+)
+def update_output(value):
+    return Experiment(db.get(value)).get_plotly()
 
 if __name__ == '__main__':
     app.run_server(debug=True)
