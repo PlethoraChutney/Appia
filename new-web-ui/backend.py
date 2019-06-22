@@ -6,10 +6,11 @@ import couchdb
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+from config import config
 
 def init_db():
-    user = 'admin'
-    password = 'my_secret_password'
+    user = config[user]
+    password = config[password]
     couchserver = couchdb.Server(f'http://{user}:{password}@127.0.0.1:5984')
 
     dbname = 'traces'
@@ -113,7 +114,9 @@ def collect_experiments(directory, db):
         if os.path.isfile(os.path.join(sub_dir, 'long_chromatograms.csv')):
             list_of_dirs.append(os.path.abspath(os.path.join(directory, sub_dir)))
 
+    print(list_of_dirs)
     for experiment in list_of_dirs:
+        print(experiment)
         list_of_experiments.append(Experiment(experiment))
 
     for experiment in list_of_experiments:

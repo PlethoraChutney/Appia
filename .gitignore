@@ -6,3 +6,5 @@ Old/
 .Rhistory
 .rproj.user/
 *.pdf
+config.py
+server.lnk
