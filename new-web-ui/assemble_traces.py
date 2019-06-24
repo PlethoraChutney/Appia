@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import argparse
 import backend
+import config
 
 # This script only works if you have your Empower method export the headers in
 # wide format.
@@ -21,7 +22,7 @@ directory_renamed = "renamed_traces"
 data_row = 0
 
 # get the couchdb
-db = backend.init_db()
+db = backend.init_db(config)
 
 ##### Chromatogram Consolidation Functions #####
 

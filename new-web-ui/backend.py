@@ -6,11 +6,10 @@ import couchdb
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-from config import config
 
-def init_db():
-    user = config[user]
-    password = config[password]
+def init_db(config):
+    user = config['user']
+    password = config['password']
     couchserver = couchdb.Server(f'http://{user}:{password}@127.0.0.1:5984')
 
     dbname = 'traces'
