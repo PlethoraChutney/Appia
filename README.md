@@ -46,21 +46,11 @@ instrument method needs the pattern `ScanEm540`.
 The batch scripts live in the root directory, everything else is in `/scripts/`.
 
 ## Web UI
-The web ui (a [Shiny](https://shiny.rstudio.com/) app) provides a simpler way
-to analyze the processed traces. Right now, only 2D data can be visualized with
-this app. To launch it, run `launch_viewer.bat`.
-
-![View of WebUI](test_traces/web_ui_example.png)
-
-Pick a trace folder from the dropdown menu (Simply a list of directories in the
-parent directory), and hit `Load data`. A plot (or plots) will show up, basically
-identical to the 2D exported plots. However, you can check or uncheck each sample
-and channel, or normalize the data to the highest and lowest points, and the
-plot will update in real time. The time slider sets min and max of the x-axis.
-
-There is a y-slider, but it's hidden by default since typically
-each channel has different relevant signal levels. Uncheck `Free Scales
-(disable y-axis slider)` to set both y-axes equal and gain control of the scale.
-
-You can export plots made with the Shiny app using the download plots button at
-the bottom of the main panel.
+The new Web UI relies on a couchdb database running on your HPLC computer. The
+`assemble_traces.py` script in `new-web-ui` adds the trace to your couchdb database
+in addition to making the local `.csv`s. `app.py` is a plotly dash script that creates
+a web interface where you can go through and find traces by typing in a dropdown and
+interact with them directly. This is much faster than the old R solution, because
+it doesn't have to re-draw graphs every time you change anything and it is reading
+from a database instead of a file. Also much much cleaner and easier to style. Check
+it out!
