@@ -126,7 +126,7 @@ if __name__ == '__main__':
 
 	if not quiet:
 		print('Making plots...')
-	subprocess.run(['Rscript', os.path.join(script_location, 'auto_graph.R'), os.path.normpath(new_fullpath)])
+	subprocess.run(['Rscript', os.path.join(script_location,'..', 'scripts', 'auto_graph.R'), os.path.normpath(new_fullpath)])
 
 	if not quiet:
 		print('Done!')
