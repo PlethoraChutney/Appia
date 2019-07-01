@@ -2,8 +2,11 @@
 # report to some folder. Then we can use this script to run the assemble_traces
 # script to automatically compile the run and add it to the database.
 
-$FOLDER = "C:\Users\rich\Desktop\watcher_test"
-$FILTER = "*.txt"
+$DOCDIR = [Environment]::GetFolderPath("MyDocuments")
+$FOLDER = "$DOCDIR\experiment_watcher\reports"
+$TRACES = "$DOCDIR\experiment_watcher\traces"
+$FILTER = "*.pdf"
+$ASSEMBLE_COM = "python .\assemble_traces.py $TRACES"
 
 $WATCHER = New-Object IO.FileSystemWatcher $FOLDER, $FILTER -Property @{
   IncludeSubdirectories = $false
@@ -11,10 +14,5 @@ $WATCHER = New-Object IO.FileSystemWatcher $FOLDER, $FILTER -Property @{
 }
 
 $ON_CREATED = Register-ObjectEvent $WATCHER Created -SourceIdentifier FileCreated -Action {
-  $PATH = $Event.SourceEventArgs.FullPath
-  $NAME = $Event.SourceEventArgs.Name
-  $CHANGE_TYPE = $Event.SourceEventArgs.ChangeType
-  $TIME_STAMP = $Event.TimeGenerated
-  Write-Host "The file '$NAME' was $CHANGE_TYPE at $TIME_STAMP"
-  Write-Host $PATH
+  Invoke-Expression $ASSEMBLE_COM
 }
