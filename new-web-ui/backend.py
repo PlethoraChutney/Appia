@@ -6,6 +6,7 @@ import couchdb
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+from config import config
 
 def init_db(config):
     user = config['user']
@@ -32,11 +33,13 @@ class Experiment:
         elif os.path.isdir(input):
             self.id = os.path.split(input)[-1].replace('_processed', '')
             in_df = pd.read_csv(os.path.join(input, 'long_chromatograms.csv'))
-            self.normalized = in_df.groupby(['Sample', 'Channel']).transform(lambda x: ((x - x.min()) / (x.max() - x.min())))['Signal'].tolist()
+            in_df['Normalized'] = in_df.groupby(['Sample', 'Channel']).transform(lambda x: ((x - x.min()) / (x.max() - x.min())))['Signal'].tolist()
+            in_df.fillna(0, inplace = True)
             self.time = in_df['Time'].tolist()
             self.signal = in_df['Signal'].tolist()
             self.channel = in_df['Channel'].tolist()
             self.sample = in_df['Sample'].tolist()
+            self.normalized = in_df['Normalized'].tolist()
         else:
             print('Input not recognized')
 
