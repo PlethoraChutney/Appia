@@ -20,8 +20,11 @@ heavy lifting. This is to get around the fact that you can't make python scripts
 executable in Windows.
 
 `assemble_rename_traces.py` first moves all of the 'arw' files into a new directory,
-where it reads them and creates two files: `long_chromatograms.csv` and `wide_chromatograms.csv`.
+where it reads them and creates two files: `long_chromatograms.csv` and `wide_chromatograms.csv.
 Finally, it runs `auto_graph.R` on `long_chromatograms.csv`.
+There's a version of this script in `new-web-ui` called `assemble_traces.py` that,
+in addition to making these two files, also adds the experiment to a couchdb database
+used for the plotly web ui. I plan on phasing out the non-couchdb version.
 
 `auto_graph.R` produces the graphs. It produces a raw and normalized trace
 for each channel, colored by sample.
@@ -52,5 +55,4 @@ in addition to making the local `.csv`s. `app.py` is a plotly dash script that c
 a web interface where you can go through and find traces by typing in a dropdown and
 interact with them directly. This is much faster than the old R solution, because
 it doesn't have to re-draw graphs every time you change anything and it is reading
-from a database instead of a file. Also much much cleaner and easier to style. Check
-it out!
+from a database instead of a file.

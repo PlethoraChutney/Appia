@@ -8,6 +8,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from config import config
 
+# make a config.py with your couchdb username and password in it. Don't put them here!
 def init_db(config):
     user = config['user']
     password = config['password']
@@ -41,7 +42,7 @@ class Experiment:
             self.sample = in_df['Sample'].tolist()
             self.normalized = in_df['Normalized'].tolist()
         else:
-            print('Input not recognized')
+            raise TypeError('Input is not a couchdb or csv')
 
     def as_pandas_df(self):
         out_df = pd.DataFrame(
@@ -77,6 +78,11 @@ class Experiment:
         df = self.as_pandas_df()
         graphs = {}
         plotly_graphs = []
+        # Plotly graphs are built trace by trace, unlike R, where you specify
+        # a set of data over which to break lines (i.e., you say "Color by sample"
+        # in R but you build each sample line individually in python). So we need
+        # to loop over channels, and we need to loop over normalzied or raw data.
+        # That's what these two set of nested for loops do.
         for channel in df['Channel'].unique():
             data = []
             df_channel = df[df.Channel == channel]
@@ -93,7 +99,7 @@ class Experiment:
                 trace = {'x': df_level['Time'], 'y': df_level['Normalized'], 'name': level, 'type': 'scatter'}
                 data.append(trace)
             graphs[f'Normalized {channel}'] = data
-
+        # Return html elements, not raw plotly graphs
         for channel in graphs.keys():
             plotly_graphs.append(dcc.Graph(
                 id=f'channel-{channel}',
