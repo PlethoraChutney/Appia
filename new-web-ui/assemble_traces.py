@@ -81,6 +81,7 @@ if __name__ == '__main__':
 	parser.add_argument('directory', default = os.getcwd(), help = 'Which directory to pull all .arw files from')
 	parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true', default = False)
 	parser.add_argument('--no-db', help = 'Do not add to couchdb', action = 'store_true', default = False)
+	parser.add_argument('--no-plots', help = 'Do not make R plots', action = 'store_true', default = False)
 
 	args = parser.parse_args()
 
@@ -88,6 +89,7 @@ if __name__ == '__main__':
 	directory = os.path.normpath(args.directory)
 	quiet = args.quiet
 	no_db = args.no_db
+	no_plots = args.no_plots
 
 	if not quiet:
 		print(f'Checking {directory} for .arw files...')
@@ -128,9 +130,10 @@ if __name__ == '__main__':
 		db = backend.init_db(config.config)
 		backend.collect_experiments(os.path.abspath(new_fullpath), db)
 
-	if not quiet:
-		print('Making plots...')
-	subprocess.run(['Rscript', os.path.join(script_location,'..', 'scripts', 'auto_graph.R'), os.path.normpath(new_fullpath)])
+	if not no_plots:
+		if not quiet:
+			print('Making plots...')
+		subprocess.run(['Rscript', os.path.join(script_location,'..', 'scripts', 'auto_graph.R'), os.path.normpath(new_fullpath)])
 
 	if not quiet:
 		print('Done!')
