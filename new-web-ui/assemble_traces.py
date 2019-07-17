@@ -43,7 +43,7 @@ def get_headers(file_list):
 
 def get_chroms(file_list, header_list):
 	# get the time column from the first trace
-	first_trace = pd.read_csv(file_list[1], delim_whitespace = True, skiprows = header_rows, names = ["Time", "Trace"], header = None)
+	first_trace = pd.read_csv(file_list[0], delim_whitespace = True, skiprows = header_rows, names = ["Time", "Trace"], header = None)
 
 	chroms = first_trace[["Time"]].copy()
 

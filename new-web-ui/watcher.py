@@ -6,11 +6,10 @@ import subprocess
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-auto_exp_dir = os.path.abspath(os.path.join('..', '..', '..', '..', 'experiment_watcher'))
+auto_exp_dir = os.path.abspath(os.path.join('..', '..', '..', 'experiment_watcher'))
 
 class WatersWatcher:
     watch_dir = os.path.join(auto_exp_dir, 'reports')
-    print(watch_dir)
 
     def __init__(self):
         self.observer = Observer()
@@ -39,7 +38,7 @@ class WatersHandler(PatternMatchingEventHandler):
         elif event.event_type == 'modified':
             return None
         elif event.event_type == 'created':
-            subprocess.run(['python', 'assemble_traces.py', os.path.join(auto_exp_dir, 'traces'), '--quiet', '--no-plots'])
+            subprocess.run(['pythonw', 'assemble_traces.py', os.path.join(auto_exp_dir, 'traces'), '--quiet', '--no-plots'])
 
 def watch():
     w = WatersWatcher()
