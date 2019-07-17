@@ -41,6 +41,9 @@ class WatersHandler(PatternMatchingEventHandler):
         elif event.event_type == 'created':
             subprocess.run(['python', 'assemble_traces.py', os.path.join(auto_exp_dir, 'traces'), '--quiet', '--no-plots'])
 
-if __name__ == '__main__':
+def watch():
     w = WatersWatcher()
     w.run()
+
+if __name__ == '__main__':
+    watch()
