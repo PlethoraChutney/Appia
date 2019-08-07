@@ -12,6 +12,25 @@ db = init_db(config)
 app = dash.Dash(__name__, url_base_pathname = '/traces/')
 server = app.server
 
+app.index_string = '''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>Troll - Traces</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
 
 def serve_layout():
     return html.Div(
