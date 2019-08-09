@@ -102,6 +102,7 @@ class Experiment:
         # Return html elements, not raw plotly graphs
         for channel in graphs.keys():
             plotly_graphs.append(dcc.Graph(
+                style={'height': 600},
                 id=f'channel-{channel}',
                 figure={
                     'data': graphs[channel],

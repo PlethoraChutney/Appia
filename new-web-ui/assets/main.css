@@ -37,14 +37,14 @@
 .container {
   position: relative;
   width: 100%;
-  max-width: 1260px;
+  max-width: 1400px;
   min-width: 600px;
   min-height: 90vh;
   margin: 0 auto;
   padding: 0 20px;
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: [first] 20% [sidebar] 60% [graphs] 20% [edge];
+  grid-template-columns: [first] 20% [sidebar] 80% [edge];
   grid-template-rows: [top] 200px [title] auto [rest];
   background-color: #FFFFFF;
   padding: 20px;
