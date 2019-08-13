@@ -21,8 +21,6 @@ directory_renamed = "renamed_traces"
 # data_row tells the header functions where to look for actual values.
 data_row = 0
 
-# get the couchdb
-db = backend.init_db(config)
 
 ##### Chromatogram Consolidation Functions #####
 
@@ -45,7 +43,7 @@ def get_headers(file_list):
 
 def get_chroms(file_list, header_list):
 	# get the time column from the first trace
-	first_trace = pd.read_csv(file_list[1], delim_whitespace = True, skiprows = header_rows, names = ["Time", "Trace"], header = None)
+	first_trace = pd.read_csv(file_list[0], delim_whitespace = True, skiprows = header_rows, names = ["Time", "Trace"], header = None)
 
 	chroms = first_trace[["Time"]].copy()
 
@@ -82,12 +80,16 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters HPLC traces.')
 	parser.add_argument('directory', default = os.getcwd(), help = 'Which directory to pull all .arw files from')
 	parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true', default = False)
+	parser.add_argument('--no-db', help = 'Do not add to couchdb', action = 'store_true', default = False)
+	parser.add_argument('--no-plots', help = 'Do not make R plots', action = 'store_true', default = False)
 
 	args = parser.parse_args()
 
 	script_location = os.path.dirname(os.path.realpath(__file__))
 	directory = os.path.normpath(args.directory)
 	quiet = args.quiet
+	no_db = args.no_db
+	no_plots = args.no_plots
 
 	if not quiet:
 		print(f'Checking {directory} for .arw files...')
@@ -120,13 +122,18 @@ if __name__ == '__main__':
 	file_name = os.path.join(new_fullpath, 'long_chromatograms.csv')
 	chroms.to_csv(file_name, index = False)
 
-	if not quiet:
-		print('Adding experiment to visualization database...')
-	backend.collect_experiments(os.path.abspath(new_fullpath), db)
+	if not no_db:
+		if not quiet:
+			print('Adding experiment to visualization database...')
 
-	if not quiet:
-		print('Making plots...')
-	subprocess.run(['Rscript', os.path.join(script_location,'..', 'scripts', 'auto_graph.R'), os.path.normpath(new_fullpath)])
+		# get the couchdb
+		db = backend.init_db(config.config)
+		backend.collect_experiments(os.path.abspath(new_fullpath), db)
+
+	if not no_plots:
+		if not quiet:
+			print('Making plots...')
+		subprocess.run(['Rscript', os.path.join(script_location,'..', 'scripts', 'auto_graph.R'), os.path.normpath(new_fullpath)])
 
 	if not quiet:
 		print('Done!')

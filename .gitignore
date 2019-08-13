@@ -7,6 +7,5 @@ Old/
 .rproj.user/
 *.pdf
 config.py
-server.lnk
-watcher.lnk
+*.lnk
 new-web-ui/__pycache__/
