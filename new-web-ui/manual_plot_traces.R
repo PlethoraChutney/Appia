@@ -10,10 +10,12 @@ data <- read.csv(file = long_trace_filename, header = TRUE) %>%
   mutate(Normalized = (Signal-min(Signal))/(max(Signal) - min(Signal))) %>%
   ungroup() %>%
   mutate(Channel = if_else(grepl('ex280/em350', Channel), 'Trp',
-                           if_else(grepl('ex488/em509', Channel), 'GFP', as.character(Channel))))
+                           if_else(grepl('ex488/em509', Channel), 'GFP', as.character(Channel)))) %>% 
+  gather(key = Normalized, value = Signal, -Time, -Channel, -Sample)
 
-
-ggplot(data = data, aes(x = Time, y = Signal)) +
+data %>% 
+  filter(Normalized == 'Signal') %>% 
+  ggplot(aes(x = Time, y = Signal)) +
   theme_light() +
   scale_color_viridis_d() +
   geom_line(aes(color = Sample)) +
@@ -22,7 +24,9 @@ ggplot(data = data, aes(x = Time, y = Signal)) +
   ggtitle("FSEC Traces")
 ggsave('fsec_traces.pdf', width = 7, height = 5)
 
-ggplot(data = data, aes(x = Time, y = Normalized)) +
+data %>% 
+  filter(Normalized == 'Normalized') %>% 
+  ggplot(aes(x = Time, y = Signal)) +
   theme_light() +
   scale_color_viridis_d() +
   geom_line(aes(color = Sample)) +
