@@ -6,7 +6,6 @@ import os
 import shutil
 import subprocess
 import argparse
-import backend
 import config
 
 # This script only works if you have your Empower method export the headers in
@@ -20,6 +19,8 @@ directory_renamed = "renamed_traces"
 
 # data_row tells the header functions where to look for actual values.
 data_row = 0
+
+script_path = dir_path = os.path.dirname(os.path.realpath(__file__))
 
 
 ##### Chromatogram Consolidation Functions #####
@@ -82,6 +83,7 @@ if __name__ == '__main__':
 	parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true', default = False)
 	parser.add_argument('--no-db', help = 'Do not add to couchdb', action = 'store_true', default = False)
 	parser.add_argument('--no-plots', help = 'Do not make R plots', action = 'store_true', default = False)
+	parser.add_argument('--copy-manual', help = 'Copy R plot file for manual plot editing', action = 'store_true', default = False)
 
 	args = parser.parse_args()
 
@@ -90,6 +92,7 @@ if __name__ == '__main__':
 	quiet = args.quiet
 	no_db = args.no_db
 	no_plots = args.no_plots
+	copy_manual = args.copy_manual
 
 	if not quiet:
 		print(f'Checking {directory} for .arw files...')
@@ -127,6 +130,7 @@ if __name__ == '__main__':
 			print('Adding experiment to visualization database...')
 
 		# get the couchdb
+		import backend
 		db = backend.init_db(config.config)
 		backend.collect_experiments(os.path.abspath(new_fullpath), db)
 
@@ -134,6 +138,12 @@ if __name__ == '__main__':
 		if not quiet:
 			print('Making plots...')
 		subprocess.run(['Rscript', os.path.join(script_location,'..', 'scripts', 'auto_graph.R'), os.path.normpath(new_fullpath)])
+
+	if copy_manual:
+		if not quiet:
+			print('Copying manual R script...')
+		shutil.copyfile(os.path.join(script_path, 'manual_plot_traces.R'), os.path.join(new_fullpath, 'manual_plot_traces.R'))
+
 
 	if not quiet:
 		print('Done!')
