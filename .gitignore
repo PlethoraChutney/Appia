@@ -8,4 +8,4 @@ Old/
 *.pdf
 config.py
 *.lnk
-new-web-ui/__pycache__/
+scripts/__pycache__/
