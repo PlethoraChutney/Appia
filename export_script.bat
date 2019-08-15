@@ -1,6 +1,6 @@
 @echo off
 
-python new-web-ui\assemble_traces.py .
+python scripts\assemble_traces.py .
 
 IF %ERRORLEVEL%==1 (
   PAUSE

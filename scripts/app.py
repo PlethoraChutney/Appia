@@ -9,8 +9,15 @@ db = init_db(config)
 
 ##### Web app #####
 
+# I'm serving this app on an nginx server, and I want it to be accessible
+# at a non-root URL. You can change this, and remember when you're testing
+# changes that you'll have to go to localhost:8050/traces or whatever
+
 app = dash.Dash(__name__, url_base_pathname = '/traces/')
 server = app.server
+
+# This string leaves everything up to the plotly default except changes the
+# window title.
 
 app.index_string = '''
 <!DOCTYPE html>
@@ -31,6 +38,10 @@ app.index_string = '''
     </body>
 </html>
 '''
+# we make the layout a function that gets run so that you can refresh the page
+# to refresh the dropdown options (i.e., find new experiments). If you directly
+# build the layout you need to restart the server every time there's a new
+# experiment.
 
 def serve_layout():
     return html.Div(

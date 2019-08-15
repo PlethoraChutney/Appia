@@ -7,6 +7,8 @@ import shutil
 import subprocess
 import argparse
 import config
+# this script also requires couchdb if you're using the web interface, but I
+# don't import it until later so that you can run with the --no-db option
 
 # This script only works if you have your Empower method export the headers in
 # wide format.
@@ -14,14 +16,13 @@ import config
 # header_rows tells the header funtcions how many rows to pull, and the data
 # functions how many to skip. Since the data functions don't use headers, you
 # actually want this to be one more than your real header rows.
+
 header_rows = 2
 directory_renamed = "renamed_traces"
 
 # data_row tells the header functions where to look for actual values.
+
 data_row = 0
-
-script_path = dir_path = os.path.dirname(os.path.realpath(__file__))
-
 
 ##### Chromatogram Consolidation Functions #####
 
@@ -34,6 +35,8 @@ def get_file_list(directory):
 	return file_list
 
 # get_headers and get_chroms are for the wide data format
+# these can probably be rewritten but I don't use them, so I'm not going to
+
 def get_headers(file_list):
 	header_list = ["Time (minutes)"]
 	for file in file_list:
@@ -56,6 +59,7 @@ def get_chroms(file_list, header_list):
 	return chroms
 
 # append_chroms is for the long data format
+
 def append_chroms(file_list) :
 	chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 	for file in file_list:
@@ -77,7 +81,7 @@ def filename_human_readable(file_name):
 
 ##### Main #####
 
-if __name__ == '__main__':
+def main():
 	parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters HPLC traces.')
 	parser.add_argument('directory', default = os.getcwd(), help = 'Which directory to pull all .arw files from')
 	parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true', default = False)
@@ -93,6 +97,8 @@ if __name__ == '__main__':
 	no_db = args.no_db
 	no_plots = args.no_plots
 	copy_manual = args.copy_manual
+
+	### get files and move to the new directory
 
 	if not quiet:
 		print(f'Checking {directory} for .arw files...')
@@ -113,6 +119,7 @@ if __name__ == '__main__':
 	for file in file_list:
 		shutil.move(file, os.path.join(readable_dir, os.path.basename(file)))
 
+	### make data tables and create R plots and add to database, if using
 	if not quiet:
 		print('Assembling traces...')
 	file_list = get_file_list(new_fullpath)
@@ -129,7 +136,6 @@ if __name__ == '__main__':
 		if not quiet:
 			print('Adding experiment to visualization database...')
 
-		# get the couchdb
 		import backend
 		db = backend.init_db(config.config)
 		backend.collect_experiments(os.path.abspath(new_fullpath), db)
@@ -137,13 +143,16 @@ if __name__ == '__main__':
 	if not no_plots:
 		if not quiet:
 			print('Making plots...')
-		subprocess.run(['Rscript', os.path.join(script_location,'..', 'scripts', 'auto_graph.R'), os.path.normpath(new_fullpath)])
+		subprocess.run(['Rscript', os.path.join('auto_graph.R'), os.path.normpath(new_fullpath)])
 
 	if copy_manual:
 		if not quiet:
 			print('Copying manual R script...')
-		shutil.copyfile(os.path.join(script_path, 'manual_plot_traces.R'), os.path.join(new_fullpath, 'manual_plot_traces.R'))
+		shutil.copyfile(os.path.join(script_location, 'manual_plot_traces.R'), os.path.join(new_fullpath, 'manual_plot_traces.R'))
 
 
 	if not quiet:
 		print('Done!')
+
+if __name__ == '__main__':
+	main()

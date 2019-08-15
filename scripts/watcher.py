@@ -6,6 +6,7 @@ import subprocess
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
+# set this yourself, obviously
 auto_exp_dir = os.path.abspath(os.path.join('..', '..', '..', 'experiment_watcher'))
 
 class WatersWatcher:
