@@ -47,6 +47,7 @@ def serve_layout():
     return html.Div(
         className = 'container',
         children=[
+            dcc.Location(id='root-location', refresh=False),
             html.Div(
                 className = 'graph-title',
                 children = [
@@ -97,11 +98,20 @@ def update_output(value):
     return f'Displaying: {value}'
 
 @app.callback(
-    dash.dependencies.Output('main_graphs', 'children'),
+    dash.dependencies.Output('root-location', 'hash'),
     [dash.dependencies.Input('experiment_dropdown', 'value')]
 )
 def update_output(value):
-    return Experiment(db.get(value)).get_plotly()
+    if value is not None:
+        return '#'+value
+
+@app.callback(
+    dash.dependencies.Output('main_graphs', 'children'),
+    [dash.dependencies.Input('root-location', 'hash')]
+)
+def update_output(hash):
+    if hash is not None:
+        return Experiment(db.get(hash.replace('#', ''))).get_plotly()
 
 if __name__ == '__main__':
     app.run_server(debug=False)
