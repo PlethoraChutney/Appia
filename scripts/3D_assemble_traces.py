@@ -116,5 +116,5 @@ if __name__ == '__main__':
 	chroms.to_csv(file_name, index = False)
 
 	if not quiet:
-		print('Making plots...')
+		print(f'Making plots using command: \n 3D_autograph {os.path.normpath(new_fullpath)} {column_spec}')
 	subprocess.run(['Rscript', os.path.join(script_location, '3D_autograph.R'), os.path.normpath(new_fullpath), column_spec])

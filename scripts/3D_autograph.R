@@ -3,9 +3,9 @@ library(ggplot2)
 
 args = commandArgs(trailingOnly = TRUE)
 setwd(args[1])
-column_spec = args[2]
+column_spec <- args[2]
 
-data <- read_csv('3D_chromatograms.csv', na = 'NA')
+data <- read_csv('3D_chromatograms.csv', na = 'NA', col_types = column_spec)
 
 try(
   tidy.emission.scan <- data %>%
@@ -25,7 +25,7 @@ if(exists('tidy.emission.scan')){
     geom_raster() +
     scale_fill_viridis_c(option = 'magma') +
     ggtitle('Emission scan') +
-    facet_grid(Sample ~ Excitation, scales = 'free')
+    facet_grid(Sample ~ Excitation)
 
   norm.em.plot <- tidy.emission.scan %>%
     ggplot(aes(x = Time, y = Emission, z = Normalized, fill = Normalized)) +
