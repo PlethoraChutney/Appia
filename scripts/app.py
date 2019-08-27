@@ -93,9 +93,10 @@ app.layout = serve_layout
 
 @app.callback(
     dash.dependencies.Output('output-container', 'children'),
-    [dash.dependencies.Input('experiment_dropdown', 'value')])
-def update_output(value):
-    return f'Displaying: {value}'
+    [dash.dependencies.Input('root-location', 'hash')])
+def update_output(hash):
+    experiment_name = hash.replace('#', '')
+    return f'Displaying: {experiment_name}'
 
 @app.callback(
     dash.dependencies.Output('root-location', 'hash'),
