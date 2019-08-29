@@ -2,6 +2,7 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+import urllib
 from backend import Experiment, collect_experiments, init_db, update_experiment_list
 from config import config
 
@@ -78,7 +79,8 @@ def serve_layout():
                         [dcc.Dropdown(
                             id = 'experiment_dropdown',
                             options = [{'label': x, 'value': x} for x in update_experiment_list(db)]
-                        )]
+                        ),
+                        html.A(html.Button('Download data', id = 'download-button'), href='', id='download-link', download='rawdata.csv', target='_blank', style = {'paddingTop': '5px'})]
                     )
                 ]
             ),
@@ -114,5 +116,15 @@ def update_output(hash):
     if hash is not None:
         return Experiment(db.get(hash.replace('#', ''))).get_plotly()
 
+@app.callback(
+    dash.dependencies.Output('download-link', 'href'),
+    [dash.dependencies.Input('root-location', 'hash')]
+)
+def update_download_link(hash):
+    df = Experiment(db.get(hash.replace('#', ''))).as_pandas_df()
+    csv_string = df.to_csv(index=False, encoding = 'utf-8')
+    csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
+    return csv_string
+
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=True)

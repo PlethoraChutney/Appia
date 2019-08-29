@@ -25,7 +25,7 @@ if(exists('tidy.emission.scan')){
     geom_raster() +
     scale_fill_viridis_c(option = 'magma') +
     ggtitle('Emission scan') +
-    facet_grid(Sample ~ Excitation)
+    facet_grid(Sample ~ Excitation, scales = 'free')
 
   norm.em.plot <- tidy.emission.scan %>%
     ggplot(aes(x = Time, y = Emission, z = Normalized, fill = Normalized)) +
