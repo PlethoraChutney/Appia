@@ -143,7 +143,7 @@ def main():
 	if not no_plots:
 		if not quiet:
 			print('Making plots...')
-		subprocess.run(['Rscript', os.path.join('auto_graph.R'), os.path.normpath(new_fullpath)])
+		subprocess.run(['Rscript', os.path.join(os.path.normpath(script_location), 'auto_graph.R'), os.path.normpath(new_fullpath)])
 
 	if copy_manual:
 		if not quiet:
