@@ -52,5 +52,8 @@ a web interface where you can go through and find traces by typing in a dropdown
 interact with them directly. This is much faster than the old R solution, because
 it doesn't have to re-draw graphs every time you change anything and it is reading
 from a database instead of a file. Make sure you've got `config.py` with your
-couchdb username and password in a dictionary, and you'll want to serve this
-app somehow. `waitress.py` is one answer.
+couchdb username and password in a dictionary. For example:
+```
+config = {'user': (username), 'password': (password)}
+```
+You will also want to serve this app somehow. `waitress.py` is one answer.
