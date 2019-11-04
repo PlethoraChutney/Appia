@@ -85,6 +85,7 @@ def main():
 	parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters HPLC traces.')
 	parser.add_argument('directory', default = os.getcwd(), help = 'Which directory to pull all .arw files from')
 	parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true', default = False)
+	parser.add_argument('-r', '--rename', help = 'Use a non-default name')
 	parser.add_argument('--no-db', help = 'Do not add to couchdb', action = 'store_true', default = False)
 	parser.add_argument('--no-plots', help = 'Do not make R plots', action = 'store_true', default = False)
 	parser.add_argument('--copy-manual', help = 'Copy R plot file for manual plot editing', action = 'store_true', default = False)
@@ -93,6 +94,7 @@ def main():
 
 	script_location = os.path.dirname(os.path.realpath(__file__))
 	directory = os.path.normpath(args.directory)
+	new_name = args.rename
 	quiet = args.quiet
 	no_db = args.no_db
 	no_plots = args.no_plots
@@ -109,7 +111,11 @@ def main():
 		print('No .arw files found. Exiting...')
 		sys.exit(1)
 
-	readable_dir = os.path.join(directory, filename_human_readable(file_list[0]))
+	if new_name is not None:
+		readable_dir = os.path.join(directory, new_name)
+	else:
+		readable_dir = os.path.join(directory, filename_human_readable(file_list[0]))
+
 	if not quiet:
 		print(f'Found {len(file_list)} files. Moving to {readable_dir}...')
 
@@ -138,7 +144,7 @@ def main():
 
 		import backend
 		db = backend.init_db(config.config)
-		backend.collect_experiments(os.path.abspath(new_fullpath), db)
+		backend.collect_experiments(os.path.abspath(new_fullpath), db, quiet)
 
 	if not no_plots:
 		if not quiet:

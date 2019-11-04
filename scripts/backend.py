@@ -115,7 +115,7 @@ class Experiment:
     def __repr__(self):
         self.as_pandas_df()
 
-def collect_experiments(directory, db):
+def collect_experiments(directory, db, quiet = False):
     list_of_dirs = []
     list_of_experiments = []
 
@@ -123,13 +123,12 @@ def collect_experiments(directory, db):
         if os.path.isfile(os.path.join(sub_dir, 'long_chromatograms.csv')):
             list_of_dirs.append(os.path.abspath(os.path.join(directory, sub_dir)))
 
-    print(list_of_dirs)
     for experiment in list_of_dirs:
-        print(experiment)
         list_of_experiments.append(Experiment(experiment))
 
     for experiment in list_of_experiments:
-        print(experiment.id)
+        if not quiet:
+            print(f'Adding experiment {experiment.id}')
         experiment.add_to_db(db)
 
 def update_experiment_list(db):
