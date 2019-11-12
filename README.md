@@ -46,6 +46,9 @@ instrument method needs the pattern `ScanEm540`.
 ![Example 3D Trace](3D_test_traces/example_3D_plot.png)
 
 ## Web UI
+
+![Web Interface](test_traces/web_interface.webm)
+
 The new Web UI relies on a couchdb database running on your HPLC computer.
 `app.py` is a plotly dash script that creates
 a web interface where you can go through and find traces by typing in a dropdown and
