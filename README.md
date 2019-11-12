@@ -47,7 +47,7 @@ instrument method needs the pattern `ScanEm540`.
 
 ## Web UI
 
-![Web Interface](test_traces/web_interface.webm)
+![Web Interface](test_traces/web_interface.gif)
 
 The new Web UI relies on a couchdb database running on your HPLC computer.
 `app.py` is a plotly dash script that creates
