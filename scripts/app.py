@@ -78,9 +78,11 @@ def serve_layout():
                         children =
                         [dcc.Dropdown(
                             id = 'experiment_dropdown',
-                            options = [{'label': x, 'value': x} for x in update_experiment_list(db)]
+                            options = [{'label': x, 'value': x} for x in update_experiment_list(db)],
+                            multi = True
                         ),
-                        html.A(html.Button('Download data', id = 'download-button'), href='', id='download-link', download='rawdata.csv', target='_blank', style = {'paddingTop': '5px'})]
+                        html.Hr(),
+                        html.A(html.Button('Download data', id = 'download-button'), href='', id='download-link', download='rawdata.csv', target='_blank')]
                     )
                 ]
             ),
@@ -106,7 +108,7 @@ def update_output(hash):
 )
 def update_output(value):
     if value is not None:
-        return '#'+value
+        return '#' + '+'.join(value)
 
 @app.callback(
     dash.dependencies.Output('main_graphs', 'children'),
@@ -114,7 +116,14 @@ def update_output(value):
 )
 def update_output(hash):
     if hash is not None:
-        return Experiment(db.get(hash.replace('#', ''))).get_plotly()
+        hash_string = hash.replace('#', '')
+        experiment_name_list = hash_string.split('+')
+        
+        if len(experiment_name_list) == 1:
+            return Experiment(db.get(experiment_name_list[0])).get_plotly()
+
+        experiment_list = [Experiment(db.get(x)) for x in experiment_name_list]
+        return Experiment(experiment_list).get_plotly()
 
 @app.callback(
     dash.dependencies.Output('download-link', 'href'),
