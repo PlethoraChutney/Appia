@@ -31,6 +31,14 @@ class Experiment:
             self.normalized = input['normalized']
             self.channel = input['channel']
             self.sample = input['sample']
+        elif type(input) == list:
+            list_of_dfs = [x.as_pandas_df() for x in input]
+            merged_df = pd.concat(list_of_dfs)
+            self.time = merged_df['Time'].tolist()
+            self.signal = merged_df['Signal'].tolist()
+            self.channel = merged_df['Channel'].tolist()
+            self.sample = merged_df['Sample'].tolist()
+            self.normalized = merged_df['Normalized'].tolist()
         elif os.path.isdir(input):
             self.id = os.path.split(input)[-1].replace('_processed', '')
             in_df = pd.read_csv(os.path.join(input, 'long_chromatograms.csv'))
@@ -69,10 +77,10 @@ class Experiment:
         db.save(doc)
 
     def add_to_db(self, db):
-        if db.get(self.id) is None:
+        try:
             self.__store_in_db(db)
-        else:
-            print('This experiment is already in the database!')
+        except:
+            print(f'\033[93m[WARNING]\033[0m Experiment already in database! Rerun this script with --rename to add it to the database.')
 
     def get_plotly(self):
         df = self.as_pandas_df()
