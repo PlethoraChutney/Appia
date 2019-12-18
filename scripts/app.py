@@ -82,7 +82,8 @@ def serve_layout():
                             multi = True
                         ),
                         html.Hr(),
-                        html.A(html.Button('Download data', id = 'download-button'), href='', id='download-link', download='rawdata.csv', target='_blank')]
+                        html.A(html.Button('Download data', id = 'download-button'), href='',
+                        id='download-link', download='rawdata.csv', target='_blank')]
                     )
                 ]
             ),
@@ -99,8 +100,8 @@ app.layout = serve_layout
     dash.dependencies.Output('output-container', 'children'),
     [dash.dependencies.Input('root-location', 'hash')])
 def update_output(hash):
-    experiment_name = hash.replace('#', '')
-    return f'Displaying: {experiment_name}'
+    experiment_name = hash.replace('#', '').replace('+', ' and ')
+    return f'{experiment_name}'
 
 @app.callback(
     dash.dependencies.Output('root-location', 'hash'),
@@ -118,7 +119,7 @@ def update_output(hash):
     if hash is not None:
         hash_string = hash.replace('#', '')
         experiment_name_list = hash_string.split('+')
-        
+
         if len(experiment_name_list) == 1:
             return Experiment(db.get(experiment_name_list[0])).get_plotly()
 
