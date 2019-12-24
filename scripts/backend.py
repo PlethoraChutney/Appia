@@ -23,7 +23,7 @@ def init_db(config):
     return(db)
 
 class Experiment:
-    def __init__(self, input, very_large = False):
+    def __init__(self, input, reduce = 1):
         if type(input) == couchdb.client.Document:
             self.id = input['_id']
             self.time = input['time']
@@ -45,12 +45,12 @@ class Experiment:
             in_df['Normalized'] = in_df.groupby(['Sample', 'Channel']).transform(lambda x: ((x - x.min()) / (x.max() - x.min())))['Signal'].tolist()
             in_df.fillna(0, inplace = True)
 
-            if very_large:
+            if reduce != 1:
                 # extremely large datasets, like large-scale expressions, typically
                 # do not need the quarter-second or half-second resolution afforded
                 # by the HPLC. We can decimate these datasets to make them load
                 # faster in the web interface and other programs.
-                in_df = in_df.iloc[::10]
+                in_df = in_df.iloc[::reduce]
 
             self.time = in_df['Time'].tolist()
             self.signal = in_df['Signal'].tolist()
@@ -131,7 +131,7 @@ class Experiment:
     def __repr__(self):
         self.as_pandas_df()
 
-def collect_experiments(directory, db, quiet = False, very_large = False):
+def collect_experiments(directory, db, quiet = False, reduce = 1):
     list_of_dirs = []
     list_of_experiments = []
 
@@ -140,7 +140,7 @@ def collect_experiments(directory, db, quiet = False, very_large = False):
             list_of_dirs.append(os.path.abspath(os.path.join(directory, sub_dir)))
 
     for experiment in list_of_dirs:
-        list_of_experiments.append(Experiment(experiment, very_large))
+        list_of_experiments.append(Experiment(experiment, reduce))
 
     for experiment in list_of_experiments:
         if not quiet:

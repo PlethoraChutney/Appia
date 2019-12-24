@@ -86,7 +86,7 @@ def main():
 	parser.add_argument('directory', default = os.getcwd(), help = 'Which directory to pull all .arw files from')
 	parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true', default = False)
 	parser.add_argument('-r', '--rename', help = 'Use a non-default name')
-	parser.add_argument('--very-large', help = 'Use if your dataset is large, and you do not need high resolution', action = 'store_true', default = 'False')
+	parser.add_argument('--reduce', help = 'Keep only one in REDUCE points, e.g., `--reduce 10` keeps only 1/10th of your points. Use if your dataset is very large and you do not need high temporal resolution.', default = 1, type = int)
 	parser.add_argument('--no-db', help = 'Do not add to couchdb', action = 'store_true', default = False)
 	parser.add_argument('--no-plots', help = 'Do not make R plots', action = 'store_true', default = False)
 	parser.add_argument('--copy-manual', help = 'Copy R plot file for manual plot editing', action = 'store_true', default = False)
@@ -96,7 +96,7 @@ def main():
 	script_location = os.path.dirname(os.path.realpath(__file__))
 	directory = os.path.normpath(args.directory)
 	new_name = args.rename
-	very_large = args.very_large
+	reduce = args.reduce
 	quiet = args.quiet
 	no_db = args.no_db
 	no_plots = args.no_plots
@@ -146,7 +146,7 @@ def main():
 
 		import backend
 		db = backend.init_db(config.config)
-		backend.collect_experiments(os.path.abspath(new_fullpath), db, quiet, very_large)
+		backend.collect_experiments(os.path.abspath(new_fullpath), db, quiet, reduce)
 
 	if not no_plots:
 		if not quiet:
