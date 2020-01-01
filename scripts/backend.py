@@ -8,6 +8,8 @@ import dash_core_components as dcc
 import dash_html_components as html
 from config import config
 
+# 1 Database initialization ----------------------------------------------------
+
 # make a config.py with your couchdb username and password in it. Don't put them here!
 def init_db(config):
     user = config['user']
@@ -22,6 +24,8 @@ def init_db(config):
 
     return(db)
 
+# 2 Experiment class -----------------------------------------------------------
+# * 2.1 Experiment I/O ---------------------------------------------------------
 class Experiment:
     def __init__(self, input, reduce = 1):
         if type(input) == couchdb.client.Document:
@@ -31,6 +35,7 @@ class Experiment:
             self.normalized = input['normalized']
             self.channel = input['channel']
             self.sample = input['sample']
+        # Lists are given to Experiment() when we're merging several datasets
         elif type(input) == list:
             list_of_dfs = [x.as_pandas_df() for x in input]
             merged_df = pd.concat(list_of_dfs)
@@ -39,6 +44,8 @@ class Experiment:
             self.channel = merged_df['Channel'].tolist()
             self.sample = merged_df['Sample'].tolist()
             self.normalized = merged_df['Normalized'].tolist()
+        # Directories are given to Experiment() when we're first adding csv files
+        # to the couchdb database
         elif os.path.isdir(input):
             self.id = os.path.split(input)[-1].replace('_processed', '')
             in_df = pd.read_csv(os.path.join(input, 'long_chromatograms.csv'))
@@ -90,6 +97,8 @@ class Experiment:
         except:
             print(f'\033[93m[WARNING]\033[0m Experiment already in database! Rerun this script with --rename to add it to the database.')
 
+# * 2.2 Experiment graph production --------------------------------------------
+
     def get_plotly(self):
         df = self.as_pandas_df()
         graphs = {}
@@ -130,6 +139,8 @@ class Experiment:
 
     def __repr__(self):
         self.as_pandas_df()
+
+# 3 Misc db functions ----------------------------------------------------------
 
 def collect_experiments(directory, db, quiet = False, reduce = 1):
     list_of_dirs = []

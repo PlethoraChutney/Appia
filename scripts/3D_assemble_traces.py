@@ -8,6 +8,8 @@ import shutil
 import subprocess
 import argparse
 
+# 1 Hardcoding -----------------------------------------------------------------
+
 # This script only supports sample headers in the wide format
 
 # header_rows should include the header AND the information of that header
@@ -26,7 +28,7 @@ data_row = 0
 excitation_regex = '(?<=ScanEx).{3}'
 emission_regex = '(?<=ScanEm).{3}'
 
-##### Chromatogram Consolidation Functions #####
+# 2 Consolidation Functions ----------------------------------------------------
 def get_file_list(directory):
 	file_list = []
 	for file in os.listdir(directory):
@@ -79,7 +81,7 @@ def filename_human_readable(file_name):
 	readable_dir_name = str(headers.loc[data_row]['Sample Set Name']).replace('/', '-').replace(" ", "_") + "_processed"
 	return readable_dir_name
 
-##### Main #####
+# 3 Main -----------------------------------------------------------------------
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters 3D HPLC traces.')

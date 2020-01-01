@@ -7,6 +7,8 @@ import shutil
 import subprocess
 import argparse
 import config
+
+# 1 Hardcoding -----------------------------------------------------------------
 # this script also requires couchdb if you're using the web interface, but I
 # don't import it until later so that you can run with the --no-db option
 
@@ -24,7 +26,7 @@ directory_renamed = "renamed_traces"
 
 data_row = 0
 
-##### Chromatogram Consolidation Functions #####
+# 2 Import functions -----------------------------------------------------------
 
 def get_file_list(directory):
 	file_list = []
@@ -34,31 +36,7 @@ def get_file_list(directory):
 
 	return file_list
 
-# get_headers and get_chroms are for the wide data format
-# these can probably be rewritten but I don't use them, so I'm not going to
-
-def get_headers(file_list):
-	header_list = ["Time (minutes)"]
-	for file in file_list:
-		df = pd.read_csv(file, delim_whitespace = True, nrows = header_rows)
-		header = [str(df.loc[data_row]['SampleName']) + " " + str(df.loc[data_row]['Channel'])]
-		header_list.append(header[0])
-	return(header_list)
-
-def get_chroms(file_list, header_list):
-	# get the time column from the first trace
-	first_trace = pd.read_csv(file_list[0], delim_whitespace = True, skiprows = header_rows, names = ["Time", "Trace"], header = None)
-
-	chroms = first_trace[["Time"]].copy()
-
-	for file in file_list:
-		df = pd.read_csv(file, delim_whitespace = True, skiprows = header_rows, names = ["Time", "Trace"], header = None)
-		chroms = pd.concat([chroms, df["Trace"]], axis = 1)
-
-	chroms.columns = header_list
-	return chroms
-
-# append_chroms is for the long data format
+# 3 Data processing functions --------------------------------------------------
 
 def append_chroms(file_list) :
 	chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
@@ -72,14 +50,23 @@ def append_chroms(file_list) :
 
 		chroms = chroms.append(to_append, ignore_index = False)
 
-	return chroms
+	wide_table = chroms.copy()
+	wide_table['Sample'] = wide_table['Sample'].astype(str) + ' ' + wide_table['Channel']
+	wide_table.drop('Channel', axis = 1)
+	wide_table = wide_table.pivot_table(
+		index = 'Time',
+		columns = 'Sample',
+		values = 'Signal'
+	)
+
+	return (chroms, wide_table)
 
 def filename_human_readable(file_name):
 	headers = pd.read_csv(file_name, delim_whitespace = True, nrows = header_rows)
 	readable_dir_name = str(headers.loc[data_row]['Sample Set Name']).replace('/', '-').replace(" ", "_") + "_processed"
 	return readable_dir_name
 
-##### Main #####
+# 4 Main -----------------------------------------------------------------------
 
 def main():
 	parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters HPLC traces.')
@@ -94,7 +81,7 @@ def main():
 	args = parser.parse_args()
 
 	script_location = os.path.dirname(os.path.realpath(__file__))
-	directory = os.path.normpath(args.directory)
+	directory = os.path.abspath(args.directory)
 	new_name = args.rename
 	reduce = args.reduce
 	quiet = args.quiet
@@ -102,7 +89,7 @@ def main():
 	no_plots = args.no_plots
 	copy_manual = args.copy_manual
 
-	### get files and move to the new directory
+# * 4.1 Import files -----------------------------------------------------------
 
 	if not quiet:
 		print(f'Checking {directory} for .arw files...')
@@ -127,18 +114,19 @@ def main():
 	for file in file_list:
 		shutil.move(file, os.path.join(readable_dir, os.path.basename(file)))
 
-	### make data tables and create R plots and add to database, if using
+# * 4.2 Assemble .arw to .csv --------------------------------------------------
+
 	if not quiet:
 		print('Assembling traces...')
-	file_list = get_file_list(new_fullpath)
-	header_list = get_headers(file_list)
-	chroms = get_chroms(file_list, header_list)
-	file_name = os.path.join(new_fullpath, 'wide_chromatograms.csv')
-	chroms.to_csv(file_name, index = False)
 
-	chroms = append_chroms(file_list)
+	file_list = get_file_list(new_fullpath)
+	long_and_wide = append_chroms(file_list)
 	file_name = os.path.join(new_fullpath, 'long_chromatograms.csv')
-	chroms.to_csv(file_name, index = False)
+	long_and_wide[0].to_csv(file_name, index = False)
+	file_name = os.path.join(new_fullpath, 'wide_chromatograms.csv')
+	long_and_wide[1].to_csv(file_name, index = True)
+
+# * 4.3 Add traces to couchdb --------------------------------------------------
 
 	if not no_db:
 		if not quiet:
@@ -147,6 +135,8 @@ def main():
 		import backend
 		db = backend.init_db(config.config)
 		backend.collect_experiments(os.path.abspath(new_fullpath), db, quiet, reduce)
+
+# * 4.4 Plot traces ------------------------------------------------------------
 
 	if not no_plots:
 		if not quiet:

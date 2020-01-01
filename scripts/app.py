@@ -8,7 +8,7 @@ from config import config
 
 db = init_db(config)
 
-##### Web app #####
+# 1 Change root and title ------------------------------------------------------
 
 # I'm serving this app on an nginx server, and I want it to be accessible
 # at a non-root URL. You can change this, and remember when you're testing
@@ -17,8 +17,7 @@ db = init_db(config)
 app = dash.Dash(__name__, url_base_pathname = '/traces/')
 server = app.server
 
-# This string leaves everything up to the plotly default except changes the
-# window title.
+#
 
 app.index_string = '''
 <!DOCTYPE html>
@@ -39,6 +38,9 @@ app.index_string = '''
     </body>
 </html>
 '''
+
+# 2 App ------------------------------------------------------------------------
+
 # we make the layout a function that gets run so that you can refresh the page
 # to refresh the dropdown options (i.e., find new experiments). If you directly
 # build the layout you need to restart the server every time there's a new
@@ -96,12 +98,17 @@ def serve_layout():
 
 app.layout = serve_layout
 
+# 3 Callbacks ------------------------------------------------------------------
+
+# Indicate what experiment(s) are being displayed
 @app.callback(
     dash.dependencies.Output('output-container', 'children'),
     [dash.dependencies.Input('root-location', 'hash')])
 def update_output(hash):
     experiment_name = hash.replace('#', '').replace('+', ' and ')
     return f'{experiment_name}'
+
+# Make URL hash the experiment name(s)
 
 @app.callback(
     dash.dependencies.Output('root-location', 'hash'),
@@ -110,6 +117,8 @@ def update_output(hash):
 def update_output(value):
     if value is not None:
         return '#' + '+'.join(value)
+
+# Update graphs when URL hash changes
 
 @app.callback(
     dash.dependencies.Output('main_graphs', 'children'),
@@ -125,6 +134,8 @@ def update_output(hash):
 
         experiment_list = [Experiment(db.get(x)) for x in experiment_name_list]
         return Experiment(experiment_list).get_plotly()
+
+# Make data downloadable
 
 @app.callback(
     dash.dependencies.Output('download-link', 'href'),
