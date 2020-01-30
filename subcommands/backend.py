@@ -6,7 +6,7 @@ import couchdb
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-from config import config
+from subcommands.config import config
 
 # 1 Database initialization ----------------------------------------------------
 

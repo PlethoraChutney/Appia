@@ -63,12 +63,7 @@ def filename_human_readable(file_name, data_row = 0, header_rows = 2):
 
 # 3 Main -----------------------------------------------------------------------
 
-parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters 3D HPLC traces.', add_help=False)
-parser.add_argument('directory', default = os.getcwd(), help = 'Which directory to pull all .arw files from')
-parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true', default = False)
-
-def main():
-	args = parser.parse_args()
+def main(args):
 
 	script_location = os.path.dirname(os.path.realpath(__file__))
 	directory = os.path.normpath(args.directory)
@@ -100,5 +95,7 @@ def main():
 		print(f'Making plots using command: \n 3D_autograph {os.path.normpath(new_fullpath)} {column_spec}')
 	subprocess.run(['Rscript', os.path.join(script_location, '3D_auto_graph_HPLC.R'), os.path.normpath(new_fullpath), column_spec])
 
-if __name__ == '__main__':
-	main()
+parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters 3D HPLC traces.', add_help=False)
+parser.set_defaults(func = main)
+parser.add_argument('directory', default = os.getcwd(), help = 'Which directory to pull all .arw files from')
+parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true', default = False)
