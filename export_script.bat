@@ -1,6 +1,6 @@
 @echo off
 
-python scripts\assemble_traces.py .
+python appia.py hplc .
 
 IF %ERRORLEVEL%==1 (
   PAUSE
