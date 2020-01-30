@@ -8,4 +8,4 @@ Old/
 *.pdf
 config.py
 *.lnk
-scripts/__pycache__/
+*/__pycache__/*

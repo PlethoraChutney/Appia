@@ -6,7 +6,6 @@ import os
 import shutil
 import subprocess
 import argparse
-import config
 
 # 1 Import functions -----------------------------------------------------------
 
@@ -57,15 +56,16 @@ def filename_human_readable(file_name, header_rows = 2, data_row = 0):
 
 # 2 Main -----------------------------------------------------------------------
 
+parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters HPLC traces.', add_help=False)
+parser.add_argument('directory', default = os.getcwd(), help = 'Which directory to pull all .arw files from')
+parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true', default = False)
+parser.add_argument('-r', '--rename', help = 'Use a non-default name')
+parser.add_argument('--reduce', help = 'Keep only one in REDUCE points, e.g., `--reduce 10` keeps only 1/10th of your points. Use if your dataset is very large and you do not need high temporal resolution.', default = 1, type = int)
+parser.add_argument('--no-db', help = 'Do not add to couchdb', action = 'store_true', default = False)
+parser.add_argument('--no-plots', help = 'Do not make R plots', action = 'store_true', default = False)
+parser.add_argument('--copy-manual', help = 'Copy R plot file for manual plot editing', action = 'store_true', default = False)
+
 def main():
-	parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters HPLC traces.')
-	parser.add_argument('directory', default = os.getcwd(), help = 'Which directory to pull all .arw files from')
-	parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true', default = False)
-	parser.add_argument('-r', '--rename', help = 'Use a non-default name')
-	parser.add_argument('--reduce', help = 'Keep only one in REDUCE points, e.g., `--reduce 10` keeps only 1/10th of your points. Use if your dataset is very large and you do not need high temporal resolution.', default = 1, type = int)
-	parser.add_argument('--no-db', help = 'Do not add to couchdb', action = 'store_true', default = False)
-	parser.add_argument('--no-plots', help = 'Do not make R plots', action = 'store_true', default = False)
-	parser.add_argument('--copy-manual', help = 'Copy R plot file for manual plot editing', action = 'store_true', default = False)
 
 	args = parser.parse_args()
 
@@ -121,7 +121,8 @@ def main():
 		if not quiet:
 			print('Adding experiment to visualization database...')
 
-		import backend
+		import subcommands.config
+		import subcommands.backend
 		db = backend.init_db(config.config)
 		backend.collect_experiments(os.path.abspath(new_fullpath), db, quiet, reduce)
 

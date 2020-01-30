@@ -91,22 +91,19 @@ def append_chroms(file_list, quiet, skip_rows = 1):
 
 # 2 Main -----------------------------------------------------------------------
 
-def main():
-    parser = argparse.ArgumentParser(description = 'A script to collect FPLC traces from GE AKTA FPLCs')
-    parser.add_argument('file_list', help = 'Files to compare. If given a directory, all .csvs in that directory.', nargs = '+')
-    parser.add_argument('-o', '--output', help = 'Where to write the compiled traces. Default is fplcs.csv in the first input directory')
-    parser.add_argument('-s', '--skiprows', default = 1, help = 'Number of rows to skip reading. Default 1', action = 'store', dest = 'skip_rows', type = int)
-    parser.add_argument('-f', '--fractions', nargs = 2, default = ['0', '0'], help = 'Inclusive range of fractions to fill in. Default is not to fill any.')
-    parser.add_argument('-m', '--ml', nargs = 2, default = ['5', '25'], help = 'Inclusive range for x-axis, in mL. Default is 5 to 25')
-    parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true')
-    parser.add_argument('--copy-manual', help = 'Copy the manual plotting Rscript for further tweaking', action = 'store_true')
-    parser.add_argument('--no-plots', help = 'Don\'t make R plots.', action = 'store_true')
-    parser.add_argument('--wide-table', help= 'Save an additional table that is in \'wide\' format.', action = 'store_true')
-    parser.add_argument('--mass-export', help = 'Analyze each input file seperately. Default false. Will not make wide table, will copy manual R script and make default plots. Ignores -o, -s, -f, -m, -q flags.', action = 'store_true')
+parser = argparse.ArgumentParser(description = 'A script to collect FPLC traces from GE AKTA FPLCs', add_help=False)
+parser.add_argument('file_list', help = 'Files to compare. If given a directory, all .csvs in that directory.', nargs = '+')
+parser.add_argument('-o', '--output', help = 'Where to write the compiled traces. Default is fplcs.csv in the first input directory')
+parser.add_argument('-s', '--skiprows', default = 1, help = 'Number of rows to skip reading. Default 1', action = 'store', dest = 'skip_rows', type = int)
+parser.add_argument('-f', '--fractions', nargs = 2, default = ['0', '0'], help = 'Inclusive range of fractions to fill in. Default is not to fill any.')
+parser.add_argument('-m', '--ml', nargs = 2, default = ['5', '25'], help = 'Inclusive range for x-axis, in mL. Default is 5 to 25')
+parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true')
+parser.add_argument('--copy-manual', help = 'Copy the manual plotting Rscript for further tweaking', action = 'store_true')
+parser.add_argument('--no-plots', help = 'Don\'t make R plots.', action = 'store_true')
+parser.add_argument('--wide-table', help= 'Save an additional table that is in \'wide\' format.', action = 'store_true')
+parser.add_argument('--mass-export', help = 'Analyze each input file seperately. Default false. Will not make wide table, will copy manual R script and make default plots. Ignores -o, -s, -f, -m, -q flags.', action = 'store_true')
 
-    if len(sys.argv) == 1:
-        parser.print_help(sys.stderr)
-        sys.exit(0)
+def main():
     args = parser.parse_args()
 
     script_path = os.path.dirname(os.path.realpath(__file__))
