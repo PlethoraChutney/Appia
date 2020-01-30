@@ -23,7 +23,7 @@ The 2D script requires `SampleName`, `Channel`, and `Sample Set Name`. The
 The order is not important, so long as the required headers are present in the .arw
 file. Other information can be there as well, it won't hurt anything.
 
-![Example 2D Trace](test_traces/2d_example_plot.png)
+![Example 2D Trace](HPLC-tests/2d_example_plot.png)
 
 The 3D scripts will automatically determine if your samle was run with an excitation
 or emission scan, separate the data into two groups, and plot each group independently.
@@ -33,13 +33,13 @@ emission scan, and ### is the constant wavelength. So for example, if you
 were scanning the emission while holding excitation constant at 540nm, your
 instrument method needs the pattern `ScanEm540`.
 
-![Example 3D Trace](3D_test_traces/example_3D_plot.png)
+![Example 3D Trace](3D-tests/example_3D_plot.png)
 
 ### Web UI
 
-![Web Interface](test_traces/web_interface.gif)
+![Web Interface](HPLC-tests/web_interface.gif)
 
-The new Web UI relies on a couchdb database running on your HPLC computer.
+The Web UI relies on a couchdb database running on your HPLC computer.
 `app.py` is a plotly dash script that creates
 a web interface where you can go through and find traces by typing in a dropdown and
 interact with them directly. This is much faster than the old R solution, because
