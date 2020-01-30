@@ -1,10 +1,19 @@
-# Waters HPLC Processing Scripts
+# Appia - simple chromatography processing
+Appia is a simple set of scripts to process chromatography data from AKTA and
+Waters systems. HPLC data can then be viewed on the easy-to-use and intuitive
+web interface, built with plotly dash and hosted locally for data security.
+
+Additionally, automatic plots will be prepared for all three types of chromatography
+data using ggplot in R. Options to copy a manual file for plot tweaking are
+available.
+
+## Waters HPLC Processing
 This is a collection of scripts for quick analysis and plotting
 of Waters liquid chromatography data. I expect that you'll run the
 batch file from the same directory as the python and R scripts, as
 well as your raw data (which are .arw files).
 
-## How to format your Waters export method
+### How to format your Waters export method
 I have dropped support for Waters data exported with long headers (i.e., two
 columns and multiple rows). These scripts now require your data to be formatted
 with a single pair of rows, with the columns deliniating what header goes where.
@@ -13,25 +22,6 @@ The 2D script requires `SampleName`, `Channel`, and `Sample Set Name`. The
 3D script requires `SampleName`, `Instrument Method Name`, and `Sample Set Name`.
 The order is not important, so long as the required headers are present in the .arw
 file. Other information can be there as well, it won't hurt anything.
-
-## What the scripts do
-`export_script.bat` simply runs `assemble_traces.py`, which does all the
-heavy lifting. This is to get around the fact that you can't make python scripts
-executable in Windows.
-
-`assemble_traces.py` first moves all of the 'arw' files into a new directory,
-where it reads them and creates two files: `long_chromatograms.csv` and `wide_chromatograms.csv`.
-It then adds this experiment to the couchdb database using your config file. `config.py`
-needs to be in the same directory as `backend.py` and have the username and password
-for the database in a dictionary. Finally, it runs `auto_graph.R` on `long_chromatograms.csv`.
-
- * `--quiet` will prevent messages from printing to terminal.
- * `--no-db` is for use if you don't have couchdb and don't want to use the web interface.
- * `--no-plots` will not run the R script, just generate the csvs and add them to the db.
- * `--copy-manual` copies over the R script to the out dir so you can fine-tune the plot yourself.
-
-`auto_graph.R` produces the graphs. It produces a raw and normalized trace
-for each channel, colored by sample.
 
 ![Example 2D Trace](test_traces/2d_example_plot.png)
 
@@ -45,7 +35,7 @@ instrument method needs the pattern `ScanEm540`.
 
 ![Example 3D Trace](3D_test_traces/example_3D_plot.png)
 
-## Web UI
+### Web UI
 
 ![Web Interface](test_traces/web_interface.gif)
 
@@ -60,3 +50,22 @@ couchdb username and password in a dictionary. For example:
 config = {'user': (username), 'password': (password)}
 ```
 You will also want to serve this app somehow. `waitress.py` is one answer.
+
+### Batch scripts
+From the command line, the best way to use Appia is to run appia.py. However,
+several batch scripts are included in this repo to give users who prefer not
+to use command line interfaces a set of commonly-used optoins.
+
+ * `hplc_export` runs `appia.py hplc .`, with all default options
+ * `hplc_rename_export` runs `appia.py hplc --rename [user-input] .`, to rename
+or combine experiments in the web interface.
+ * `hplc_LSE_export` runs `appia.py hplc --reduce 10 --no-plots --rename [user-input] .`,
+which is useful if a great number of traces are being combined
+for viewing through the web interface.
+ * `3D-hplc_export` runs `appia.py three-d .`, for analysis of three dimensional
+HPLC experiments.
+
+## AKTA FPLC Processing
+The AKTA processing is straightforward. First, export your data from the AKTA in
+.csv format. Then, run `appia.py fplc` on either one .csv file or a list of
+.csv files. There are options for mass-processing several experiments at once.
