@@ -17,9 +17,9 @@ data <- read.csv(file = long_trace_filename, header = TRUE) %>%
 # 2 Plot ------------------------------------------------------------------
 
 if (length(levels(data$Sample)) > 10) {
-  color_scheme = scale_color_viridis_d()
+  color_scale = scale_color_viridis_d()
 } else {
-  color_scheme = scale_color_manual(values = c(
+  color_scale = scale_color_manual(values = c(
     '#17becf', # cyan
     '#ff7f0e', # orange
     '#e377c2', # pink
@@ -36,7 +36,7 @@ if (length(levels(data$Sample)) > 10) {
 
 ggplot(data = data, aes(x = Time, y = Signal)) +
   theme_light() +
-  color_scheme +
+  color_scale +
   geom_line(aes(color = Sample)) +
   facet_grid(Channel ~ ., scales = "free") +
   xlab("Time (minutes)") +
@@ -47,7 +47,7 @@ data %>%
   filter(Normalized == 'Normalized') %>% 
   ggplot(aes(x = Time, y = Signal)) +
   theme_light() +
-  scale_color_viridis_d() +
+  color_scale +
   geom_line(aes(color = Sample)) +
   facet_grid(Channel ~ ., scales = "free") +
   xlab("Time (minutes)") +
