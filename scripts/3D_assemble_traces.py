@@ -8,26 +8,6 @@ import shutil
 import subprocess
 import argparse
 
-# 1 Hardcoding -----------------------------------------------------------------
-
-# This script only supports sample headers in the wide format
-
-# header_rows should include the header AND the information of that header
-# i.e., if your first row is "SampleName ..." and your second is "Buffer ..."
-# header_rows is 2
-header_rows = 2
-directory_renamed = "renamed_traces"
-
-# data_row is the row, *ignoring headers* in which values are stored. In the
-# above example, data_row is 0
-data_row = 0
-
-# This is a positive lookbehind assertion, meaning it'll only match 3 characters
-# preceeded by 'ScanEx' or 'ScanEm'. Please include this phrase in your methods if you want
-# to use this script.
-excitation_regex = '(?<=ScanEx).{3}'
-emission_regex = '(?<=ScanEm).{3}'
-
 # 2 Consolidation Functions ----------------------------------------------------
 def get_file_list(directory):
 	file_list = []
@@ -37,7 +17,7 @@ def get_file_list(directory):
 
 	return file_list
 
-def append_chroms(file_list) :
+def append_chroms(file_list, excitation_regex = '(?<=ScanEx).{3}', emission_regex = '(?<=ScanEm).{3}', data_row = 0, header_rows = 2) :
 	chroms = pd.DataFrame()
 
 	for file in file_list:
@@ -76,7 +56,7 @@ def append_chroms(file_list) :
 	column_spec = 'dccc' + 'd'*(len(chroms.columns)-4)
 	return [chroms, column_spec]
 
-def filename_human_readable(file_name):
+def filename_human_readable(file_name, data_row = 0, header_rows = 2):
 	headers = pd.read_csv(file_name, delim_whitespace = True, nrows = header_rows - 1)
 	readable_dir_name = str(headers.loc[data_row]['Sample Set Name']).replace('/', '-').replace(" ", "_") + "_processed"
 	return readable_dir_name
@@ -118,4 +98,4 @@ if __name__ == '__main__':
 
 	if not quiet:
 		print(f'Making plots using command: \n 3D_autograph {os.path.normpath(new_fullpath)} {column_spec}')
-	subprocess.run(['Rscript', os.path.join(script_location, '3D_autograph.R'), os.path.normpath(new_fullpath), column_spec])
+	subprocess.run(['Rscript', os.path.join(script_location, '3D_auto_graph_HPLC.R'), os.path.normpath(new_fullpath), column_spec])

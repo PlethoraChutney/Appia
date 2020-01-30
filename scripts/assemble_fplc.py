@@ -6,12 +6,7 @@ import argparse
 import subprocess
 import shutil
 
-# 1 Hardcoding -----------------------------------------------------------------
-
-skip_rows = 1
-script_path = dir_path = os.path.dirname(os.path.realpath(__file__))
-
-# 2 Data import ----------------------------------------------------------------
+# 1 Data import ----------------------------------------------------------------
 
 def get_file_list(directory, quiet):
     file_list = []
@@ -31,9 +26,10 @@ def get_file_list(directory, quiet):
 
     return file_list
 
-# * 2.1 Data tidying -----------------------------------------------------------
+# * 1.1 Data tidying -----------------------------------------------------------
 
-def append_chroms(file_list, quiet):
+def append_chroms(file_list, quiet, skip_rows = 1):
+
     if not quiet:
         print('Generating compiled trace csv...')
     chroms = pd.DataFrame(columns = ['mL', 'Channel', 'Signal', 'frac_mL', 'Fraction', 'Sample', 'inst_frac'])
@@ -93,7 +89,7 @@ def append_chroms(file_list, quiet):
         print('Done with csv...')
     return chroms
 
-# 3 Main -----------------------------------------------------------------------
+# 2 Main -----------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(description = 'A script to collect FPLC traces from GE AKTA FPLCs')
@@ -113,6 +109,7 @@ def main():
         sys.exit(0)
     args = parser.parse_args()
 
+    script_path = os.path.dirname(os.path.realpath(__file__))
     quiet = args.quiet
     file_list = get_file_list(args.file_list, quiet)
     dir = os.path.dirname(file_list[0])
@@ -127,7 +124,7 @@ def main():
     wide_table = args.wide_table
     mass_export = args.mass_export
 
-# * 3.1 csv generation ---------------------------------------------------------
+# * 2.1 csv generation ---------------------------------------------------------
 
     outfile = os.path.abspath(args.output) if args.output else os.path.join(dir, 'fplcs.csv')
     outdir = os.path.dirname(outfile)
@@ -152,19 +149,19 @@ def main():
     if wide_table:
         compiled.pivot('mL', 'Channel', 'Signal').to_csv(newdir + '_wide.csv')
 
-# * 3.2 Plots ------------------------------------------------------------------
+# * 2.2 Plots ------------------------------------------------------------------
 
     if not no_plots:
         if not quiet:
             print(f'Generating plots ({low_ml} to {high_ml}mL, fractions {min_frac} to {max_frac})...')
-        subprocess.run(['Rscript', '--quiet', os.path.join(script_path, 'plot_traces.R'), outfile, min_frac, max_frac, low_ml, high_ml])
+        subprocess.run(['Rscript', '--quiet', os.path.join(script_path, 'auto_graph_FPLC.R'), outfile, min_frac, max_frac, low_ml, high_ml])
         if os.path.isfile(os.path.join(outdir, 'Rplots.pdf')) :
             os.remove(os.path.join(outdir, 'Rplots.pdf'))
 
     if copy_manual:
         if not quiet:
             print('Copying manual RScript...')
-        shutil.copyfile(os.path.join(script_path, 'manual_plot_traces.R'), os.path.join(outdir, 'manual_plot_traces.R'))
+        shutil.copyfile(os.path.join(script_path, 'manual_plot_FPLC.R'), os.path.join(outdir, 'manual_plot_traces.R'))
     if not quiet:
         print('Done.')
 
