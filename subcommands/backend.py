@@ -14,7 +14,8 @@ from subcommands.config import config
 def init_db(config):
     user = config['user']
     password = config['password']
-    couchserver = couchdb.Server(f'http://{user}:{password}@127.0.0.1:5984')
+    host = config['host']
+    couchserver = couchdb.Server(f'http://{user}:{password}@{host}:5984')
 
     dbname = 'traces'
     if dbname in couchserver:

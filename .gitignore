@@ -9,3 +9,4 @@ Old/
 config.py
 *.lnk
 */__pycache__/*
+appia-env/
