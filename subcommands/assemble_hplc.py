@@ -66,6 +66,7 @@ def main(args):
 	no_db = args.no_db
 	no_plots = args.no_plots
 	copy_manual = args.copy_manual
+	no_move = args.no_move
 
 # * 2.1 Import files -----------------------------------------------------------
 
@@ -83,14 +84,20 @@ def main(args):
 	else:
 		readable_dir = os.path.join(directory, filename_human_readable(file_list[0]))
 
-	if not quiet:
+	if not quiet and not no_move:
 		print(f'Found {len(file_list)} files. Moving to {readable_dir}...')
+	elif not quiet:
+		print(f'Found {len(file_list)} files. Processing in place...')
 
-	new_fullpath = readable_dir
-	os.makedirs(new_fullpath)
+	if not no_move:
+		new_fullpath = readable_dir
+		os.makedirs(new_fullpath)
+	else:
+		new_fullpath = directory
 
-	for file in file_list:
-		shutil.move(file, os.path.join(readable_dir, os.path.basename(file)))
+	if not no_move:
+		for file in file_list:
+			shutil.move(file, os.path.join(readable_dir, os.path.basename(file)))
 
 # * 2.2 Assemble .arw to .csv --------------------------------------------------
 
@@ -139,3 +146,4 @@ parser.add_argument('--reduce', help = 'Keep only one in REDUCE points, e.g., `-
 parser.add_argument('--no-db', help = 'Do not add to couchdb', action = 'store_true', default = False)
 parser.add_argument('--no-plots', help = 'Do not make R plots', action = 'store_true', default = False)
 parser.add_argument('--copy-manual', help = 'Copy R plot file for manual plot editing', action = 'store_true', default = False)
+parser.add_argument('--no-move', help = 'Don\'t move .arw files from their current directory', action = 'store_true', default = False)
