@@ -164,3 +164,9 @@ def update_experiment_list(db):
     for docid in db.view('_all_docs'):
         list_of_experiments.append(docid['id'])
     return list_of_experiments
+
+def remove_experiment(db, exp_id):
+    try:
+        db.delete(db[exp_id])
+    except:
+        print(f'Could not find experiment {exp_id}')

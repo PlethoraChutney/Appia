@@ -21,7 +21,18 @@ data %>%
   ggplot() +
   coord_cartesian(xlim = c(low_ml, high_ml)) +
   theme_light() +
-  scale_fill_viridis_d(limits = min_frac : max_frac) +
+  scale_color_manual(values = c(
+    '#17becf', # cyan
+    '#ff7f0e', # orange
+    '#e377c2', # pink
+    '#1f77b4', # blue
+    '#2ca02c', # green
+    '#d62728', # red
+    '#9467bd', # purple
+    '#7f7f7f', # grey
+    '#bcbd22', # yellow-green
+    '#8c564b'  # brown
+  ), limits = min_frac : max_frac) +
   labs(fill = 'Fraction') +
   geom_ribbon(aes(x = mL, ymin = 0, ymax = Signal, fill = factor(inst_frac))) +
   geom_line(aes(x = mL, y = Signal))

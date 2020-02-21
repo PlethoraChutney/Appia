@@ -16,10 +16,9 @@ data <- read.csv(file = long_trace_filename, header = TRUE) %>%
 
 # 2 Plot ------------------------------------------------------------------
 
-if (length(levels(data$Sample)) > 10) {
-  color_scale = scale_color_viridis_d()
-} else {
-  color_scale = scale_color_manual(values = c(
+ggplot(data = data, aes(x = Time, y = Signal)) +
+  theme_light() +
+  scale_color_manual(values = c(
     '#17becf', # cyan
     '#ff7f0e', # orange
     '#e377c2', # pink
@@ -29,28 +28,12 @@ if (length(levels(data$Sample)) > 10) {
     '#9467bd', # purple
     '#7f7f7f', # grey
     '#bcbd22', # yellow-green
-    '#8c564b'  # brown
-  )
-  )
-}
-
-ggplot(data = data, aes(x = Time, y = Signal)) +
-  theme_light() +
-  color_scale +
+    '#8c564b',  # brown
+    'dark blue',
+    'black'
+  )) +
   geom_line(aes(color = Sample)) +
-  facet_grid(Channel ~ ., scales = "free") +
+  facet_grid(Normalized ~ Channel, scales = "free") +
   xlab("Time (minutes)") +
   ggtitle("FSEC Traces")
 ggsave('fsec_traces.pdf', width = 7, height = 5)
-
-data %>% 
-  filter(Normalized == 'Normalized') %>% 
-  ggplot(aes(x = Time, y = Signal)) +
-  theme_light() +
-  color_scale +
-  geom_line(aes(color = Sample)) +
-  facet_grid(Channel ~ ., scales = "free") +
-  xlab("Time (minutes)") +
-  ylab("Normalized Signal") +
-  ggtitle("Normalized FSEC Traces")
-ggsave('normalized_traces.pdf', width = 7, height = 5)

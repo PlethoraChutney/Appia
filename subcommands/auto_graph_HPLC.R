@@ -17,20 +17,22 @@ data <- read.csv(file = long_trace_filename, header = TRUE) %>%
 
 # 2 Plot ------------------------------------------------------------------
 
-if (length(levels(data$Sample)) > 10) {
+if (length(levels(data$Sample)) > 12) {
   color_scheme = scale_color_viridis_d()
 } else {
   color_scheme = scale_color_manual(values = c(
-                                                '#17becf', # cyan
-                                                '#ff7f0e', # orange
-                                                '#e377c2', # pink
                                                 '#1f77b4', # blue
+                                                '#ff7f0e', # orange
+                                                '#17becf', # cyan
+                                                '#e377c2', # pink
                                                 '#2ca02c', # green
                                                 '#d62728', # red
                                                 '#9467bd', # purple
                                                 '#7f7f7f', # grey
                                                 '#bcbd22', # yellow-green
-                                                '#8c564b'  # brown
+                                                '#8c564b',  # brown
+                                                'dark blue',
+                                                'black'
                                               )
                                               )
 }

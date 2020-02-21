@@ -16,6 +16,26 @@ high_ml <- as.integer(args[5])
 data <- read_csv(args[1], col_types = 'dcddcci') %>%
   mutate(inst_frac = if_else(inst_frac < min_frac, 'Waste', if_else(inst_frac > max_frac, 'Waste', as.character(inst_frac))))
 
+if (length(levels(data$Sample)) > 12) {
+  color_scheme = scale_color_viridis_d(aesthetics = c('fill', 'color'))
+} else {
+  color_scheme = scale_color_manual(values = c(
+    '#1f77b4', # blue
+    '#ff7f0e', # orange
+    '#17becf', # cyan
+    '#e377c2', # pink
+    '#2ca02c', # green
+    '#d62728', # red
+    '#9467bd', # purple
+    '#7f7f7f', # grey
+    '#bcbd22', # yellow-green
+    '#8c564b',  # brown
+    'dark blue',
+    'black'
+  ), aesthetics = c('fill', 'color')
+  )
+}
+
 # 2 Plot ------------------------------------------------------------------
 
 # * 2.1 Multi-experiment plots --------------------------------------------
@@ -30,7 +50,7 @@ data %>%
   ggplot(aes(x = mL, y = Signal, color = Sample)) +
   facet_grid(Normalized ~ ., scales = 'free') +
   theme_light() +
-  scale_color_viridis_d() +
+  color_scheme +
   geom_line()
 ggsave(filename = file.path(out.dir, paste('all_samples_', no.ext, '.pdf', sep = '')), width = 8, height = 5)
 } else {
@@ -39,7 +59,7 @@ ggsave(filename = file.path(out.dir, paste('all_samples_', no.ext, '.pdf', sep =
     ggplot(aes(x = mL, y = Signal, color = Channel)) +
     theme_light() +
     coord_cartesian(xlim = c(low_ml, high_ml)) +
-    scale_color_viridis_d() +
+    color_scheme +
     geom_line()
   ggsave(filename = file.path(out.dir, paste('all_channels_', no.ext, '.pdf', sep = '')), width = 6, height = 4)
 }
@@ -67,7 +87,7 @@ if (max_frac > 0) {
     ggplot() +
     coord_cartesian(xlim = c(low_ml, high_ml)) +
     theme_light() +
-    scale_fill_viridis_d(limits = min_frac : max_frac) +
+    color_scheme +
     labs(fill = 'Fraction') +
     geom_ribbon(aes(x = mL, ymin = 0, ymax = Signal, fill = factor(inst_frac))) +
     geom_line(aes(x = mL, y = Signal)) +
