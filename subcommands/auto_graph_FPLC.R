@@ -19,7 +19,7 @@ data <- read_csv(args[1], col_types = 'dcddcci') %>%
 if (length(levels(data$Sample)) > 12) {
   color_scheme = scale_color_viridis_d(aesthetics = c('fill', 'color'))
 } else {
-  color_scheme = scale_color_manual(values = c(
+  color_scheme = scale_fill_manual(values = c(
     '#1f77b4', # blue
     '#ff7f0e', # orange
     '#17becf', # cyan

@@ -31,7 +31,9 @@ data %>%
     '#9467bd', # purple
     '#7f7f7f', # grey
     '#bcbd22', # yellow-green
-    '#8c564b'  # brown
+    '#8c564b', # brown
+    'dark blue',
+    'black'
   ), limits = min_frac : max_frac) +
   labs(fill = 'Fraction') +
   geom_ribbon(aes(x = mL, ymin = 0, ymax = Signal, fill = factor(inst_frac))) +
