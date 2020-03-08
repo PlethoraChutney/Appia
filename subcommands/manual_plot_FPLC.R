@@ -4,8 +4,8 @@ library(devEMF)
 
 # 1 Import ----------------------------------------------------------------
 
-min_frac <- 2 # everything before this fraction will be 'Waste'
-max_frac <- 14 # everything after this fraction will be 'Waste'
+min_frac <- 1 # everything before this fraction will be 'Waste'
+max_frac <- 40 # everything after this fraction will be 'Waste'
 low_ml <- 5 # these values set the x-axis limits
 high_ml <- 25
 

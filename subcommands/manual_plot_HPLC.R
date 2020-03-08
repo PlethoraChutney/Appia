@@ -4,7 +4,7 @@ library(ggplot2)
 
 # 1 Import ----------------------------------------------------------------
 
-long_trace_filename = "long_chromatograms.csv"
+long_trace_filename <- "long_chromatograms.csv"
 
 data <- read.csv(file = long_trace_filename, header = TRUE) %>%
   group_by(Channel, Sample) %>%
@@ -34,6 +34,5 @@ ggplot(data = data, aes(x = Time, y = Signal)) +
   )) +
   geom_line(aes(color = Sample)) +
   facet_grid(Normalized ~ Channel, scales = "free") +
-  xlab("Time (minutes)") +
-  ggtitle("FSEC Traces")
+  xlab("Time (minutes)")
 ggsave('fsec_traces.pdf', width = 7, height = 5)

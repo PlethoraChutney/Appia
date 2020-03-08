@@ -43,8 +43,7 @@ ggplot(data = data, aes(x = Time, y = Signal)) +
   color_scheme +
   geom_line(aes(color = Sample)) +
   facet_grid(Channel ~ ., scales = "free") +
-  xlab("Time (minutes)") +
-  ggtitle("FSEC Traces")
+  xlab("Time (minutes)")
 ggsave('fsec_traces.pdf', width = 7, height = 5)
 
 ggplot(data = data, aes(x = Time, y = Normalized)) +
@@ -53,6 +52,5 @@ ggplot(data = data, aes(x = Time, y = Normalized)) +
   geom_line(aes(color = Sample)) +
   facet_grid(Channel ~ ., scales = "free") +
   xlab("Time (minutes)") +
-  ylab("Normalized Signal") +
-  ggtitle("Normalized FSEC Traces")
+  ylab("Normalized Signal")
 ggsave('normalized_traces.pdf', width = 7, height = 5)
