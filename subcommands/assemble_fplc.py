@@ -145,7 +145,7 @@ def main(args):
     if copy_manual:
         if not quiet:
             print('Copying manual RScript...')
-        shutil.copyfile(os.path.join(script_path, 'manual_plot_FPLC.R'), os.path.join(outdir, 'manual_plot_traces.R'))
+        shutil.copyfile(os.path.join(script_path, 'manual_plot_FPLC.R'), os.path.join(outdir, 'manual_plot_FPLC.R'))
     if not quiet:
         print('Done.')
 
