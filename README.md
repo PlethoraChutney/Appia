@@ -35,7 +35,13 @@ instrument method needs the pattern `ScanEm540`.
 
 ![Example 3D Trace](3D-tests/example_3D_plot.png)
 
-### Web UI
+## Shimadzu HPLC Processing
+Shimadzu exports are also supported. Simply run the script as normal on `.asc` files
+exported from the instrument, and add the `--shimadzu` flag. The code for shimadzu
+is a secondary priority, so some hardcoding may be required if you don't have the
+same number of detectors as we do.
+
+## Web UI
 
 ![Web Interface](HPLC-tests/web_interface.gif)
 
