@@ -9,6 +9,7 @@ import argparse
 
 # 1 Import functions -----------------------------------------------------------
 
+
 def get_file_list(directory):
 	file_list = []
 	for file in os.listdir(directory):
@@ -19,13 +20,12 @@ def get_file_list(directory):
 
 # 2 Data processing functions --------------------------------------------------
 
-def append_chroms(file_list, header_rows = 2, data_row = 0) :
+
+def append_chroms(file_list, header_rows = 2, data_row = 0):
 
 	# header_rows tells the header funtcions how many rows to pull, and the data
 	# functions how many to skip. Since the data functions don't use headers, you
 	# actually want this to be one more than your real header rows.
-
-	directory_renamed = "renamed_traces"
 
 	chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 	for file in file_list:
@@ -49,12 +49,14 @@ def append_chroms(file_list, header_rows = 2, data_row = 0) :
 
 	return (chroms, wide_table)
 
+
 def filename_human_readable(file_name, header_rows = 2, data_row = 0):
 	headers = pd.read_csv(file_name, delim_whitespace = True, nrows = header_rows)
 	readable_dir_name = str(headers.loc[data_row]['Sample Set Name']).replace('/', '-').replace(" ", "_") + "_processed"
 	return readable_dir_name
 
 # 2 Main -----------------------------------------------------------------------
+
 
 def main(args):
 
@@ -133,17 +135,25 @@ def main(args):
 			print('Copying manual R script...')
 		shutil.copyfile(os.path.join(script_location, 'manual_plot_HPLC.R'), os.path.join(new_fullpath, 'manual_plot_HPLC.R'))
 
-
 	if not quiet:
 		print('Done!')
 
+
 parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters HPLC traces.', add_help=False)
 parser.set_defaults(func = main)
-parser.add_argument('directory', default = os.getcwd(), help = 'Which directory to pull all .arw files from')
-parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true', default = False)
+parser.add_argument('directory', default = os.getcwd(),
+					help = 'Which directory to pull all .arw files from')
+parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress',
+					action = 'store_true', default = False)
 parser.add_argument('-r', '--rename', help = 'Use a non-default name')
-parser.add_argument('--reduce', help = 'Keep only one in REDUCE points, e.g., `--reduce 10` keeps only 1/10th of your points. Use if your dataset is very large and you do not need high temporal resolution.', default = 1, type = int)
-parser.add_argument('--no-db', help = 'Do not add to couchdb', action = 'store_true', default = False)
+parser.add_argument('--reduce', help = 'Keep only one in REDUCE points, e.g., `--reduce 10` keeps only 1/10th of your points. Use if your dataset is very large and you do not need high temporal resolution.',
+					default = 1, type = int)
+parser.add_argument('--no-db', help = 'Do not add to couchdb', action = 'store_true',
+					default = False)
 parser.add_argument('--no-plots', help = 'Do not make R plots', action = 'store_true', default = False)
-parser.add_argument('--copy-manual', help = 'Copy R plot file for manual plot editing', action = 'store_true', default = False)
-parser.add_argument('--no-move', help = 'Don\'t move .arw files from their current directory', action = 'store_true', default = False)
+parser.add_argument('--copy-manual', help = 'Copy R plot file for manual plot editing',
+					action = 'store_true', default = False)
+parser.add_argument('--no-move', help = 'Don\'t move .arw files from their current directory',
+					action = 'store_true', default = False)
+parser.add_argument('--shimadzu', help = 'Analyze traces from a Shimadzu instrument (*.asc)',
+					action = 'store_true')
