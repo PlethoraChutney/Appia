@@ -26,10 +26,6 @@ def print_message(quiet, message):
 
 def append_chroms(file_list, shimadzu):
 
-	# header_rows tells the header funtcions how many rows to pull, and the data
-	# functions how many to skip. Since the data functions don't use headers, you
-	# actually want this to be one more than your real header rows.
-
 	chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 
 	if not shimadzu:
