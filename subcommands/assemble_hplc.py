@@ -43,19 +43,22 @@ def append_chroms(file_list, shimadzu):
 	else:
 		header_rows = 16
 		data_row = 0
+		number_channels = 2
+		channel_names = ['A', 'B']
 		for file in file_list:
-			to_append = pd.read_csv(file, sep = '\t', skiprows = header_rows, names = ['Signal'], header = None)
+			to_append = pd.read_csv(file, sep = '\t', skiprows = header_rows, names = ['Signal'], header = None, dtype = 'float64')
 			sample_info = pd.read_csv(file, sep = '\t', nrows = header_rows, names = ['Stat', 'A', 'B', 'Units'], engine = 'python')
 			sample_info.set_index('Stat', inplace = True)
-			sampling_interval = float(sample_info.loc['Sampling Rate:'][0])
-			to_append['Time'] = (to_append.index + 1) * sampling_interval
 			to_append['Sample'] = str(sample_info.loc['Sample ID:'][0])
 			number_samples = int(sample_info.loc['Total Data Points:'][0])
-			to_append['Channel'] = [x for x in ['A', 'B'] for i in range(number_samples)]
+			to_append['Channel'] = [x for x in channel_names for i in range(number_samples)]
+			sampling_interval = float(sample_info.loc['Sampling Rate:'][0])
+			seconds_list = [x * sampling_interval for x in range(number_samples)] * 2
+			to_append['Time'] = [x/60 for x in seconds_list]
 
-			print(to_append)
-			chroms.append(to_append, ignore_index = True)
-			print(chroms)
+			chroms = chroms.append(to_append, ignore_index = True, sort = True)
+
+		chroms = chroms[['Time', 'Signal', 'Channel', 'Sample']]
 
 	wide_table = chroms.copy()
 	wide_table['Sample'] = wide_table['Sample'].astype(str) + ' ' + wide_table['Channel']
