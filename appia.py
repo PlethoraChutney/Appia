@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import argparse
 
 from subcommands.assemble_fplc import parser as fplc_parser
