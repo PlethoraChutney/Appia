@@ -17,6 +17,10 @@ def get_file_list(directory, extension):
 
 	return file_list
 
+def print_message(quiet, message):
+	if not quiet:
+		print(message)
+
 # 2 Data processing functions --------------------------------------------------
 
 
@@ -44,6 +48,7 @@ def append_chroms(file_list, shimadzu):
 		header_rows = 16
 		data_row = 0
 		# if you don't have two detectors, or want to rename the channels, change that here
+		# and in filename_human_readable()
 		channel_names = ['A', 'B']
 		for file in file_list:
 			to_append = pd.read_csv(file, sep = '\t', skiprows = header_rows, names = ['Signal'], header = None, dtype = 'float64')
@@ -79,9 +84,18 @@ def filename_human_readable(file_name, shimadzu):
 		data_row = 0
 		headers = pd.read_csv(file_name, delim_whitespace = True, nrows = header_rows)
 		readable_dir_name = str(headers.loc[data_row]['Sample Set Name']).replace('/', '-').replace(" ", "_") + "_processed"
-		return readable_dir_name
+
 	else:
-		return file_name
+		# change channel names here and in append_chroms()
+		header_rows = 16
+		channel_names = ['A', 'B']
+		sample_info = pd.read_csv(file_name, sep = '\t', nrows = header_rows,
+								names = ['Stat'] + channel_names + ['Units'], engine = 'python')
+		sample_info.set_index('Stat', inplace = True)
+		readable_dir_name = str(sample_info.loc['Acquisition Date and Time:'][0]).replace('/', '-').replace(' ', '_').replace(':', '-') + '_processed'
+
+	return readable_dir_name
+
 
 # 2 Main -----------------------------------------------------------------------
 
@@ -101,18 +115,17 @@ def main(args):
 
 # * 2.1 Import files -----------------------------------------------------------
 
-	if not quiet:
-		print(f'Checking {directory} for files...')
-
 	if shimadzu:
 		extension = '.asc'
 	else:
 		extension = '.arw'
 
+	print_message(quiet, f'Checking {directory} for {extension} files...')
+
 	file_list = get_file_list(directory, extension)
 
-	if len(file_list) == 0 and not quiet:
-		print('No trace files found. Exiting...')
+	if len(file_list) == 0:
+		print_message(quiet, f'No {extension} files found. Exiting...')
 		sys.exit(1)
 
 	if new_name is not None:
@@ -120,25 +133,20 @@ def main(args):
 	else:
 		readable_dir = os.path.join(directory, filename_human_readable(file_list[0], shimadzu))
 
-	if not quiet and not no_move:
-		print(f'Found {len(file_list)} files. Moving to {readable_dir}...')
-	elif not quiet:
-		print(f'Found {len(file_list)} files. Processing in place...')
-
 	if not no_move:
+		print_message(quiet, f'Found {len(file_list)} files. Moving to {readable_dir}...')
 		new_fullpath = readable_dir
 		os.makedirs(new_fullpath)
-	else:
-		new_fullpath = directory
 
-	if not no_move:
 		for file in file_list:
 			shutil.move(file, os.path.join(readable_dir, os.path.basename(file)))
+	else:
+		print_message(quiet, f'Found {len(file_list)} files. Processing in place...')
+		new_fullpath = directory
 
 # * 2.2 Assemble .arw to .csv --------------------------------------------------
 
-	if not quiet:
-		print('Assembling traces...')
+	print_message(quiet, 'Assembling traces...')
 
 	file_list = get_file_list(new_fullpath, extension)
 	long_and_wide = append_chroms(file_list, shimadzu)
@@ -150,8 +158,7 @@ def main(args):
 # * 2.3 Add traces to couchdb --------------------------------------------------
 
 	if not no_db:
-		if not quiet:
-			print('Adding experiment to visualization database...')
+		print_message(quiet, 'Adding experiment to visualization database...')
 
 		from subcommands import backend, config
 		db = backend.init_db(config.config)
@@ -160,17 +167,14 @@ def main(args):
 # * 2.4 Plot traces ------------------------------------------------------------
 
 	if not no_plots:
-		if not quiet:
-			print('Making plots...')
+		print_message(quiet, 'Making plots...')
 		subprocess.run(['Rscript', os.path.join(os.path.normpath(script_location), 'auto_graph_HPLC.R'), os.path.normpath(new_fullpath)])
 
 	if copy_manual:
-		if not quiet:
-			print('Copying manual R script...')
+		print_message(quiet, 'Copying manual R script...')
 		shutil.copyfile(os.path.join(script_location, 'manual_plot_HPLC.R'), os.path.join(new_fullpath, 'manual_plot_HPLC.R'))
 
-	if not quiet:
-		print('Done!')
+	print_message(quiet, 'Done!')
 
 
 parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters HPLC traces.', add_help=False)
@@ -180,7 +184,7 @@ parser.add_argument('directory', default = os.getcwd(),
 parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress',
 					action = 'store_true', default = False)
 parser.add_argument('-r', '--rename', help = 'Use a non-default name')
-parser.add_argument('--reduce', help = 'Keep only one in REDUCE points, e.g., `--reduce 10` keeps only 1/10th of your points. Use if your dataset is very large and you do not need high temporal resolution.',
+parser.add_argument('--reduce', help = 'Keep only one in REDUCE points, e.g., `--reduce 10` keeps only 1/10th of your points.',
 					default = 1, type = int)
 parser.add_argument('--no-db', help = 'Do not add to couchdb', action = 'store_true',
 					default = False)
