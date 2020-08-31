@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import numpy as np
 import pandas as pd
 import sys
 import os
@@ -10,10 +9,10 @@ import argparse
 # 1 Import functions -----------------------------------------------------------
 
 
-def get_file_list(directory):
+def get_file_list(directory, extension):
 	file_list = []
 	for file in os.listdir(directory):
-		if file.endswith(".arw"):
+		if file.endswith(extension):
 			file_list.append(os.path.join(directory, file))
 
 	return file_list
@@ -21,22 +20,42 @@ def get_file_list(directory):
 # 2 Data processing functions --------------------------------------------------
 
 
-def append_chroms(file_list, header_rows = 2, data_row = 0):
+def append_chroms(file_list, shimadzu):
 
 	# header_rows tells the header funtcions how many rows to pull, and the data
 	# functions how many to skip. Since the data functions don't use headers, you
 	# actually want this to be one more than your real header rows.
 
 	chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
-	for file in file_list:
-		to_append = pd.read_csv(file, delim_whitespace = True, skiprows = header_rows, names = ["Time", "Signal"], header = None)
-		sample_info = pd.read_csv(file, delim_whitespace = True, nrows = header_rows)
-		sample_name = str(sample_info.loc[data_row]['SampleName'])
-		channel_ID = str(sample_info.loc[data_row]['Channel'])
-		to_append['Channel'] = channel_ID
-		to_append['Sample'] = sample_name
 
-		chroms = chroms.append(to_append, ignore_index = False)
+	if not shimadzu:
+		header_rows = 2
+		data_row = 0
+		for file in file_list:
+			to_append = pd.read_csv(file, delim_whitespace = True, skiprows = header_rows, names = ["Time", "Signal"], header = None)
+			sample_info = pd.read_csv(file, delim_whitespace = True, nrows = header_rows)
+			sample_name = str(sample_info.loc[data_row]['SampleName'])
+			channel_ID = str(sample_info.loc[data_row]['Channel'])
+			to_append['Channel'] = channel_ID
+			to_append['Sample'] = sample_name
+
+			chroms = chroms.append(to_append, ignore_index = False)
+	else:
+		header_rows = 16
+		data_row = 0
+		for file in file_list:
+			to_append = pd.read_csv(file, sep = '\t', skiprows = header_rows, names = ['Signal'], header = None)
+			sample_info = pd.read_csv(file, sep = '\t', nrows = header_rows, names = ['Stat', 'A', 'B', 'Units'], engine = 'python')
+			sample_info.set_index('Stat', inplace = True)
+			sampling_interval = float(sample_info.loc['Sampling Rate:'][0])
+			to_append['Time'] = (to_append.index + 1) * sampling_interval
+			to_append['Sample'] = str(sample_info.loc['Sample ID:'][0])
+			number_samples = int(sample_info.loc['Total Data Points:'][0])
+			to_append['Channel'] = [x for x in ['A', 'B'] for i in range(number_samples)]
+
+			print(to_append)
+			chroms.append(to_append, ignore_index = True)
+			print(chroms)
 
 	wide_table = chroms.copy()
 	wide_table['Sample'] = wide_table['Sample'].astype(str) + ' ' + wide_table['Channel']
@@ -50,10 +69,15 @@ def append_chroms(file_list, header_rows = 2, data_row = 0):
 	return (chroms, wide_table)
 
 
-def filename_human_readable(file_name, header_rows = 2, data_row = 0):
-	headers = pd.read_csv(file_name, delim_whitespace = True, nrows = header_rows)
-	readable_dir_name = str(headers.loc[data_row]['Sample Set Name']).replace('/', '-').replace(" ", "_") + "_processed"
-	return readable_dir_name
+def filename_human_readable(file_name, shimadzu):
+	if not shimadzu:
+		header_rows = 2
+		data_row = 0
+		headers = pd.read_csv(file_name, delim_whitespace = True, nrows = header_rows)
+		readable_dir_name = str(headers.loc[data_row]['Sample Set Name']).replace('/', '-').replace(" ", "_") + "_processed"
+		return readable_dir_name
+	else:
+		return file_name
 
 # 2 Main -----------------------------------------------------------------------
 
@@ -69,22 +93,28 @@ def main(args):
 	no_plots = args.no_plots
 	copy_manual = args.copy_manual
 	no_move = args.no_move
+	shimadzu = args.shimadzu
 
 # * 2.1 Import files -----------------------------------------------------------
 
 	if not quiet:
-		print(f'Checking {directory} for .arw files...')
+		print(f'Checking {directory} for files...')
 
-	file_list = get_file_list(directory)
+	if shimadzu:
+		extension = '.asc'
+	else:
+		extension = '.arw'
+
+	file_list = get_file_list(directory, extension)
 
 	if len(file_list) == 0 and not quiet:
-		print('No .arw files found. Exiting...')
+		print('No trace files found. Exiting...')
 		sys.exit(1)
 
 	if new_name is not None:
 		readable_dir = os.path.join(directory, new_name)
 	else:
-		readable_dir = os.path.join(directory, filename_human_readable(file_list[0]))
+		readable_dir = os.path.join(directory, filename_human_readable(file_list[0], shimadzu))
 
 	if not quiet and not no_move:
 		print(f'Found {len(file_list)} files. Moving to {readable_dir}...')
@@ -106,8 +136,8 @@ def main(args):
 	if not quiet:
 		print('Assembling traces...')
 
-	file_list = get_file_list(new_fullpath)
-	long_and_wide = append_chroms(file_list)
+	file_list = get_file_list(new_fullpath, extension)
+	long_and_wide = append_chroms(file_list, shimadzu)
 	file_name = os.path.join(new_fullpath, 'long_chromatograms.csv')
 	long_and_wide[0].to_csv(file_name, index = False)
 	file_name = os.path.join(new_fullpath, 'wide_chromatograms.csv')
