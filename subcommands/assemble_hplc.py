@@ -182,12 +182,12 @@ parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progres
 parser.add_argument('-r', '--rename', help = 'Use a non-default name')
 parser.add_argument('--reduce', help = 'Keep only one in REDUCE points, e.g., `--reduce 10` keeps only 1/10th of your points.',
 					default = 1, type = int)
-parser.add_argument('--no-db', help = 'Do not add to couchdb', action = 'store_true',
+parser.add_argument('-d', '--no-db', help = 'Do not add to couchdb', action = 'store_true',
 					default = False)
-parser.add_argument('--no-plots', help = 'Do not make R plots', action = 'store_true', default = False)
-parser.add_argument('--copy-manual', help = 'Copy R plot file for manual plot editing',
+parser.add_argument('-p', '--no-plots', help = 'Do not make R plots', action = 'store_true', default = False)
+parser.add_argument('-c', '--copy-manual', help = 'Copy R plot file for manual plot editing',
 					action = 'store_true', default = False)
-parser.add_argument('--no-move', help = 'Don\'t move .arw files from their current directory',
+parser.add_argument('-m', '--no-move', help = 'Don\'t move .arw files from their current directory',
 					action = 'store_true', default = False)
 parser.add_argument('--shimadzu', help = 'Analyze traces from a Shimadzu instrument (*.asc)',
 					action = 'store_true')

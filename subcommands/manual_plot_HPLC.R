@@ -16,9 +16,9 @@ data <- read.csv(file = long_trace_filename, header = TRUE) %>%
 
 # 2 Plot ------------------------------------------------------------------
 
-data %>% 
+data %>%
   ggplot(aes(x = Time, y = Signal)) +
-    theme_light() +
+    theme_minimal() +
     scale_color_manual(values = c(
       '#17becf', # cyan
       '#ff7f0e', # orange

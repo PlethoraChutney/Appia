@@ -4,8 +4,8 @@ library(devEMF)
 
 # 1 Import ----------------------------------------------------------------
 
-min_frac <- 1 # everything before this fraction will be 'Waste'
-max_frac <- 40 # everything after this fraction will be 'Waste'
+min_frac <- 10 # everything before this fraction will be 'Waste'
+max_frac <- 20 # everything after this fraction will be 'Waste'
 low_ml <- 5 # these values set the x-axis limits
 high_ml <- 25
 
@@ -20,7 +20,7 @@ data %>%
   group_by(Sample) %>%
   ggplot() +
   coord_cartesian(xlim = c(low_ml, high_ml)) +
-  theme_light() +
+  theme_minimal() +
   scale_fill_manual(values = c(
     '#17becf', # cyan
     '#ff7f0e', # orange
