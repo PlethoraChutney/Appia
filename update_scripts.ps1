@@ -1,5 +1,5 @@
 echo 'Updating scripts from Script_repos'
-$userDirectories = 'Rich_Results', 'Arpita_Results', 'Sigrid_Results', 'Alex_Results'
+$userDirectories = 'Rich_Results', 'Arpita_Results', 'Alex_Results', 'James_Results', 'Kim_Results'
 foreach($labmember in $userDirectories)
   {
     Write-Output "Updating $labmember"
