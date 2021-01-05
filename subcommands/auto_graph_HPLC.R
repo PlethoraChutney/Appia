@@ -48,7 +48,7 @@ ggsave('fsec_traces.pdf', width = 7, height = 5)
 
 ggplot(data = data, aes(x = Time, y = Normalized)) +
   theme_minimal() +
-  scale_color_viridis_d() +
+  color_scheme +
   geom_line(aes(color = Sample)) +
   facet_grid(Channel ~ ., scales = "free") +
   xlab("Time (minutes)") +
