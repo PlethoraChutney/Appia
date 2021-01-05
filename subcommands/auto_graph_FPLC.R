@@ -49,7 +49,7 @@ data %>%
   ungroup() %>%
   ggplot(aes(x = mL, y = Signal, color = Sample)) +
   facet_grid(Normalized ~ ., scales = 'free') +
-  theme_light() +
+  theme_minimal() +
   color_scheme +
   geom_line()
 ggsave(filename = file.path(out.dir, paste('all_samples_', no.ext, '.pdf', sep = '')), width = 8, height = 5)
@@ -57,7 +57,7 @@ ggsave(filename = file.path(out.dir, paste('all_samples_', no.ext, '.pdf', sep =
   data %>%
     filter(mL > (low_ml - 10) & mL < (high_ml + 10)) %>%
     ggplot(aes(x = mL, y = Signal, color = Channel)) +
-    theme_light() +
+    theme_minimal() +
     coord_cartesian(xlim = c(low_ml, high_ml)) +
     color_scheme +
     geom_line()
@@ -73,7 +73,7 @@ if (max_frac == 0) {
     group_by(Sample) %>%
     ggplot() +
     coord_cartesian(xlim = c(low_ml, high_ml)) +
-    theme_light() +
+    theme_minimal() +
     geom_line(aes(x = mL, y = Signal)) +
     facet_grid(Sample ~ ., scales = 'free')
   ggsave(filename = file.path(out.dir, paste('mAU_', no.ext, '.pdf', sep = '')), width = 6, height = 4)
@@ -86,7 +86,7 @@ if (max_frac > 0) {
     group_by(Sample) %>%
     ggplot() +
     coord_cartesian(xlim = c(low_ml, high_ml)) +
-    theme_light() +
+    theme_minimal() +
     color_scheme +
     labs(fill = 'Fraction') +
     geom_ribbon(aes(x = mL, ymin = 0, ymax = Signal, fill = factor(inst_frac))) +

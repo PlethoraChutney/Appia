@@ -39,7 +39,7 @@ if (length(levels(data$Sample)) > 12) {
                        
 
 ggplot(data = data, aes(x = Time, y = Signal)) +
-  theme_light() +
+  theme_minimal() +
   color_scheme +
   geom_line(aes(color = Sample)) +
   facet_grid(Channel ~ ., scales = "free") +
@@ -47,7 +47,7 @@ ggplot(data = data, aes(x = Time, y = Signal)) +
 ggsave('fsec_traces.pdf', width = 7, height = 5)
 
 ggplot(data = data, aes(x = Time, y = Normalized)) +
-  theme_light() +
+  theme_minimal() +
   scale_color_viridis_d() +
   geom_line(aes(color = Sample)) +
   facet_grid(Channel ~ ., scales = "free") +
