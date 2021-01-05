@@ -22,7 +22,7 @@ def get_client(config):
     return client
 
 def send_graphs(client, files):
-    client.chat_postMessage(channel = chromatography_channel, text = f'Your chromatography run is done!')
+    client.chat_postMessage(channel = chromatography_channel, text = 'A chromatography run has completed!')
     for file in files:
         client.files_upload(
             channels = chromatography_channel,

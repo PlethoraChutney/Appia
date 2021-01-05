@@ -169,7 +169,8 @@ def main(args):
 	if not no_plots and not no_db:
 		from subcommands import slack_bot
 		client = slack_bot.get_client(config.config)
-		slack_bot.send_graphs(client,
+		slack_bot.send_graphs(
+			client,
 			[os.path.join(os.path.normpath(new_fullpath), x) for x in ['fsec_traces.pdf', 'normalized_traces.pdf']]
 		)
 

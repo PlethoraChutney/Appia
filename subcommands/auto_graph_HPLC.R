@@ -1,4 +1,5 @@
 suppressWarnings(suppressMessages(library(dplyr)))
+suppressWarnings(suppressMessages(library(stringr)))
 suppressWarnings(suppressMessages(library(ggplot2)))
 
 
@@ -7,6 +8,7 @@ suppressWarnings(suppressMessages(library(ggplot2)))
 long_trace_filename = "long_chromatograms.csv"
 args = commandArgs(trailingOnly = TRUE)
 setwd(args[1])
+experiment_name = str_remove(basename(args[1]), '_processed')
 
 data <- read.csv(file = long_trace_filename, header = TRUE) %>%
   group_by(Channel, Sample) %>%
@@ -43,6 +45,7 @@ ggplot(data = data, aes(x = Time, y = Signal)) +
   color_scheme +
   geom_line(aes(color = Sample)) +
   facet_grid(Channel ~ ., scales = "free") +
+  ggtitle(str_c(experiment_name, ' Raw Signal')) +
   xlab("Time (minutes)")
 ggsave('fsec_traces.pdf', width = 7, height = 5)
 
@@ -52,5 +55,6 @@ ggplot(data = data, aes(x = Time, y = Normalized)) +
   geom_line(aes(color = Sample)) +
   facet_grid(Channel ~ ., scales = "free") +
   xlab("Time (minutes)") +
+  ggtitle(str_c(experiment_name, ' Normalized Signal')) +
   ylab("Normalized Signal")
 ggsave('normalized_traces.pdf', width = 7, height = 5)
