@@ -166,6 +166,13 @@ def main(args):
 		print_message(quiet, 'Making plots...')
 		subprocess.run(['Rscript', os.path.join(os.path.normpath(script_location), 'auto_graph_HPLC.R'), os.path.normpath(new_fullpath)])
 
+	if not no_plots and not no_db:
+		from subcommands import slack_bot
+		client = slack_bot.get_client(config.config)
+		slack_bot.send_graphs(client,
+			[os.path.join(os.path.normpath(new_fullpath), x) for x in ['fsec_traces.pdf', 'normalized_traces.pdf']]
+		)
+
 	if copy_manual:
 		print_message(quiet, 'Copying manual R script...')
 		shutil.copyfile(os.path.join(script_location, 'manual_plot_HPLC.R'), os.path.join(new_fullpath, 'manual_plot_HPLC.R'))
