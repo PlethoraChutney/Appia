@@ -136,7 +136,14 @@ def post_to_slack(config, new_fullpath):
 
 
 def main(args):
-
+	# The visualization database depends on a dictionary from a file
+	# in the appia subcommands directory called `config.py`. This dictionary
+	# must also be named `config` and have the relevant keys and values
+	try:
+		from subcommands import config
+	except ImportError:
+		logging.warning('You must have a config file named config.py in subcommands to use the visualization database and slack bot.')
+	logging.debug(args)
 	script_location = os.path.dirname(os.path.realpath(__file__))
 	directory = os.path.abspath(args.directory)
 
@@ -186,13 +193,13 @@ def main(args):
 
 	if not args.no_db:
 		logging.info('Adding experiment to visualization database...')
+		try:
+			from subcommands import backend
 
-		# The visualization database depends on a dictionary from a file
-		# in the appia subcommands directory called `config.py`. This dictionary
-		# must also be named `config` and have the relevant keys and values
-		from subcommands import backend, config
-		db = backend.init_db(config.config)
-		backend.collect_experiments(os.path.abspath(new_fullpath), db, args.reduce)
+			db = backend.init_db(config.config)
+			backend.collect_experiments(os.path.abspath(new_fullpath), db, args.reduce)
+		except ModuleNotFoundError:
+			logging.error('No config. Skipping visualization db.')
 
 # * 2.4 Plot traces ------------------------------------------------------------
 
@@ -203,8 +210,12 @@ def main(args):
 	# send both R plots to the chromatography channel in slack
 	# channel and bot token need to be in the config file with the
 	# couchdb setup
-	if not args.no_plots and not args.no_db:
-		post_to_slack(config.config, new_fullpath)
+	if args.post_to_slack:
+		logging.info('Posting to slack')
+		try:
+			post_to_slack(config.config, new_fullpath)
+		except UnboundLocalError:
+			logging.error('No config. Skipping slack posting.')
 
 	if args.copy_manual:
 		logging.info('Copying manual R script...')
@@ -222,7 +233,11 @@ parser.add_argument('--reduce', help = 'Keep only one in REDUCE points, e.g., `-
 					default = 1, type = int)
 parser.add_argument('-d', '--no-db', help = 'Do not add to couchdb', action = 'store_true',
 					default = False)
-parser.add_argument('-p', '--no-plots', help = 'Do not make R plots', action = 'store_true', default = False)
+plot_group = parser.add_mutually_exclusive_group()
+plot_group.add_argument('-p', '--no-plots', help = 'Do not make R plots', action = 'store_true',
+					default = False)
+plot_group.add_argument('-s', '--post-to-slack', help = "Send completed plots to Slack",
+					action = 'store_true', default = False)
 parser.add_argument('-c', '--copy-manual', help = 'Copy R plot file for manual plot editing',
 					action = 'store_true', default = False)
 parser.add_argument('-k', '--no-move', help = 'Don\'t move .arw files from their current directory',
