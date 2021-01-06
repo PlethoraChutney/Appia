@@ -4,7 +4,12 @@ from slack import WebClient
 from slack.errors import SlackApiError
 
 def get_client(config):
-    chromatography_channel = config['chromatography_channel']
+    try:
+        chromatography_channel = config['chromatography_channel']
+    except KeyError as e:
+        print('Include the name or ID of your chromatography channel in config.\nSkipping slack integration.')
+        return
+
     try:
         token = config['token']
         if config['token'] == '':
@@ -25,8 +30,16 @@ def get_client(config):
     return client
 
 def send_graphs(config, client, files):
-    chromatography_channel = config['chromatography_channel']
-    client.chat_postMessage(channel = chromatography_channel, text = 'A chromatography run has completed!')
+    try:
+        chromatography_channel = config['chromatography_channel']
+    except KeyError as e:
+        print('Include the name or ID of your chromatography channel in config.\nSkipping slack integration.')
+        return
+
+    client.chat_postMessage(
+        channel = chromatography_channel,
+        text = 'A chromatography run has completed!'
+    )
     for file in files:
         client.files_upload(
             channels = chromatography_channel,
