@@ -32,8 +32,18 @@ def append_chroms(file_list, shimadzu):
 		header_rows = 2
 		data_row = 0
 		for file in file_list:
-			to_append = pd.read_csv(file, delim_whitespace = True, skiprows = header_rows, names = ["Time", "Signal"], header = None)
-			sample_info = pd.read_csv(file, delim_whitespace = True, nrows = header_rows)
+			to_append = pd.read_csv(
+				file,
+				delim_whitespace = True,
+				skiprows = header_rows,
+				names = ["Time", "Signal"],
+				header = None
+			)
+			sample_info = pd.read_csv(
+				file,
+				delim_whitespace = True,
+				nrows = header_rows
+			)
 			sample_name = str(sample_info.loc[data_row]['SampleName'])
 			channel_ID = str(sample_info.loc[data_row]['Channel'])
 			to_append['Channel'] = channel_ID
@@ -90,15 +100,24 @@ def filename_human_readable(file_name, shimadzu):
 	if not shimadzu:
 		header_rows = 2
 		data_row = 0
-		headers = pd.read_csv(file_name, delim_whitespace = True, nrows = header_rows)
+		headers = pd.read_csv(
+			file_name,
+			delim_whitespace = True,
+			nrows = header_rows
+		)
 		readable_dir_name = str(headers.loc[data_row]['Sample Set Name']).replace('/', '-').replace(" ", "_") + "_processed"
 
 	else:
 		# change channel names here and in append_chroms()
 		header_rows = 16
 		channel_names = ['A', 'B']
-		sample_info = pd.read_csv(file_name, sep = '\t', nrows = header_rows,
-								names = ['Stat'] + channel_names + ['Units'], engine = 'python')
+		sample_info = pd.read_csv(
+			file_name,
+			sep = '\t',
+			nrows = header_rows,
+			names = ['Stat'] + channel_names + ['Units'],
+			engine = 'python'
+		)
 		sample_info.set_index('Stat', inplace = True)
 		readable_dir_name = str(sample_info.loc['Acquisition Date and Time:'][0]).replace('/', '-').replace(' ', '_').replace(':', '-') + '_processed'
 
@@ -120,56 +139,46 @@ def post_to_slack(config, new_fullpath):
 
 def main(args):
 
-	# I wrote this ages ago and for some reason all the shit I was seeing on
-	# stack exchange did this, I'm so sorry to whoever you are
 	script_location = os.path.dirname(os.path.realpath(__file__))
 	directory = os.path.abspath(args.directory)
-	new_name = args.rename
-	reduce = args.reduce
-	quiet = args.quiet
-	no_db = args.no_db
-	no_plots = args.no_plots
-	copy_manual = args.copy_manual
-	no_move = args.no_move
-	shimadzu = args.shimadzu
 
 # * 2.1 Import files -----------------------------------------------------------
 
-	if shimadzu:
+	if args.shimadzu:
 		extension = '.asc'
 	else:
 		extension = '.arw'
 
-	print_message(quiet, f'Checking {directory} for {extension} files...')
+	print_message(args.quiet, f'Checking {directory} for {extension} files...')
 
 	file_list = get_file_list(directory, extension)
 
 	if len(file_list) == 0:
-		print_message(quiet, f'No {extension} files found. Exiting...')
+		print_message(args.quiet, f'No {extension} files found. Exiting...')
 		sys.exit(1)
 
-	if new_name is not None:
-		readable_dir = os.path.join(directory, new_name)
+	if args.rename is not None:
+		readable_dir = os.path.join(directory, args.rename)
 	else:
-		readable_dir = os.path.join(directory, filename_human_readable(file_list[0], shimadzu))
+		readable_dir = os.path.join(directory, filename_human_readable(file_list[0], args.shimadzu))
 
-	if not no_move:
-		print_message(quiet, f'Found {len(file_list)} files. Moving to {readable_dir}...')
+	if not args.no_move:
+		print_message(args.quiet, f'Found {len(file_list)} files. Moving to {readable_dir}...')
 		new_fullpath = readable_dir
 		os.makedirs(new_fullpath)
 
 		for file in file_list:
 			shutil.move(file, os.path.join(readable_dir, os.path.basename(file)))
 	else:
-		print_message(quiet, f'Found {len(file_list)} files. Processing in place...')
+		print_message(args.quiet, f'Found {len(file_list)} files. Processing in place...')
 		new_fullpath = directory
 
 # * 2.2 Assemble .arw to .csv --------------------------------------------------
 
-	print_message(quiet, 'Assembling traces...')
+	print_message(args.quiet, 'Assembling traces...')
 
 	file_list = get_file_list(new_fullpath, extension)
-	long_and_wide = append_chroms(file_list, shimadzu)
+	long_and_wide = append_chroms(file_list, args.shimadzu)
 	file_name = os.path.join(new_fullpath, 'long_chromatograms.csv')
 	long_and_wide[0].to_csv(file_name, index = False)
 	file_name = os.path.join(new_fullpath, 'wide_chromatograms.csv')
@@ -177,34 +186,34 @@ def main(args):
 
 # * 2.3 Add traces to couchdb --------------------------------------------------
 
-	if not no_db:
-		print_message(quiet, 'Adding experiment to visualization database...')
+	if not args.no_db:
+		print_message(args.quiet, 'Adding experiment to visualization database...')
 
 		# The visualization database depends on a dictionary from a file
 		# in the appia subcommands directory called `config.py`. This dictionary
 		# must also be named `config` and have the relevant keys and values
 		from subcommands import backend, config
 		db = backend.init_db(config.config)
-		backend.collect_experiments(os.path.abspath(new_fullpath), db, quiet, reduce)
+		backend.collect_experiments(os.path.abspath(new_fullpath), db, args.quiet, args.reduce)
 
 # * 2.4 Plot traces ------------------------------------------------------------
 
-	if not no_plots:
-		print_message(quiet, 'Making plots...')
+	if not args.no_plots:
+		print_message(args.quiet, 'Making plots...')
 		subprocess.run(['Rscript', os.path.join(os.path.normpath(script_location), 'auto_graph_HPLC.R'), os.path.normpath(new_fullpath)])
 
 	# send both R plots to the chromatography channel in slack
 	# channel and bot token need to be in the config file with the
 	# couchdb setup
-	if not no_plots and not no_db:
+	if not args.no_plots and not args.no_db:
 		from subcommands import slack_bot
 		post_to_slack(config.config, new_fullpath)
 
-	if copy_manual:
-		print_message(quiet, 'Copying manual R script...')
+	if args.copy_manual:
+		print_message(args.quiet, 'Copying manual R script...')
 		shutil.copyfile(os.path.join(script_location, 'manual_plot_HPLC.R'), os.path.join(new_fullpath, 'manual_plot_HPLC.R'))
 
-	print_message(quiet, 'Done!')
+	print_message(args.quiet, 'Done!')
 
 
 parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters HPLC traces.', add_help=False)
