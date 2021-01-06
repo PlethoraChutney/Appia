@@ -124,12 +124,13 @@ def filename_human_readable(file_name, shimadzu):
 	return readable_dir_name
 
 def post_to_slack(config, new_fullpath):
+	from subcommands import slack_bot
 	client = slack_bot.get_client(config)
 	if client is None:
 		return
 
 	slack_bot.send_graphs(
-		config.config,
+		config,
 		client,
 		[os.path.join(os.path.normpath(new_fullpath), x) for x in ['fsec_traces.pdf', 'normalized_traces.pdf']]
 	)
@@ -206,7 +207,6 @@ def main(args):
 	# channel and bot token need to be in the config file with the
 	# couchdb setup
 	if not args.no_plots and not args.no_db:
-		from subcommands import slack_bot
 		post_to_slack(config.config, new_fullpath)
 
 	if args.copy_manual:
