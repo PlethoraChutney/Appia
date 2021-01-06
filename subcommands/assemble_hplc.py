@@ -225,7 +225,7 @@ parser.add_argument('-d', '--no-db', help = 'Do not add to couchdb', action = 's
 parser.add_argument('-p', '--no-plots', help = 'Do not make R plots', action = 'store_true', default = False)
 parser.add_argument('-c', '--copy-manual', help = 'Copy R plot file for manual plot editing',
 					action = 'store_true', default = False)
-parser.add_argument('-m', '--no-move', help = 'Don\'t move .arw files from their current directory',
+parser.add_argument('-k', '--no-move', help = 'Don\'t move .arw files from their current directory',
 					action = 'store_true', default = False)
 parser.add_argument('--shimadzu', help = 'Analyze traces from a Shimadzu instrument (*.asc)',
 					action = 'store_true')

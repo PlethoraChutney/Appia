@@ -28,12 +28,18 @@ def get_file_list(directory):
 
 # * 1.1 Data tidying -----------------------------------------------------------
 
-def append_chroms(file_list, skip_rows = 1):
+def append_chroms(file_list):
 
     logging.info('Generating compiled trace csv...')
     chroms = pd.DataFrame(columns = ['mL', 'Channel', 'Signal', 'frac_mL', 'Fraction', 'Sample', 'inst_frac'])
     for file in file_list:
-        fplc_trace = pd.read_csv(file, skiprows = skip_rows, header = [1], encoding = 'utf-16-le', delimiter = '\t', engine = 'python', )
+        fplc_trace = pd.read_csv(
+            file, skiprows = 1,
+            header = [1],
+            encoding = 'utf-16-le',
+            delimiter = '\t',
+            engine = 'python'
+        )
         fplc_trace = fplc_trace.filter(regex = '(ml|mAU$|mS/cm$|\%$|Fraction)')
         columns = fplc_trace.columns
 
@@ -92,18 +98,13 @@ def append_chroms(file_list, skip_rows = 1):
 def main(args):
 
     script_path = os.path.dirname(os.path.realpath(__file__))
-    file_list = get_file_list(args.file_list, quiet)
+    file_list = get_file_list(args.file_list)
     dir = os.path.dirname(file_list[0])
     dir = os.path.abspath(dir)
-    skip_rows = args.skip_rows
     min_frac = str(args.fractions[0])
     max_frac = str(args.fractions[1])
     low_ml = str(args.ml[0])
     high_ml = str(args.ml[1])
-    copy_manual = args.copy_manual
-    no_plots = args.no_plots
-    wide_table = args.wide_table
-    mass_export = args.mass_export
 
 # * 2.1 csv generation ---------------------------------------------------------
 
@@ -117,7 +118,7 @@ def main(args):
         if input(f'Are you sure you want to overwrite the file {os.path.abspath(outfile)}?\n[Y]es / [N]o\n').upper() != 'Y':
             sys.exit(0)
 
-    if mass_export:
+    if args.mass_export:
         for file in file_list:
             newdir = file[:-4].replace(' ', '_')
             os.mkdir(newdir)
@@ -127,18 +128,18 @@ def main(args):
 
     compiled = append_chroms(file_list)
     compiled.to_csv(outfile, index = False)
-    if wide_table:
+    if args.wide_table:
         compiled.pivot('mL', 'Channel', 'Signal').to_csv(newdir + '_wide.csv')
 
 # * 2.2 Plots ------------------------------------------------------------------
 
-    if not no_plots:
+    if not args.no_plots:
         logging.info(f'Generating plots ({low_ml} to {high_ml}mL, fractions {min_frac} to {max_frac})...')
         subprocess.run(['Rscript', os.path.join(script_path, 'auto_graph_FPLC.R'), outfile, min_frac, max_frac, low_ml, high_ml])
         if os.path.isfile(os.path.join(outdir, 'Rplots.pdf')) :
             os.remove(os.path.join(outdir, 'Rplots.pdf'))
 
-    if copy_manual:
+    if args.copy_manual:
         logging.info('Copying manual RScript...')
         shutil.copyfile(os.path.join(script_path, 'manual_plot_FPLC.R'), os.path.join(outdir, 'manual_plot_FPLC.R'))
     logging.info('Done.')
@@ -147,10 +148,9 @@ parser = argparse.ArgumentParser(description = 'A script to collect FPLC traces 
 parser.set_defaults(func = main)
 parser.add_argument('file_list', help = 'Files to compare. If given a directory, all .csvs in that directory.', nargs = '+')
 parser.add_argument('-o', '--output', help = 'Where to write the compiled traces. Default is fplcs.csv in the first input directory')
-parser.add_argument('-s', '--skiprows', default = 1, help = 'Number of rows to skip reading. Default 1', action = 'store', dest = 'skip_rows', type = int)
 parser.add_argument('-f', '--fractions', nargs = 2, default = ['0', '0'], help = 'Inclusive range of fractions to fill in. Default is not to fill any.')
 parser.add_argument('-m', '--ml', nargs = 2, default = ['5', '25'], help = 'Inclusive range for x-axis, in mL. Default is 5 to 25')
-parser.add_argument('--copy-manual', help = 'Copy the manual plotting Rscript for further tweaking', action = 'store_true')
-parser.add_argument('--no-plots', help = 'Don\'t make R plots.', action = 'store_true')
+parser.add_argument('-c', '--copy-manual', help = 'Copy the manual plotting Rscript for further tweaking', action = 'store_true')
+parser.add_argument('-p', '--no-plots', help = 'Don\'t make R plots.', action = 'store_true')
 parser.add_argument('--wide-table', help= 'Save an additional table that is in \'wide\' format.', action = 'store_true')
 parser.add_argument('--mass-export', help = 'Analyze each input file seperately. Default false. Will not make wide table, will copy manual R script and make default plots. Ignores -o, -s, -f, -m, -q flags.', action = 'store_true')
