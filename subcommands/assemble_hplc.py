@@ -47,9 +47,21 @@ def append_chroms(file_list, shimadzu):
 		# and in filename_human_readable()
 		channel_names = ['A', 'B']
 		for file in file_list:
-			to_append = pd.read_csv(file, sep = '\t', skiprows = header_rows, names = ['Signal'], header = None, dtype = 'float64')
-			sample_info = pd.read_csv(file, sep = '\t', nrows = header_rows,
-									names = ['Stat'] + channel_names + ['Units'], engine = 'python')
+			to_append = pd.read_csv(
+				file,
+				sep = '\t',
+				skiprows = header_rows,
+				names = ['Signal'],
+				header = None,
+				dtype = 'float64'
+			)
+			sample_info = pd.read_csv(
+				file,
+				sep = '\t',
+				nrows = header_rows,
+				names = ['Stat'] + channel_names + ['Units'],
+				engine = 'python'
+			)
 			sample_info.set_index('Stat', inplace = True)
 			to_append['Sample'] = str(sample_info.loc['Sample ID:'][0])
 			number_samples = int(sample_info.loc['Total Data Points:'][0])
@@ -92,12 +104,24 @@ def filename_human_readable(file_name, shimadzu):
 
 	return readable_dir_name
 
+def post_to_slack(config, new_fullpath):
+	client = slack_bot.get_client(config)
+	if client is None:
+		return
+
+	slack_bot.send_graphs(
+		config.config,
+		client,
+		[os.path.join(os.path.normpath(new_fullpath), x) for x in ['fsec_traces.pdf', 'normalized_traces.pdf']]
+	)
 
 # 2 Main -----------------------------------------------------------------------
 
 
 def main(args):
 
+	# I wrote this ages ago and for some reason all the shit I was seeing on
+	# stack exchange did this, I'm so sorry to whoever you are
 	script_location = os.path.dirname(os.path.realpath(__file__))
 	directory = os.path.abspath(args.directory)
 	new_name = args.rename
@@ -156,6 +180,9 @@ def main(args):
 	if not no_db:
 		print_message(quiet, 'Adding experiment to visualization database...')
 
+		# The visualization database depends on a dictionary from a file
+		# in the appia subcommands directory called `config.py`. This dictionary
+		# must also be named `config` and have the relevant keys and values
 		from subcommands import backend, config
 		db = backend.init_db(config.config)
 		backend.collect_experiments(os.path.abspath(new_fullpath), db, quiet, reduce)
@@ -166,13 +193,12 @@ def main(args):
 		print_message(quiet, 'Making plots...')
 		subprocess.run(['Rscript', os.path.join(os.path.normpath(script_location), 'auto_graph_HPLC.R'), os.path.normpath(new_fullpath)])
 
+	# send both R plots to the chromatography channel in slack
+	# channel and bot token need to be in the config file with the
+	# couchdb setup
 	if not no_plots and not no_db:
 		from subcommands import slack_bot
-		client = slack_bot.get_client(config.config)
-		slack_bot.send_graphs(
-			client,
-			[os.path.join(os.path.normpath(new_fullpath), x) for x in ['fsec_traces.pdf', 'normalized_traces.pdf']]
-		)
+		post_to_slack(config.config, new_fullpath)
 
 	if copy_manual:
 		print_message(quiet, 'Copying manual R script...')
