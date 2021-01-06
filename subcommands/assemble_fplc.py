@@ -5,10 +5,11 @@ import os
 import argparse
 import subprocess
 import shutil
+import logging
 
 # 1 Data import ----------------------------------------------------------------
 
-def get_file_list(directory, quiet):
+def get_file_list(directory):
     file_list = []
 
     if len(directory) > 1:
@@ -21,17 +22,15 @@ def get_file_list(directory, quiet):
         if directory[0].endswith('.csv'):
             file_list.append(os.path.normpath(directory[0]))
 
-    if not quiet:
-        print(f'Found {len(file_list)} files')
+    logging.info(f'Found {len(file_list)} files')
 
     return file_list
 
 # * 1.1 Data tidying -----------------------------------------------------------
 
-def append_chroms(file_list, quiet, skip_rows = 1):
+def append_chroms(file_list, skip_rows = 1):
 
-    if not quiet:
-        print('Generating compiled trace csv...')
+    logging.info('Generating compiled trace csv...')
     chroms = pd.DataFrame(columns = ['mL', 'Channel', 'Signal', 'frac_mL', 'Fraction', 'Sample', 'inst_frac'])
     for file in file_list:
         fplc_trace = pd.read_csv(file, skiprows = skip_rows, header = [1], encoding = 'utf-16-le', delimiter = '\t', engine = 'python', )
@@ -85,8 +84,7 @@ def append_chroms(file_list, quiet, skip_rows = 1):
 
         chroms = chroms.append(long_trace, ignore_index = True)
 
-    if not quiet:
-        print('Done with csv...')
+    logging.info('Done with csv...')
     return chroms
 
 # 2 Main -----------------------------------------------------------------------
@@ -94,7 +92,6 @@ def append_chroms(file_list, quiet, skip_rows = 1):
 def main(args):
 
     script_path = os.path.dirname(os.path.realpath(__file__))
-    quiet = args.quiet
     file_list = get_file_list(args.file_list, quiet)
     dir = os.path.dirname(file_list[0])
     dir = os.path.abspath(dir)
@@ -128,7 +125,7 @@ def main(args):
             shutil.move(file, os.path.join(newdir, file))
         sys.exit(0)
 
-    compiled = append_chroms(file_list, quiet)
+    compiled = append_chroms(file_list)
     compiled.to_csv(outfile, index = False)
     if wide_table:
         compiled.pivot('mL', 'Channel', 'Signal').to_csv(newdir + '_wide.csv')
@@ -136,18 +133,15 @@ def main(args):
 # * 2.2 Plots ------------------------------------------------------------------
 
     if not no_plots:
-        if not quiet:
-            print(f'Generating plots ({low_ml} to {high_ml}mL, fractions {min_frac} to {max_frac})...')
-        subprocess.run(['Rscript', '--quiet', os.path.join(script_path, 'auto_graph_FPLC.R'), outfile, min_frac, max_frac, low_ml, high_ml])
+        logging.info(f'Generating plots ({low_ml} to {high_ml}mL, fractions {min_frac} to {max_frac})...')
+        subprocess.run(['Rscript', os.path.join(script_path, 'auto_graph_FPLC.R'), outfile, min_frac, max_frac, low_ml, high_ml])
         if os.path.isfile(os.path.join(outdir, 'Rplots.pdf')) :
             os.remove(os.path.join(outdir, 'Rplots.pdf'))
 
     if copy_manual:
-        if not quiet:
-            print('Copying manual RScript...')
+        logging.info('Copying manual RScript...')
         shutil.copyfile(os.path.join(script_path, 'manual_plot_FPLC.R'), os.path.join(outdir, 'manual_plot_FPLC.R'))
-    if not quiet:
-        print('Done.')
+    logging.info('Done.')
 
 parser = argparse.ArgumentParser(description = 'A script to collect FPLC traces from GE AKTA FPLCs', add_help=False)
 parser.set_defaults(func = main)
@@ -156,7 +150,6 @@ parser.add_argument('-o', '--output', help = 'Where to write the compiled traces
 parser.add_argument('-s', '--skiprows', default = 1, help = 'Number of rows to skip reading. Default 1', action = 'store', dest = 'skip_rows', type = int)
 parser.add_argument('-f', '--fractions', nargs = 2, default = ['0', '0'], help = 'Inclusive range of fractions to fill in. Default is not to fill any.')
 parser.add_argument('-m', '--ml', nargs = 2, default = ['5', '25'], help = 'Inclusive range for x-axis, in mL. Default is 5 to 25')
-parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true')
 parser.add_argument('--copy-manual', help = 'Copy the manual plotting Rscript for further tweaking', action = 'store_true')
 parser.add_argument('--no-plots', help = 'Don\'t make R plots.', action = 'store_true')
 parser.add_argument('--wide-table', help= 'Save an additional table that is in \'wide\' format.', action = 'store_true')

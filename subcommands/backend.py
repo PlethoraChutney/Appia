@@ -4,6 +4,7 @@ import sys
 import os
 import couchdb
 import dash
+import logging
 import dash_core_components as dcc
 import dash_html_components as html
 from subcommands.config import config
@@ -96,7 +97,7 @@ class Experiment:
         try:
             self.__store_in_db(db)
         except:
-            print(f'\033[93m[WARNING]\033[0m Experiment already in database! Rerun this script with --rename to add it to the database.')
+            logging.error('Experiment already in database! Rerun this script with --rename to add it to the database.')
 
 # * 2.2 Experiment graph production --------------------------------------------
 
@@ -143,7 +144,7 @@ class Experiment:
 
 # 3 Misc db functions ----------------------------------------------------------
 
-def collect_experiments(directory, db, quiet = False, reduce = 1):
+def collect_experiments(directory, db, reduce = 1):
     list_of_dirs = []
     list_of_experiments = []
 
@@ -155,8 +156,7 @@ def collect_experiments(directory, db, quiet = False, reduce = 1):
         list_of_experiments.append(Experiment(experiment, reduce))
 
     for experiment in list_of_experiments:
-        if not quiet:
-            print(f'Adding experiment {experiment.id}')
+        logging.info(f'Adding experiment {experiment.id}')
         experiment.add_to_db(db)
 
 def update_experiment_list(db):
@@ -169,4 +169,4 @@ def remove_experiment(db, exp_id):
     try:
         db.delete(db[exp_id])
     except:
-        print(f'Could not find experiment {exp_id}')
+        logging.error(f'Could not find experiment {exp_id}')

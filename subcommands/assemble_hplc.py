@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import argparse
+import logging
 
 # 1 Import functions -----------------------------------------------------------
 
@@ -16,10 +17,6 @@ def get_file_list(directory, extension):
 			file_list.append(os.path.join(directory, file))
 
 	return file_list
-
-def print_message(quiet, message):
-	if not quiet:
-		print(message)
 
 # 2 Data processing functions --------------------------------------------------
 
@@ -150,12 +147,12 @@ def main(args):
 	else:
 		extension = '.arw'
 
-	print_message(args.quiet, f'Checking {directory} for {extension} files...')
+	logging.info(f'Checking {directory} for {extension} files...')
 
 	file_list = get_file_list(directory, extension)
 
 	if len(file_list) == 0:
-		print_message(args.quiet, f'No {extension} files found. Exiting...')
+		logging.error(f'No {extension} files found. Exiting...')
 		sys.exit(1)
 
 	if args.rename is not None:
@@ -164,19 +161,19 @@ def main(args):
 		readable_dir = os.path.join(directory, filename_human_readable(file_list[0], args.shimadzu))
 
 	if not args.no_move:
-		print_message(args.quiet, f'Found {len(file_list)} files. Moving to {readable_dir}...')
+		logging.info(f'Found {len(file_list)} files. Moving to {readable_dir}...')
 		new_fullpath = readable_dir
 		os.makedirs(new_fullpath)
 
 		for file in file_list:
 			shutil.move(file, os.path.join(readable_dir, os.path.basename(file)))
 	else:
-		print_message(args.quiet, f'Found {len(file_list)} files. Processing in place...')
+		logging.info(f'Found {len(file_list)} files. Processing in place...')
 		new_fullpath = directory
 
 # * 2.2 Assemble .arw to .csv --------------------------------------------------
 
-	print_message(args.quiet, 'Assembling traces...')
+	logging.info('Assembling traces...')
 
 	file_list = get_file_list(new_fullpath, extension)
 	long_and_wide = append_chroms(file_list, args.shimadzu)
@@ -188,19 +185,19 @@ def main(args):
 # * 2.3 Add traces to couchdb --------------------------------------------------
 
 	if not args.no_db:
-		print_message(args.quiet, 'Adding experiment to visualization database...')
+		logging.info('Adding experiment to visualization database...')
 
 		# The visualization database depends on a dictionary from a file
 		# in the appia subcommands directory called `config.py`. This dictionary
 		# must also be named `config` and have the relevant keys and values
 		from subcommands import backend, config
 		db = backend.init_db(config.config)
-		backend.collect_experiments(os.path.abspath(new_fullpath), db, args.quiet, args.reduce)
+		backend.collect_experiments(os.path.abspath(new_fullpath), db, args.reduce)
 
 # * 2.4 Plot traces ------------------------------------------------------------
 
 	if not args.no_plots:
-		print_message(args.quiet, 'Making plots...')
+		logging.info('Making plots...')
 		subprocess.run(['Rscript', os.path.join(os.path.normpath(script_location), 'auto_graph_HPLC.R'), os.path.normpath(new_fullpath)])
 
 	# send both R plots to the chromatography channel in slack
@@ -210,18 +207,16 @@ def main(args):
 		post_to_slack(config.config, new_fullpath)
 
 	if args.copy_manual:
-		print_message(args.quiet, 'Copying manual R script...')
+		logging.info('Copying manual R script...')
 		shutil.copyfile(os.path.join(script_location, 'manual_plot_HPLC.R'), os.path.join(new_fullpath, 'manual_plot_HPLC.R'))
 
-	print_message(args.quiet, 'Done!')
+	logging.info('Done!')
 
 
 parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters HPLC traces.', add_help=False)
 parser.set_defaults(func = main)
 parser.add_argument('directory', default = os.getcwd(),
 					help = 'Which directory to pull all .arw files from')
-parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress',
-					action = 'store_true', default = False)
 parser.add_argument('-r', '--rename', help = 'Use a non-default name')
 parser.add_argument('--reduce', help = 'Keep only one in REDUCE points, e.g., `--reduce 10` keeps only 1/10th of your points.',
 					default = 1, type = int)

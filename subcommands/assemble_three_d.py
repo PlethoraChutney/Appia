@@ -5,6 +5,7 @@ import sys
 import os
 import re
 import shutil
+import logging
 import subprocess
 import argparse
 
@@ -67,16 +68,13 @@ def main(args):
 
 	script_location = os.path.dirname(os.path.realpath(__file__))
 	directory = os.path.normpath(args.directory)
-	quiet = args.quiet
 
 	script_location = os.path.dirname(os.path.realpath(__file__))
 
-	if not quiet:
-		print(f'Checking {directory} for .arw files...')
+	logging.info(f'Checking {directory} for .arw files...')
 	file_list = get_file_list(directory)
 	readable_dir = filename_human_readable(file_list[0])
-	if not quiet:
-		print(f'Found {len(file_list)} files. Moving to {readable_dir}...')
+	logging.info(f'Found {len(file_list)} files. Moving to {readable_dir}...')
 
 	os.makedirs(os.path.join(directory, readable_dir))
 	new_fullpath = os.path.join(directory, readable_dir)
@@ -84,18 +82,15 @@ def main(args):
 	for file in file_list:
 		shutil.move(file, new_fullpath)
 
-	if not quiet:
-		print('Assembling traces...')
+	logging.info('Assembling traces...')
 	file_list = get_file_list(new_fullpath)
 	chroms, column_spec = append_chroms(file_list)
 	file_name = os.path.join(new_fullpath, "3D_chromatograms.csv")
 	chroms.to_csv(file_name, index = False)
 
-	if not quiet:
-		print(f'Making plots using command: \n 3D_autograph {os.path.normpath(new_fullpath)} {column_spec}')
+	logging.info(f'Making plots using command: \n 3D_autograph {os.path.normpath(new_fullpath)} {column_spec}')
 	subprocess.run(['Rscript', os.path.join(script_location, '3D_auto_graph_HPLC.R'), os.path.normpath(new_fullpath), column_spec])
 
 parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters 3D HPLC traces.', add_help=False)
 parser.set_defaults(func = main)
 parser.add_argument('directory', default = os.getcwd(), help = 'Which directory to pull all .arw files from')
-parser.add_argument('-q', '--quiet', help = 'Don\'t print messages about progress', action = 'store_true', default = False)
