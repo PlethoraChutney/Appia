@@ -5,6 +5,7 @@ import logging
 from subcommands.assemble_fplc import parser as fplc_parser
 from subcommands.assemble_hplc import parser as hplc_parser
 from subcommands.assemble_three_d import parser as three_d_parser
+from subcommands.combined_process import parser as combined_parser
 
 def main():
     parser = argparse.ArgumentParser(
@@ -26,6 +27,11 @@ def main():
         name = 'three-d',
         help = 'Process three dimensional HPLC files (.arw)',
         parents = [three_d_parser]
+    )
+    subparsers.add_parser(
+        name = 'combined',
+        help = 'Combine HPLC and FPLC processing into a single experiment.',
+        parents = [combined_parser]
     )
     parser.add_argument(
         '-v', '--verbose',
