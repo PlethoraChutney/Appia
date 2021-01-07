@@ -144,13 +144,44 @@ def main(args):
         shutil.copyfile(os.path.join(script_path, 'manual_plot_FPLC.R'), os.path.join(outdir, 'manual_plot_FPLC.R'))
     logging.info('Done.')
 
-parser = argparse.ArgumentParser(description = 'A script to collect FPLC traces from GE AKTA FPLCs', add_help=False)
+parser = argparse.ArgumentParser(
+    description = 'A script to collect FPLC traces from GE AKTA FPLCs',
+    add_help=False
+)
 parser.set_defaults(func = main)
-parser.add_argument('file_list', help = 'Files to compare. If given a directory, all .csvs in that directory.', nargs = '+')
-parser.add_argument('-o', '--output', help = 'Where to write the compiled traces. Default is fplcs.csv in the first input directory')
-parser.add_argument('-f', '--fractions', nargs = 2, default = ['0', '0'], help = 'Inclusive range of fractions to fill in. Default is not to fill any.')
-parser.add_argument('-m', '--ml', nargs = 2, default = ['5', '25'], help = 'Inclusive range for x-axis, in mL. Default is 5 to 25')
-parser.add_argument('-c', '--copy-manual', help = 'Copy the manual plotting Rscript for further tweaking', action = 'store_true')
-parser.add_argument('-p', '--no-plots', help = 'Don\'t make R plots.', action = 'store_true')
-parser.add_argument('--wide-table', help= 'Save an additional table that is in \'wide\' format.', action = 'store_true')
-parser.add_argument('--mass-export', help = 'Analyze each input file seperately. Default false. Will not make wide table, will copy manual R script and make default plots. Ignores -o, -s, -f, -m, -q flags.', action = 'store_true')
+parser.add_argument(
+    'file_list',
+    help = 'Files to compare. If given a directory, all .csvs in that directory.',
+    nargs = '+'
+)
+parser.add_argument(
+    '-o', '--output',
+    help = 'Where to write the compiled traces. Default is fplcs.csv in the first input directory'
+)
+parser.add_argument(
+    '-f', '--fractions',
+    nargs = 2, default = ['0', '0'],
+    help = 'Inclusive range of fractions to fill in. Default is not to fill any.'
+)
+parser.add_argument(
+    '-m', '--ml',
+    nargs = 2, default = ['5', '25'],
+    help = 'Inclusive range for x-axis, in mL. Default is 5 to 25'
+)
+parser.add_argument(
+    '-c', '--copy-manual',
+    help = 'Copy the manual plotting Rscript for further tweaking', action = 'store_true')
+parser.add_argument(
+    '-p', '--no-plots',
+    help = 'Don\'t make R plots.', action = 'store_true'
+)
+parser.add_argument(
+    '--wide-table',
+    help= 'Save an additional table that is in \'wide\' format.',
+    action = 'store_true'
+)
+parser.add_argument(
+    '--mass-export',
+    help = 'Analyze each input file seperately. Default false. Will not make wide table, will copy manual R script and make default plots. Ignores -o, -s, -f, -m flags.',
+    action = 'store_true'
+)

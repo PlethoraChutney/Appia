@@ -27,10 +27,12 @@ def main():
         help = 'Process three dimensional HPLC files (.arw)',
         parents = [three_d_parser]
     )
-    parser.add_argument('-v', '--verbose',
-                        help = 'Increase logger verbosity',
-                        action = 'count',
-                        default = 0)
+    parser.add_argument(
+        '-v', '--verbose',
+        help = 'Get more informational messages',
+        action = 'count',
+        default = 0
+    )
 
     args = parser.parse_args()
 

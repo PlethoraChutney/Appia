@@ -90,6 +90,12 @@ def main(args):
 	logging.info(f'Making plots using command: \n 3D_autograph {os.path.normpath(new_fullpath)} {column_spec}')
 	subprocess.run(['Rscript', os.path.join(script_location, '3D_auto_graph_HPLC.R'), os.path.normpath(new_fullpath), column_spec])
 
-parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters 3D HPLC traces.', add_help=False)
+parser = argparse.ArgumentParser(
+	description = 'A script to collect and plot Waters 3D HPLC traces.',
+	add_help=False
+)
 parser.set_defaults(func = main)
-parser.add_argument('directory', default = os.getcwd(), help = 'Which directory to pull all .arw files from')
+parser.add_argument(
+	'directory',
+	help = 'Which directory to pull all .arw files from.'
+)

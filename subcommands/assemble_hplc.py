@@ -225,21 +225,55 @@ def main(args):
 
 parser = argparse.ArgumentParser(description = 'A script to collect and plot Waters HPLC traces.', add_help=False)
 parser.set_defaults(func = main)
-parser.add_argument('directory', default = os.getcwd(),
-					help = 'Which directory to pull all .arw files from')
-parser.add_argument('-r', '--rename', help = 'Use a non-default name')
-parser.add_argument('--reduce', help = 'Keep only one in REDUCE points, e.g., `--reduce 10` keeps only 1/10th of your points.',
-					default = 1, type = int)
-parser.add_argument('-d', '--no-db', help = 'Do not add to couchdb', action = 'store_true',
-					default = False)
+parser.add_argument(
+	'directory',
+	default = os.getcwd(),
+	help = 'Which directory to pull all .arw files from'
+)
+parser.add_argument(
+	'-r', '--rename',
+	help = 'Use a non-default name'
+)
+parser.add_argument(
+	'--reduce',
+	help = 'Keep only one in REDUCE points, e.g., `--reduce 10` keeps only 1/10th of your points.',
+	default = 1,
+	type = int
+)
+parser.add_argument(
+	'-d', '--no-db',
+	help = 'Do not add to couchdb',
+	action = 'store_true',
+	default = False
+)
+
 plot_group = parser.add_mutually_exclusive_group()
-plot_group.add_argument('-p', '--no-plots', help = 'Do not make R plots', action = 'store_true',
-					default = False)
-plot_group.add_argument('-s', '--post-to-slack', help = "Send completed plots to Slack",
-					action = 'store_true', default = False)
-parser.add_argument('-c', '--copy-manual', help = 'Copy R plot file for manual plot editing',
-					action = 'store_true', default = False)
-parser.add_argument('-k', '--no-move', help = 'Don\'t move .arw files from their current directory',
-					action = 'store_true', default = False)
-parser.add_argument('--shimadzu', help = 'Analyze traces from a Shimadzu instrument (*.asc)',
-					action = 'store_true')
+plot_group.add_argument(
+	'-p', '--no-plots',
+	help = 'Do not make R plots',
+	action = 'store_true',
+	default = False
+)
+plot_group.add_argument(
+	'-s', '--post-to-slack',
+	help = "Send completed plots to Slack",
+	action = 'store_true',
+	default = False
+)
+parser.add_argument(
+	'-c', '--copy-manual',
+	help = 'Copy R plot file for manual plot editing',
+	action = 'store_true',
+	default = False
+)
+parser.add_argument(
+	'-k', '--no-move',
+	help = 'Process data files in place (do not move to new directory)',
+	action = 'store_true',
+	default = False
+)
+parser.add_argument(
+	'--shimadzu',
+	help = 'Analyze traces from a Shimadzu instrument (*.asc)',
+	action = 'store_true'
+)
