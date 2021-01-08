@@ -7,7 +7,10 @@ import logging
 
 
 def combined_df(files, h_system):
+    # including fplc in system extensions for ~*~* futureproofing *~*~
+    f_system = 'akta'
     system_extensions = {
+        'akta': '.csv',
         'waters': '.arw',
         'shimadzu': '.asc'
     }
@@ -17,15 +20,26 @@ def combined_df(files, h_system):
         globbed_files.extend(glob(pattern))
     files = [os.path.abspath(x) for x in globbed_files]
     files = set(files)
+    hplc_files = []
+    fplc_files = []
 
     for file in files:
         try:
-            assert file.lower().endswith(('.csv', system_extensions[h_system]))
-        except AssertionError:
-            logging.warning(f'Unexpected file extension in {file}. Please check your system and file arguments.')
+            if file.endswith(system_extensions[f_system]):
+                fplc_files.append(file)
+            elif file.endswith(system_extensions[h_system]):
+                hplc_files.append(file)
+            else:
+                raise KeyError
+        except KeyError:
+            logging.error(f'Unexpected file extension in {file}. Please check your system and file arguments.')
             sys.exit(1)
 
-    print(files)
+    if len(hplc_files) == 0 or len(fplc_files) != 1:
+        logging.error('Must have at least one HPLC file and exactly one FPLC file for combined processing')
+        sys.exit(2)
+
+
 
 def main(args):
     cdf = combined_df(args.files, str.lower(args.system))
