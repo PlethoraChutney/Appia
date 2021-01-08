@@ -8,6 +8,10 @@ import logging
 
 def combined_df(experiment, files, h_system):
     # including fplc in system extensions for ~*~* futureproofing *~*~
+    if h_system == 'shimadzu':
+        logging.error('Combined processing not currently supported for Shimadzu instruments')
+        sys.exit(3)
+
     f_system = 'akta'
     system_extensions = {
         'akta': '.csv',
@@ -44,6 +48,11 @@ def combined_df(experiment, files, h_system):
     h_df['Experiment'] = experiment
     f_df = assemble_fplc.append_chroms(fplc_files)
     f_df['Experiment'] = experiment
+
+    if 'CV' not in h_df:
+        logging.error('Please re-export your HPLC data with the instrument method included. This is needed to calculate volume and CV for comparison with SEC data, which is reported in volume.')
+        sys.exit(4)
+
     h_df.to_csv('test_h.csv')
     f_df.to_csv('test_f.csv')
 

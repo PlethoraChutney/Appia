@@ -10,3 +10,4 @@ config.py
 *.lnk
 */__pycache__/*
 appia-env/
+test*csv

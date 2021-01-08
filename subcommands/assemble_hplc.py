@@ -22,6 +22,16 @@ def get_file_list(directory, extension):
 
 def append_chroms(file_list, system):
 
+	flow_rates = {
+		'10_300': 0.5,
+		'5_150': 0.3
+	}
+
+	column_volumes = {
+		'10_300': 24,
+		'5_150': 3
+	}
+
 	chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 
 	if system == 'waters':
@@ -44,6 +54,17 @@ def append_chroms(file_list, system):
 			channel_ID = str(sample_info.loc[data_row]['Channel'])
 			to_append['Channel'] = channel_ID
 			to_append['Sample'] = sample_name
+
+			if 'Instrument Method Name' in sample_info:
+				method = str(sample_info.loc[data_row]['Instrument Method Name'])
+
+				if '10_300' in method:
+					column = '10_300'
+				elif '5_150' in method:
+					column = '5_150'
+
+				to_append['Volume'] = to_append['Time']*flow_rates[column]
+				to_append['Column Volume'] = to_append['Volume']/column_volumes[column]
 
 			chroms = chroms.append(to_append, ignore_index = False)
 	elif system == 'shimadzu':
