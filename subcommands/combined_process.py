@@ -1,6 +1,7 @@
 from subcommands import assemble_hplc, assemble_fplc
 from glob import glob
 import os
+import sys
 import argparse
 import logging
 
@@ -15,12 +16,15 @@ def combined_df(files, h_system):
     for pattern in files:
         globbed_files.extend(glob(pattern))
     files = [os.path.abspath(x) for x in globbed_files]
+    files = set(files)
 
     for file in files:
         try:
             assert file.lower().endswith(('.csv', system_extensions[h_system]))
         except AssertionError:
-            logging.warning(f'Unexpected file extension in {file}. Did you set the right system?')
+            logging.warning(f'Unexpected file extension in {file}. Please check your system and file arguments.')
+            sys.exit(1)
+
     print(files)
 
 def main(args):
