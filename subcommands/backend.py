@@ -5,6 +5,7 @@ import os
 import couchdb
 import dash
 import logging
+import argparse
 import dash_core_components as dcc
 import dash_html_components as html
 from subcommands.config import config
@@ -196,5 +197,46 @@ def update_experiment_list(db):
 def remove_experiment(db, exp_id):
     try:
         db.delete(db[exp_id])
-    except:
+    except couchdb.http.ResourceNotFound:
         logging.error(f'Could not find experiment {exp_id}')
+
+def three_column_print(in_list):
+    in_list = iter(in_list)
+    for i in in_list:
+        print('{:<45}{:<45}{}'.format(i, next(in_list, ""), next(in_list, '')))
+
+def main(args):
+    db = init_db(config)
+
+    if args.get_list:
+        three_column_print(update_experiment_list(db))
+
+    if args.delete:
+        for exp in args.delete:
+            remove_experiment(db, exp)
+
+    if args.mass_add:
+        collect_experiments(args.mass_add, db)
+
+parser = argparse.ArgumentParser(
+    description = 'Database management',
+    add_help=False
+)
+parser.set_defaults(func = main)
+parser.add_argument(
+    '-l', '--get-list',
+    help = 'Print list of all experiments in database',
+    action = 'store_true'
+)
+parser.add_argument(
+    '-d', '--delete',
+    help = 'Delete experiment(s) by name',
+    type = str,
+    nargs = '+'
+)
+parser.add_argument(
+    '--mass-add',
+    help = 'Add multiple experiments or multiple directories of experiments',
+    type = str,
+    nargs = '+'
+)
