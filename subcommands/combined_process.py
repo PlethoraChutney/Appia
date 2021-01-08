@@ -6,7 +6,7 @@ import argparse
 import logging
 
 
-def combined_df(files, h_system):
+def combined_df(experiment, files, h_system):
     # including fplc in system extensions for ~*~* futureproofing *~*~
     f_system = 'akta'
     system_extensions = {
@@ -41,17 +41,29 @@ def combined_df(files, h_system):
 
     # keep [0] because append_chroms returns a list of [long, wide] dfs
     h_df = assemble_hplc.append_chroms(hplc_files, h_system)[0]
+    h_df['Experiment'] = experiment
+    f_df = assemble_fplc.append_chroms(fplc_files)
+    f_df['Experiment'] = experiment
     h_df.to_csv('test_h.csv')
+    f_df.to_csv('test_f.csv')
 
+    # next is to verify that you have something you can use to match fraction numbers
+    # probably best is to split by underscores and keep the last segment, then
+    # enforce that...for now
 
 def main(args):
-    cdf = combined_df(args.files, args.system)
+    cdf = combined_df(args.experiment, args.files, args.system)
 
 parser = argparse.ArgumentParser(
     description = 'Combined FPLC and HPLC processing',
     add_help=False
 )
 parser.set_defaults(func = main)
+parser.add_argument(
+    'experiment',
+    help = 'Name of combined experiment',
+    type = str
+)
 parser.add_argument(
     'files',
     help = 'All files to combine and process.',
