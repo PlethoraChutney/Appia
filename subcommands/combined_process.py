@@ -47,9 +47,6 @@ def combined_df(experiment, files, h_system):
     h_df.to_csv('test_h.csv')
     f_df.to_csv('test_f.csv')
 
-    # next is to verify that you have something you can use to match fraction numbers
-    # probably best is to split by underscores and keep the last segment, then
-    # enforce that...for now
 
 def main(args):
     cdf = combined_df(args.experiment, args.files, args.system)
