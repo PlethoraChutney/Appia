@@ -30,6 +30,7 @@ def init_db(config):
 # * 2.1 Experiment I/O ---------------------------------------------------------
 class Experiment:
     def __init__(self, input, reduce = 1):
+        logging.debug(type(input))
         if type(input) == couchdb.client.Document:
             self.exptype = 'hplc'
             self.id = input['_id']
@@ -39,7 +40,7 @@ class Experiment:
             self.channel = input['channel']
             self.sample = input['sample']
         # Lists are given to Experiment() when we're merging several datasets
-        elif type(input) == list:
+        elif isinstance(input, list):
             self.exptype = 'hplc'
             list_of_dfs = [x.as_pandas_df() for x in input]
             merged_df = pd.concat(list_of_dfs)
@@ -49,26 +50,26 @@ class Experiment:
             self.sample = merged_df['Sample'].tolist()
             self.normalized = merged_df['Normalized'].tolist()
 
-        # dataframes come from combined processing
-        elif isinstance(input, pd.DataFrame):
+        # tuples are from combined experiments
+        elif isinstance(input, tuple):
             if reduce != 1:
                 # extremely large datasets, like large-scale expressions, typically
                 # do not need the quarter-second or half-second resolution afforded
                 # by the HPLC. We can decimate these datasets to make them load
                 # faster in the web interface and other programs.
-                in_df = in_df.iloc[::reduce]
+                input[0] = in_df.iloc[::reduce]
 
             self.exptype = 'combined'
-            self.expname = input['Experiment'].tolist()
-            self.volume = input['mL'].tolist()
-            self.cv = input['Column Volume'].tolist()
-            self.sample = input['Sample'].tolist()
-            self.channel = input['Channel'].tolist()
-            self.signal = input['Signal'].tolist()
+            self.id = input[1]
+            self.volume = input[0]['mL'].tolist()
+            self.cv = input[0]['Column Volume'].tolist()
+            self.sample = input[0]['Sample'].tolist()
+            self.channel = input[0]['Channel'].tolist()
+            self.signal = input[0]['Signal'].tolist()
 
         # Directories are given to Experiment() when we're first adding csv files
         # to the couchdb database
-        elif os.path.isdir(input):
+        elif isinstance(input, str) and os.path.isdir(input):
             self.exptype = 'hplc'
             self.id = os.path.split(input)[-1].replace('_processed', '')
             in_df = pd.read_csv(os.path.join(input, 'long_chromatograms.csv'))
@@ -87,17 +88,27 @@ class Experiment:
             raise TypeError('Input is not a couchdb or csv')
 
     def as_pandas_df(self):
-        out_df = pd.DataFrame(
-            {
-                'Time': self.time,
-                'Signal': self.signal,
-                'Normalized': self.normalized,
-                'Channel': self.channel,
-                'Sample': self.sample
-            }
-        )
-
-        return(out_df)
+        if self.exptype == 'hplc':
+            out_df = pd.DataFrame(
+                {
+                    'Time': self.time,
+                    'Signal': self.signal,
+                    'Normalized': self.normalized,
+                    'Channel': self.channel,
+                    'Sample': self.sample
+                }
+            )
+        elif self.exptype == 'combined':
+            out_df = pd.DataFrame(
+                {
+                    'Signal': self.signal,
+                    'mL': self.volume,
+                    'Column Volume': self.cv,
+                    'Sample': self.sample,
+                    'Channel': self.channel
+                }
+            )
+        return out_df
 
     def __store_in_db(self, db):
         doc = {
@@ -157,7 +168,7 @@ class Experiment:
         return(plotly_graphs)
 
     def __repr__(self):
-        self.as_pandas_df()
+        return repr(self.as_pandas_df())
 
 # 3 Misc db functions ----------------------------------------------------------
 

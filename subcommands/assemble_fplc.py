@@ -29,8 +29,6 @@ def get_file_list(directory):
 # * 1.1 Data tidying -----------------------------------------------------------
 
 def append_chroms(file_list):
-
-    logging.info('Generating compiled trace csv...')
     chroms = pd.DataFrame(columns = ['mL', 'Channel', 'Signal', 'frac_mL', 'Fraction', 'Sample', 'inst_frac'])
     for file in file_list:
         fplc_trace = pd.read_csv(
@@ -92,7 +90,6 @@ def append_chroms(file_list):
         long_trace['Column Volume'] = long_trace['mL']/24
         chroms = chroms.append(long_trace, ignore_index = True)
 
-    logging.info('Done with csv...')
     return chroms
 
 # 2 Main -----------------------------------------------------------------------
@@ -128,10 +125,12 @@ def main(args):
             shutil.move(file, os.path.join(newdir, file))
         sys.exit(0)
 
+    logging.info('Generating compiled trace csv...')
     compiled = append_chroms(file_list)
     compiled.to_csv(outfile, index = False)
     if args.wide_table:
         compiled.pivot('mL', 'Channel', 'Signal').to_csv(newdir + '_wide.csv')
+    logging.info('Done with csv...')
 
 # * 2.2 Plots ------------------------------------------------------------------
 
