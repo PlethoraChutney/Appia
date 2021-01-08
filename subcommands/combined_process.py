@@ -4,6 +4,7 @@ import os
 import sys
 import argparse
 import logging
+import pandas as pd
 
 
 def combined_df(experiment, files, h_system):
@@ -46,19 +47,29 @@ def combined_df(experiment, files, h_system):
     # keep [0] because append_chroms returns a list of [long, wide] dfs
     h_df = assemble_hplc.append_chroms(hplc_files, h_system)[0]
     h_df['Experiment'] = experiment
+
+    # filter out unnecessary channels and the wash recordings from the AKTA
     f_df = assemble_fplc.append_chroms(fplc_files)
+    f_df = f_df[f_df.Channel == 'mAU']
+    f_df = f_df[f_df.mL < 24.5]
     f_df['Experiment'] = experiment
 
-    if 'CV' not in h_df:
+    if 'Column Volume' not in h_df:
         logging.error('Please re-export your HPLC data with the instrument method included. This is needed to calculate volume and CV for comparison with SEC data, which is reported in volume.')
         sys.exit(4)
 
-    h_df.to_csv('test_h.csv')
-    f_df.to_csv('test_f.csv')
+    f_df['Channel'] = '!SEC'
+    f_df['Sample'] = f_df['inst_frac']
+    h_df.drop(['Time'], inplace = True, axis = 1)
+    f_df.drop(['Fraction', 'frac_mL', 'inst_frac'], inplace = True, axis = 1)
+
+    c_df = pd.concat([h_df, f_df])
+    return c_df
 
 
 def main(args):
-    cdf = combined_df(args.experiment, args.files, args.system)
+    c_df = combined_df(args.experiment, args.files, args.system)
+    print(c_df)
 
 parser = argparse.ArgumentParser(
     description = 'Combined FPLC and HPLC processing',

@@ -63,8 +63,8 @@ def append_chroms(file_list, system):
 				elif '5_150' in method:
 					column = '5_150'
 
-				to_append['Volume'] = to_append['Time']*flow_rates[column]
-				to_append['Column Volume'] = to_append['Volume']/column_volumes[column]
+				to_append['mL'] = to_append['Time']*flow_rates[column]
+				to_append['Column Volume'] = to_append['mL']/column_volumes[column]
 
 			chroms = chroms.append(to_append, ignore_index = False)
 	elif system == 'shimadzu':

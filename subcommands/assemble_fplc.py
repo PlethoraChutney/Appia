@@ -88,6 +88,8 @@ def append_chroms(file_list):
         for i in range(len(frac_mL)):
             long_trace.loc[long_trace['mL'] > frac_mL[i], 'inst_frac'] = i + 2
 
+        # Hard code a Superose 6 10_300 CV
+        long_trace['Column Volume'] = long_trace['mL']/24
         chroms = chroms.append(long_trace, ignore_index = True)
 
     logging.info('Done with csv...')
