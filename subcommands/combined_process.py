@@ -1,4 +1,4 @@
-from subcommands import assemble_hplc, assemble_fplc
+from subcommands import assemble_hplc, assemble_fplc, backend
 from glob import glob
 import os
 import sys
@@ -70,6 +70,7 @@ def combined_df(experiment, files, h_system):
 def main(args):
     c_df = combined_df(args.experiment, args.files, args.system)
     print(c_df)
+    backend.Experiment(c_df)
 
 parser = argparse.ArgumentParser(
     description = 'Combined FPLC and HPLC processing',

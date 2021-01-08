@@ -31,6 +31,7 @@ def init_db(config):
 class Experiment:
     def __init__(self, input, reduce = 1):
         if type(input) == couchdb.client.Document:
+            self.exptype = 'hplc'
             self.id = input['_id']
             self.time = input['time']
             self.signal = input['signal']
@@ -39,6 +40,7 @@ class Experiment:
             self.sample = input['sample']
         # Lists are given to Experiment() when we're merging several datasets
         elif type(input) == list:
+            self.exptype = 'hplc'
             list_of_dfs = [x.as_pandas_df() for x in input]
             merged_df = pd.concat(list_of_dfs)
             self.time = merged_df['Time'].tolist()
@@ -46,19 +48,34 @@ class Experiment:
             self.channel = merged_df['Channel'].tolist()
             self.sample = merged_df['Sample'].tolist()
             self.normalized = merged_df['Normalized'].tolist()
+
+        # dataframes come from combined processing
+        elif isinstance(input, pd.DataFrame):
+            if reduce != 1:
+                # extremely large datasets, like large-scale expressions, typically
+                # do not need the quarter-second or half-second resolution afforded
+                # by the HPLC. We can decimate these datasets to make them load
+                # faster in the web interface and other programs.
+                in_df = in_df.iloc[::reduce]
+
+            self.exptype = 'combined'
+            self.expname = input['Experiment'].tolist()
+            self.volume = input['mL'].tolist()
+            self.cv = input['Column Volume'].tolist()
+            self.sample = input['Sample'].tolist()
+            self.channel = input['Channel'].tolist()
+            self.signal = input['Signal'].tolist()
+
         # Directories are given to Experiment() when we're first adding csv files
         # to the couchdb database
         elif os.path.isdir(input):
+            self.exptype = 'hplc'
             self.id = os.path.split(input)[-1].replace('_processed', '')
             in_df = pd.read_csv(os.path.join(input, 'long_chromatograms.csv'))
             in_df['Normalized'] = in_df.groupby(['Sample', 'Channel']).transform(lambda x: ((x - x.min()) / (x.max() - x.min())))['Signal'].tolist()
             in_df.fillna(0, inplace = True)
 
             if reduce != 1:
-                # extremely large datasets, like large-scale expressions, typically
-                # do not need the quarter-second or half-second resolution afforded
-                # by the HPLC. We can decimate these datasets to make them load
-                # faster in the web interface and other programs.
                 in_df = in_df.iloc[::reduce]
 
             self.time = in_df['Time'].tolist()
