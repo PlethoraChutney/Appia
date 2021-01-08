@@ -20,11 +20,11 @@ def get_file_list(directory, extension):
 # 2 Data processing functions --------------------------------------------------
 
 
-def append_chroms(file_list, shimadzu):
+def append_chroms(file_list, system):
 
 	chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 
-	if not shimadzu:
+	if system == 'waters':
 		header_rows = 2
 		data_row = 0
 		for file in file_list:
@@ -46,7 +46,7 @@ def append_chroms(file_list, shimadzu):
 			to_append['Sample'] = sample_name
 
 			chroms = chroms.append(to_append, ignore_index = False)
-	else:
+	elif system == 'shimadzu':
 		header_rows = 16
 		data_row = 0
 		# if you don't have two detectors, or want to rename the channels, change that here
@@ -92,8 +92,8 @@ def append_chroms(file_list, shimadzu):
 	return (chroms, wide_table)
 
 
-def filename_human_readable(file_name, shimadzu):
-	if not shimadzu:
+def filename_human_readable(file_name, system):
+	if system == 'waters':
 		header_rows = 2
 		data_row = 0
 		headers = pd.read_csv(
@@ -103,7 +103,7 @@ def filename_human_readable(file_name, shimadzu):
 		)
 		readable_dir_name = str(headers.loc[data_row]['Sample Set Name']).replace('/', '-').replace(" ", "_") + "_processed"
 
-	else:
+	elif system == 'shimadzu':
 		# change channel names here and in append_chroms()
 		header_rows = 16
 		channel_names = ['A', 'B']
@@ -148,23 +148,23 @@ def main(args):
 
 # * 2.1 Import files -----------------------------------------------------------
 
-	if args.shimadzu:
-		extension = '.asc'
-	else:
-		extension = '.arw'
+	system_extensions = {
+		'waters': '.arw',
+		'shimadzu': '.asc'
+	}
 
-	logging.info(f'Checking {directory} for {extension} files...')
+	logging.info(f'Checking {directory} for {system_extensions[args.system]} files...')
 
-	file_list = get_file_list(directory, extension)
+	file_list = get_file_list(directory, system_extensions[args.system])
 
 	if len(file_list) == 0:
-		logging.error(f'No {extension} files found. Exiting...')
+		logging.error(f'No {system_extensions[args.system]} files found. Exiting...')
 		sys.exit(1)
 
 	if args.rename is not None:
 		readable_dir = os.path.join(directory, args.rename)
 	else:
-		readable_dir = os.path.join(directory, filename_human_readable(file_list[0], args.shimadzu))
+		readable_dir = os.path.join(directory, filename_human_readable(file_list[0], args.system))
 
 	if not args.no_move:
 		logging.info(f'Found {len(file_list)} files. Moving to {readable_dir}...')
@@ -181,8 +181,8 @@ def main(args):
 
 	logging.info('Assembling traces...')
 
-	file_list = get_file_list(new_fullpath, extension)
-	long_and_wide = append_chroms(file_list, args.shimadzu)
+	file_list = get_file_list(new_fullpath, system_extensions[args.system])
+	long_and_wide = append_chroms(file_list, args.system)
 	file_name = os.path.join(new_fullpath, 'long_chromatograms.csv')
 	long_and_wide[0].to_csv(file_name, index = False)
 	file_name = os.path.join(new_fullpath, 'wide_chromatograms.csv')
@@ -273,7 +273,9 @@ parser.add_argument(
 	default = False
 )
 parser.add_argument(
-	'--shimadzu',
-	help = 'Analyze traces from a Shimadzu instrument (*.asc)',
-	action = 'store_true'
+	'--system',
+	help = 'What HPLC system. Default Waters',
+	type = str.lower,
+	choices = ['waters', 'shimadzu'],
+	default = 'waters'
 )

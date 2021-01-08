@@ -39,10 +39,13 @@ def combined_df(files, h_system):
         logging.error('Must have at least one HPLC file and exactly one FPLC file for combined processing')
         sys.exit(2)
 
+    # keep [0] because append_chroms returns a list of [long, wide] dfs
+    h_df = assemble_hplc.append_chroms(hplc_files, h_system)[0]
+    h_df.to_csv('test_h.csv')
 
 
 def main(args):
-    cdf = combined_df(args.files, str.lower(args.system))
+    cdf = combined_df(args.files, args.system)
 
 parser = argparse.ArgumentParser(
     description = 'Combined FPLC and HPLC processing',
@@ -59,5 +62,6 @@ parser.add_argument(
     '--system',
     default = 'waters',
     help = 'What HPLC system. Default Waters',
-    type = str
+    type = str.lower,
+    choices = ['waters', 'shimadzu']
 )
