@@ -32,22 +32,33 @@ class Experiment:
     def __init__(self, id, hplc, fplc, reduce = 1):
         self.id = id
         self.hplc = hplc.iloc[::reduce]
-        self.fplc = fplc.iloc[::reduce]
+        self.hplc.reset_index(inplace = True, drop = True)
 
-        self.hplc.reset_index(inplace = True)
-        self.fplc.reset_index(inplace = True)
-    def __repr__(self):
-        if self.fplc is not None:
-            combined = 'HPLC and FPLC data.'
+        if fplc is not None:
+            self.combined = True
+            self.fplc = fplc.iloc[::reduce]
+            self.fplc.reset_index(inplace = True, drop = True)
         else:
-            combined = 'HPLC data only.'
-        return f'Experiment "{self.id}" with {combined}'
+            self.combined = False
+    def __repr__(self):
+        if self.combined:
+            data_types = 'HPLC and FPLC data.'
+        else:
+            data_types = 'HPLC data only.'
+        return f'Experiment "{self.id}" with {data_types}'
+
+    def show_tables(self):
+        print(self.hplc)
+        if self.combined:
+            print(self.fplc)
 
     def upload_to_couchdb(self, db):
         try:
             h_json = self.hplc.to_json()
-            if self.fplc is not None:
+            if self.combined:
                 f_json = self.fplc.to_json()
+            else:
+                f_json = ''
 
             doc = {
                 '_id': self.id,
@@ -100,6 +111,21 @@ class Experiment:
         return(plotly_graphs)
 
 #3 Misc db functions -----------------------------------------------------------
+
+def pull_experiment(db, id):
+    doc = db.get(id)
+    hplc = pd.read_json(doc['hplc'])
+    try:
+        fplc = pd.read_json(doc['fplc'])
+    except ValueError:
+        fplc = None
+
+    return Experiment(
+        id = doc['_id'],
+        hplc = hplc,
+        fplc = fplc,
+        reduce = 1
+    )
 
 def collect_experiments(directory, db, reduce = 1):
     list_of_dirs = []

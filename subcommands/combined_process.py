@@ -7,7 +7,7 @@ import logging
 import pandas as pd
 
 
-def combined_df(experiment, files, h_system):
+def combined_df(files, h_system):
     # including fplc in system extensions for ~*~* futureproofing *~*~
     if h_system == 'shimadzu':
         logging.error('Combined processing not currently supported for Shimadzu instruments')
@@ -64,14 +64,21 @@ def combined_df(experiment, files, h_system):
 
 
 def main(args):
-    logging.info('Making combined dataframe')
-    c_df = combined_df(args.experiment, args.files, args.system)
-    logging.info('Done with df. Making and uploading experiment.')
-    test_exp = backend.Experiment('test', c_df[0], c_df[1], 1)
-    print(test_exp)
-
     db = backend.init_db(config.config)
-    test_exp.upload_to_couchdb(db)
+
+    logging.info('Making combined dataframe')
+    c_df = combined_df(args.files, args.system)
+    logging.info('Done with df. Making and uploading experiment.')
+    test = backend.Experiment(args.experiment, c_df[0], c_df[1])
+    test.upload_to_couchdb(db)
+
+    just_h = backend.pull_experiment(db, 'test')
+    print(just_h)
+    just_h.show_tables()
+
+    both_test = backend.pull_experiment(db, 'testboth')
+    print(both_test)
+    both_test.show_tables()
 
 parser = argparse.ArgumentParser(
     description = 'Combined FPLC and HPLC processing',
