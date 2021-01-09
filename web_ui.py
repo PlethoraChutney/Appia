@@ -3,7 +3,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import urllib
-from subcommands.backend import Experiment, collect_experiments, init_db, update_experiment_list
+from subcommands.backend import Experiment, collect_experiments, init_db, update_experiment_list, pull_experiment
 from subcommands.config import config
 
 db = init_db(config)
@@ -130,17 +130,17 @@ def update_output(hash):
         experiment_name_list = hash_string.split('+')
 
         if len(experiment_name_list) == 1:
-            return Experiment(db.get(experiment_name_list[0])).get_plotly()
+            return pull_experiment(db, experiment_name_list[0]).get_plotly()
 
-        experiment_list = [Experiment(db.get(x)) for x in experiment_name_list]
+        experiment_list = [pull_experiment(db, x) for x in experiment_name_list]
         return Experiment(experiment_list).get_plotly()
 
 # Make data downloadable
 
-@app.callback(
-    dash.dependencies.Output('download-link', 'href'),
-    [dash.dependencies.Input('root-location', 'hash')]
-)
+# @app.callback(
+#     dash.dependencies.Output('download-link', 'href'),
+#     [dash.dependencies.Input('root-location', 'hash')]
+# )
 def update_download_link(hash):
     df = Experiment(db.get(hash.replace('#', ''))).as_pandas_df()
     csv_string = df.to_csv(index=False, encoding = 'utf-8')
@@ -148,4 +148,4 @@ def update_download_link(hash):
     return csv_string
 
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=True)

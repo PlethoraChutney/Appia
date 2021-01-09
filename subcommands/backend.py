@@ -73,7 +73,16 @@ class Experiment:
 # * 2.2 Experiment graph production --------------------------------------------
 
     def get_plotly(self):
-        df = self.as_pandas_df()
+        if self.combined:
+            pass
+        else:
+            return self.get_hplc()
+
+    def get_hplc(self):
+        hplc = self.hplc
+        hplc['Normalized'] = hplc.groupby(['Sample', 'Channel']).transform(lambda x: ((x - x.min()) / (x.max() - x.min())))['Signal'].tolist()
+        hplc.fillna(0, inplace = True)
+        
         graphs = {}
         plotly_graphs = []
         # Plotly graphs are built trace by trace, unlike R, where you specify
@@ -81,20 +90,20 @@ class Experiment:
         # in R but you build each sample line individually in python). So we need
         # to loop over channels, and we need to loop over normalzied or raw data.
         # That's what these two set of nested for loops do.
-        for channel in df['Channel'].unique():
+        for channel in hplc['Channel'].unique():
             data = []
-            df_channel = df[df.Channel == channel]
-            for level in df_channel['Sample'].unique():
-                df_level = df_channel[df_channel.Sample == level]
-                trace = {'x': df_level['Time'], 'y': df_level['Signal'], 'name': level, 'type': 'scatter'}
+            hplc_channel = hplc[hplc.Channel == channel]
+            for level in hplc_channel['Sample'].unique():
+                hplc_level = hplc_channel[hplc_channel.Sample == level]
+                trace = {'x': hplc_level['mL'], 'y': hplc_level['Signal'], 'name': level, 'type': 'scatter'}
                 data.append(trace)
             graphs[channel] = data
-        for channel in df['Channel'].unique():
+        for channel in hplc['Channel'].unique():
             data = []
-            df_channel = df[df.Channel == channel]
-            for level in df_channel['Sample'].unique():
-                df_level = df_channel[df_channel.Sample == level]
-                trace = {'x': df_level['Time'], 'y': df_level['Normalized'], 'name': level, 'type': 'scatter'}
+            hplc_channel = hplc[hplc.Channel == channel]
+            for level in hplc_channel['Sample'].unique():
+                hplc_level = hplc_channel[hplc_channel.Sample == level]
+                trace = {'x': hplc_level['mL'], 'y': hplc_level['Normalized'], 'name': level, 'type': 'scatter'}
                 data.append(trace)
             graphs[f'Normalized {channel}'] = data
         # Return html elements, not raw plotly graphs
@@ -108,7 +117,7 @@ class Experiment:
                 }
             ))
 
-        return(plotly_graphs)
+        return plotly_graphs
 
 #3 Misc db functions -----------------------------------------------------------
 
@@ -178,7 +187,7 @@ parser = argparse.ArgumentParser(
 )
 parser.set_defaults(func = main)
 parser.add_argument(
-    '-l', '--get-list',
+    '-l', '--list',
     help = 'Print list of all experiments in database',
     action = 'store_true'
 )
