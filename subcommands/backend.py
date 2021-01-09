@@ -28,105 +28,36 @@ def init_db(config):
     return(db)
 
 # 2 Experiment class -----------------------------------------------------------
-# * 2.1 Experiment I/O ---------------------------------------------------------
 class Experiment:
-    def __init__(self, input, reduce = 1):
-        logging.debug(type(input))
-        if type(input) == couchdb.client.Document:
-            self.exptype = 'hplc'
-            self.id = input['_id']
-            self.time = input['time']
-            self.signal = input['signal']
-            self.normalized = input['normalized']
-            self.channel = input['channel']
-            self.sample = input['sample']
-        # Lists are given to Experiment() when we're merging several datasets
-        elif isinstance(input, list):
-            self.exptype = 'hplc'
-            list_of_dfs = [x.as_pandas_df() for x in input]
-            merged_df = pd.concat(list_of_dfs)
-            self.time = merged_df['Time'].tolist()
-            self.signal = merged_df['Signal'].tolist()
-            self.channel = merged_df['Channel'].tolist()
-            self.sample = merged_df['Sample'].tolist()
-            self.normalized = merged_df['Normalized'].tolist()
+    def __init__(self, id, hplc, fplc, reduce = 1):
+        self.id = id
+        self.hplc = hplc.iloc[::reduce]
+        self.fplc = fplc.iloc[::reduce]
 
-        # tuples are from combined experiments
-        elif isinstance(input, tuple):
-            if reduce != 1:
-                # extremely large datasets, like large-scale expressions, typically
-                # do not need the quarter-second or half-second resolution afforded
-                # by the HPLC. We can decimate these datasets to make them load
-                # faster in the web interface and other programs.
-                input[0] = in_df.iloc[::reduce]
-
-            self.exptype = 'combined'
-            self.id = input[1]
-            self.volume = input[0]['mL'].tolist()
-            self.cv = input[0]['Column Volume'].tolist()
-            self.sample = input[0]['Sample'].tolist()
-            self.channel = input[0]['Channel'].tolist()
-            self.signal = input[0]['Signal'].tolist()
-
-        # Directories are given to Experiment() when we're first adding csv files
-        # to the couchdb database
-        elif isinstance(input, str) and os.path.isdir(input):
-            self.exptype = 'hplc'
-            self.id = os.path.split(input)[-1].replace('_processed', '')
-            in_df = pd.read_csv(os.path.join(input, 'long_chromatograms.csv'))
-            in_df['Normalized'] = in_df.groupby(['Sample', 'Channel']).transform(lambda x: ((x - x.min()) / (x.max() - x.min())))['Signal'].tolist()
-            in_df.fillna(0, inplace = True)
-
-            if reduce != 1:
-                in_df = in_df.iloc[::reduce]
-
-            self.time = in_df['Time'].tolist()
-            self.signal = in_df['Signal'].tolist()
-            self.channel = in_df['Channel'].tolist()
-            self.sample = in_df['Sample'].tolist()
-            self.normalized = in_df['Normalized'].tolist()
+        self.hplc.reset_index(inplace = True)
+        self.fplc.reset_index(inplace = True)
+    def __repr__(self):
+        if self.fplc is not None:
+            combined = 'HPLC and FPLC data.'
         else:
-            raise TypeError('Input is not a couchdb or csv')
+            combined = 'HPLC data only.'
+        return f'Experiment "{self.id}" with {combined}'
 
-    def as_pandas_df(self):
-        if self.exptype == 'hplc':
-            out_df = pd.DataFrame(
-                {
-                    'Time': self.time,
-                    'Signal': self.signal,
-                    'Normalized': self.normalized,
-                    'Channel': self.channel,
-                    'Sample': self.sample
-                }
-            )
-        elif self.exptype == 'combined':
-            out_df = pd.DataFrame(
-                {
-                    'Signal': self.signal,
-                    'mL': self.volume,
-                    'Column Volume': self.cv,
-                    'Sample': self.sample,
-                    'Channel': self.channel
-                }
-            )
-        return out_df
-
-    def __store_in_db(self, db):
-        doc = {
-            '_id': self.id,
-            'time': self.time,
-            'signal': self.signal,
-            'normalized': self.normalized,
-            'channel': self.channel,
-            'sample': self.sample
-        }
-        db.save(doc)
-
-    def add_to_db(self, db):
+    def upload_to_couchdb(self, db):
         try:
-            self.__store_in_db(db)
-        except:
-            logging.error('Experiment already in database! Rerun this script with --rename to add it to the database.')
+            h_json = self.hplc.to_json()
+            if self.fplc is not None:
+                f_json = self.fplc.to_json()
+
+            doc = {
+                '_id': self.id,
+                'hplc': h_json,
+                'fplc': f_json,
+            }
+
+            db.save(doc)
+        except couchdb.http.ResourceConflict:
+            logging.error(f'Experiment "{self.id}" already in database.')
 
 # * 2.2 Experiment graph production --------------------------------------------
 
@@ -168,10 +99,7 @@ class Experiment:
 
         return(plotly_graphs)
 
-    def __repr__(self):
-        return repr(self.as_pandas_df())
-
-# 3 Misc db functions ----------------------------------------------------------
+#3 Misc db functions -----------------------------------------------------------
 
 def collect_experiments(directory, db, reduce = 1):
     list_of_dirs = []

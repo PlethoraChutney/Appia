@@ -1,4 +1,4 @@
-from subcommands import assemble_hplc, assemble_fplc, backend
+from subcommands import assemble_hplc, assemble_fplc, backend, config
 from glob import glob
 import os
 import sys
@@ -56,21 +56,22 @@ def combined_df(experiment, files, h_system):
         logging.error('Please re-export your HPLC data with the instrument method included. This is needed to calculate volume and CV for comparison with SEC data, which is reported in volume.')
         sys.exit(4)
 
-    f_df['Channel'] = '!SEC'
+    # Get the same columns in each df
     f_df['Sample'] = f_df['inst_frac']
     h_df.drop(['Time'], inplace = True, axis = 1)
     f_df.drop(['Fraction', 'frac_mL', 'inst_frac'], inplace = True, axis = 1)
-
-    c_df = pd.concat([h_df, f_df])
-    return c_df
+    return (h_df, f_df)
 
 
 def main(args):
     logging.info('Making combined dataframe')
     c_df = combined_df(args.experiment, args.files, args.system)
     logging.info('Done with df. Making and uploading experiment.')
-    test_exp = backend.Experiment((c_df, f'Combined: {args.experiment}'))
+    test_exp = backend.Experiment('test', c_df[0], c_df[1], 1)
     print(test_exp)
+
+    db = backend.init_db(config.config)
+    test_exp.upload_to_couchdb(db)
 
 parser = argparse.ArgumentParser(
     description = 'Combined FPLC and HPLC processing',
