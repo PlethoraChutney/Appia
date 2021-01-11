@@ -8,6 +8,7 @@ import logging
 import argparse
 import dash_core_components as dcc
 import dash_html_components as html
+import plotly.express as px
 from subcommands.config import config
 
 # 1 Database initialization ----------------------------------------------------
@@ -80,7 +81,6 @@ class Experiment:
 
     def get_hplc(self):
         hplc = self.hplc
-        hplc.fillna(0, inplace = True)
 
         graphs = {}
         plotly_graphs = []
@@ -89,31 +89,24 @@ class Experiment:
         # in R but you build each sample line individually in python). So we need
         # to loop over channels, and we need to loop over normalzied or raw data.
         # That's what these two set of nested for loops do.
-        for channel in hplc['Channel'].unique():
-            data = []
-            hplc_channel = hplc[hplc.Channel == channel]
-            for level in hplc_channel['Sample'].unique():
-                hplc_level = hplc_channel[hplc_channel.Sample == level]
-                trace = {'x': hplc_level['mL'], 'y': hplc_level['Signal'], 'name': level, 'type': 'scatter'}
-                data.append(trace)
-            graphs[channel] = data
-        for channel in hplc['Channel'].unique():
-            data = []
-            hplc_channel = hplc[hplc.Channel == channel]
-            for level in hplc_channel['Sample'].unique():
-                hplc_level = hplc_channel[hplc_channel.Sample == level]
-                trace = {'x': hplc_level['mL'], 'y': hplc_level['Normalized'], 'name': level, 'type': 'scatter'}
-                data.append(trace)
-            graphs[f'Normalized {channel}'] = data
+        for data_type in ['Signal', 'Normalized']:
+            fig = px.line(
+                data_frame = hplc,
+                x = 'mL',
+                y = data_type,
+                color = 'Sample',
+                facet_row = 'Channel',
+                template = 'plotly_white'
+            )
+            fig.layout.yaxis2.update(matches = None)
+            graphs[data_type] = fig
+
         # Return html elements, not raw plotly graphs
         for channel in graphs.keys():
             plotly_graphs.append(dcc.Graph(
                 style={'height': 600},
                 id=f'channel-{channel}',
-                figure={
-                    'data': graphs[channel],
-                    'layout': {'title': f'{channel}', }
-                }
+                figure=graphs[channel]
             ))
 
         return plotly_graphs
