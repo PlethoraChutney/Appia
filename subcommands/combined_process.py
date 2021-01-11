@@ -57,9 +57,9 @@ def combined_df(files, h_system):
         sys.exit(4)
 
     # Get the same columns in each df
-    f_df['Sample'] = f_df['inst_frac']
+    f_df['Fraction'] = f_df['inst_frac']
     h_df.drop(['Time'], inplace = True, axis = 1)
-    f_df.drop(['Fraction', 'frac_mL', 'inst_frac'], inplace = True, axis = 1)
+    f_df.drop(['frac_mL', 'inst_frac'], inplace = True, axis = 1)
     return (h_df, f_df)
 
 

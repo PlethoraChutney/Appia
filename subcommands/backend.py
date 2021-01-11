@@ -84,7 +84,7 @@ class Experiment:
                 data_frame = fplc,
                 x = 'mL',
                 y = 'Signal',
-                color = 'Sample',
+                color = 'Fraction',
                 template = 'plotly_white'
             )
             fplc_graph.add_trace(
@@ -93,7 +93,8 @@ class Experiment:
                     y = fplc['Signal'],
                     mode = 'lines',
                     showlegend = False,
-                    line = {'color': 'black'}
+                    line = {'color': 'black'},
+                    hovertext= fplc['Fraction']
                 )
             )
             combined_graphs['FPLC'] = fplc_graph
