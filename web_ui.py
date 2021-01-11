@@ -3,7 +3,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import urllib
-from subcommands.backend import Experiment, collect_experiments, init_db, update_experiment_list, pull_experiment
+from subcommands.backend import Experiment, collect_hplc, init_db, update_experiment_list, pull_experiment
 from subcommands.config import config
 
 db = init_db(config)

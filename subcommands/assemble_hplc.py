@@ -217,7 +217,7 @@ def main(args):
 			from subcommands import backend
 
 			db = backend.init_db(config.config)
-			backend.collect_experiments(os.path.abspath(new_fullpath), db, args.reduce)
+			backend.collect_hplc(os.path.abspath(new_fullpath), db, args.reduce)
 		except ModuleNotFoundError:
 			logging.error('No config. Skipping visualization db.')
 

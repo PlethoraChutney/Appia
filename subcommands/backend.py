@@ -82,7 +82,7 @@ class Experiment:
         hplc = self.hplc
         hplc['Normalized'] = hplc.groupby(['Sample', 'Channel']).transform(lambda x: ((x - x.min()) / (x.max() - x.min())))['Signal'].tolist()
         hplc.fillna(0, inplace = True)
-        
+
         graphs = {}
         plotly_graphs = []
         # Plotly graphs are built trace by trace, unlike R, where you specify
@@ -119,6 +119,11 @@ class Experiment:
 
         return plotly_graphs
 
+    def get_fplc(self):
+        fplc = self.fplc
+
+
+
 #3 Misc db functions -----------------------------------------------------------
 
 def pull_experiment(db, id):
@@ -136,7 +141,7 @@ def pull_experiment(db, id):
         reduce = 1
     )
 
-def collect_experiments(directory, db, reduce = 1):
+def collect_hplc(directory, db, reduce = 1):
     list_of_dirs = []
     list_of_experiments = []
 
@@ -144,12 +149,14 @@ def collect_experiments(directory, db, reduce = 1):
         if os.path.isfile(os.path.join(sub_dir, 'long_chromatograms.csv')):
             list_of_dirs.append(os.path.abspath(os.path.join(directory, sub_dir)))
 
-    for experiment in list_of_dirs:
-        list_of_experiments.append(Experiment(experiment, reduce))
+    for hplc_dir in list_of_dirs:
+        id = os.path.split(hplc_dir)[-1].replace('_processed', '')
+        hplc = pd.read_csv(os.path.join(hplc_dir, 'long_chromatograms.csv'))
+        list_of_experiments.append(Experiment(id, hplc, None, reduce))
 
     for experiment in list_of_experiments:
         logging.info(f'Adding experiment {experiment.id}')
-        experiment.add_to_db(db)
+        experiment.upload_to_couchdb(db)
 
 def update_experiment_list(db):
     list_of_experiments = []
@@ -171,7 +178,7 @@ def three_column_print(in_list):
 def main(args):
     db = init_db(config)
 
-    if args.get_list:
+    if args.list:
         three_column_print(update_experiment_list(db))
 
     if args.delete:
@@ -179,7 +186,7 @@ def main(args):
             remove_experiment(db, exp)
 
     if args.mass_add:
-        collect_experiments(args.mass_add, db)
+        collect_hplc(args.mass_add, db)
 
 parser = argparse.ArgumentParser(
     description = 'Database management',
