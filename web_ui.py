@@ -55,7 +55,7 @@ def serve_layout():
                 className = 'graph-title',
                 children = [
                 html.H1(
-                    children='Baconguis HPLC Reader',
+                    children='Baconguis Chromatography Reader',
                     style = {'textAlign': 'center'}
                 ),
                 html.Div(

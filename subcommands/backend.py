@@ -112,7 +112,7 @@ class Experiment:
             return self.get_hplc()[0]
 
     def get_hplc(self):
-        hplc = self.hplc
+        hplc = self.hplc.sort_values(['Sample', 'mL'], ascending = [True, True])
 
         raw_graphs = {}
         html_graphs = []
