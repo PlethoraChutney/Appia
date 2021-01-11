@@ -11,9 +11,6 @@ setwd(args[1])
 experiment_name = str_remove(basename(args[1]), '_processed')
 
 data <- read.csv(file = long_trace_filename, header = TRUE) %>%
-  group_by(Channel, Sample) %>%
-  mutate(Normalized = (Signal-min(Signal))/(max(Signal) - min(Signal))) %>%
-  ungroup() %>%
   mutate(Channel = if_else(grepl('ex280/em350', Channel), 'Trp',
                            if_else(grepl('ex488/em509', Channel), 'GFP', as.character(Channel))))
 

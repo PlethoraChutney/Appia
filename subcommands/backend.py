@@ -80,7 +80,6 @@ class Experiment:
 
     def get_hplc(self):
         hplc = self.hplc
-        hplc['Normalized'] = hplc.groupby(['Sample', 'Channel']).transform(lambda x: ((x - x.min()) / (x.max() - x.min())))['Signal'].tolist()
         hplc.fillna(0, inplace = True)
 
         graphs = {}
@@ -113,7 +112,7 @@ class Experiment:
                 id=f'channel-{channel}',
                 figure={
                     'data': graphs[channel],
-                    'layout': {'title': f'{channel}'}
+                    'layout': {'title': f'{channel}', }
                 }
             ))
 

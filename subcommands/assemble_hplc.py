@@ -54,6 +54,7 @@ def append_chroms(file_list, system):
 			channel_ID = str(sample_info.loc[data_row]['Channel'])
 			to_append['Channel'] = channel_ID
 			to_append['Sample'] = sample_name
+			to_append['Normalized'] = to_append.groupby(['Sample', 'Channel']).transform(lambda x: ((x - x.min()) / (x.max() - x.min())))['Signal'].tolist()
 
 			if 'Instrument Method Name' in sample_info:
 				method = str(sample_info.loc[data_row]['Instrument Method Name'])
