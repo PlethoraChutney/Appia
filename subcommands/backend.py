@@ -9,6 +9,7 @@ import argparse
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
+import plotly.graph_objects as go
 from subcommands.config import config
 
 # 1 Database initialization ----------------------------------------------------
@@ -75,15 +76,46 @@ class Experiment:
 
     def get_plotly(self):
         if self.combined:
-            pass
+            combined_graphs = {}
+
+            fplc = self.fplc
+
+            fplc_graph = px.area(
+                data_frame = fplc,
+                x = 'mL',
+                y = 'Signal',
+                color = 'Sample',
+                template = 'plotly_white'
+            )
+            combined_graphs['FPLC'] = fplc_graph
+
+            hplc_graphs = self.get_hplc()[1]
+            for data_type in ['Signal', 'Normalized']:
+                combined_graphs[data_type] = hplc_graphs[data_type]
+
+            html_graphs = []
+            for data_type in combined_graphs.keys():
+                html_graphs.extend([
+                    html.H5(
+                        children = data_type,
+                        style = {'textAlign': 'center'}
+                    ),
+                    dcc.Graph(
+                        style={'height': 600},
+                        id=f'data-{data_type}',
+                        figure=combined_graphs[data_type]
+                    )
+                ])
+            return html_graphs
+
         else:
-            return self.get_hplc()
+            return self.get_hplc()[0]
 
     def get_hplc(self):
         hplc = self.hplc
 
-        graphs = {}
-        plotly_graphs = []
+        raw_graphs = {}
+        html_graphs = []
         for data_type in ['Signal', 'Normalized']:
             fig = px.line(
                 data_frame = hplc,
@@ -94,11 +126,10 @@ class Experiment:
                 template = 'plotly_white'
             )
             fig.layout.yaxis2.update(matches = None)
-            graphs[data_type] = fig
+            raw_graphs[data_type] = fig
 
-        # Return html elements, not raw plotly graphs
-        for data_type in graphs.keys():
-            plotly_graphs.extend([
+        for data_type in raw_graphs.keys():
+            html_graphs.extend([
                 html.H5(
                     children = data_type,
                     style = {'textAlign': 'center'}
@@ -106,14 +137,12 @@ class Experiment:
                 dcc.Graph(
                     style={'height': 600},
                     id=f'data-{data_type}',
-                    figure=graphs[data_type]
+                    figure=raw_graphs[data_type]
                 )
             ])
 
-        return plotly_graphs
+        return (html_graphs, raw_graphs)
 
-    def get_fplc(self):
-        fplc = self.fplc
 
 
 

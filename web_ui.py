@@ -130,7 +130,8 @@ def update_output(hash):
         experiment_name_list = hash_string.split('+')
 
         if len(experiment_name_list) == 1:
-            return pull_experiment(db, experiment_name_list[0]).get_plotly()
+            graphs = pull_experiment(db, experiment_name_list[0]).get_plotly()
+            return graphs
 
         experiment_list = [pull_experiment(db, x) for x in experiment_name_list]
         return Experiment(experiment_list).get_plotly()

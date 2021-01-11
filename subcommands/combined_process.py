@@ -72,14 +72,6 @@ def main(args):
     test = backend.Experiment(args.experiment, c_df[0], c_df[1])
     test.upload_to_couchdb(db)
 
-    just_h = backend.pull_experiment(db, 'test')
-    print(just_h)
-    just_h.show_tables()
-
-    both_test = backend.pull_experiment(db, 'testboth')
-    print(both_test)
-    both_test.show_tables()
-
 parser = argparse.ArgumentParser(
     description = 'Combined FPLC and HPLC processing',
     add_help=False
