@@ -87,6 +87,15 @@ class Experiment:
                 color = 'Sample',
                 template = 'plotly_white'
             )
+            fplc_graph.add_trace(
+                go.Scatter(
+                    x = fplc['mL'],
+                    y = fplc['Signal'],
+                    mode = 'lines',
+                    showlegend = False,
+                    line = {'color': 'black'}
+                )
+            )
             combined_graphs['FPLC'] = fplc_graph
 
             hplc_graphs = self.get_hplc()[1]
