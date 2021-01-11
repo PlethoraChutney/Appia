@@ -80,6 +80,8 @@ class Experiment:
 
             fplc = self.fplc
 
+            # this isn't ideal, as turning off only specific (i.e., odd) fractions
+            # creates strange fill behavior. Still, there's no easier way to do it.
             fplc_graph = px.area(
                 data_frame = fplc,
                 x = 'mL',
