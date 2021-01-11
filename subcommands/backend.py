@@ -84,11 +84,6 @@ class Experiment:
 
         graphs = {}
         plotly_graphs = []
-        # Plotly graphs are built trace by trace, unlike R, where you specify
-        # a set of data over which to break lines (i.e., you say "Color by sample"
-        # in R but you build each sample line individually in python). So we need
-        # to loop over channels, and we need to loop over normalzied or raw data.
-        # That's what these two set of nested for loops do.
         for data_type in ['Signal', 'Normalized']:
             fig = px.line(
                 data_frame = hplc,
@@ -102,12 +97,18 @@ class Experiment:
             graphs[data_type] = fig
 
         # Return html elements, not raw plotly graphs
-        for channel in graphs.keys():
-            plotly_graphs.append(dcc.Graph(
-                style={'height': 600},
-                id=f'channel-{channel}',
-                figure=graphs[channel]
-            ))
+        for data_type in graphs.keys():
+            plotly_graphs.extend([
+                html.H5(
+                    children = data_type,
+                    style = {'textAlign': 'center'}
+                ),
+                dcc.Graph(
+                    style={'height': 600},
+                    id=f'data-{data_type}',
+                    figure=graphs[data_type]
+                )
+            ])
 
         return plotly_graphs
 
