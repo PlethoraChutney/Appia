@@ -271,6 +271,10 @@ def update_db(db):
 
     logging.info(f'Uploading {upgraded_experiments}')
 
+    for exp in upgraded_experiments:
+        remove_experiment(db, exp.id)
+        exp.upload_to_couchdb(db)
+
 
 def main(args):
     db = init_db(config)
