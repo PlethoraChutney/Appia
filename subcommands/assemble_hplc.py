@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import sys
 import os
 import shutil
@@ -43,12 +44,14 @@ def append_chroms(file_list, system):
 				delim_whitespace = True,
 				skiprows = header_rows,
 				names = ["Time", "Signal"],
-				header = None
+				header = None,
+				dtype = {'Time': np.float64, 'Signal': np.float64}
 			)
 			sample_info = pd.read_csv(
 				file,
 				delim_whitespace = True,
-				nrows = header_rows
+				nrows = header_rows,
+				dtype = str
 			)
 			sample_name = str(sample_info.loc[data_row]['SampleName'])
 			channel_ID = str(sample_info.loc[data_row]['Channel'])

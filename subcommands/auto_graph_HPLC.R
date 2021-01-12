@@ -16,7 +16,7 @@ data <- read.csv(file = long_trace_filename, header = TRUE) %>%
 
 # 2 Plot ------------------------------------------------------------------
 
-if (length(levels(data$Sample)) > 12) {
+if (length(levels(as.factor(data$Sample))) > 12) {
   color_scheme = scale_color_viridis_d()
 } else {
   color_scheme = scale_color_manual(values = c(
