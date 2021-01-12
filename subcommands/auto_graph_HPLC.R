@@ -52,6 +52,7 @@ ggplot(data = data, aes(x = Time, y = Normalized)) +
   geom_line(aes(color = Sample)) +
   facet_grid(Channel ~ ., scales = "free") +
   xlab("Time (minutes)") +
+  coord_cartesian(ylim = c(0, 1)) +
   ggtitle(str_c(experiment_name, ' Normalized Signal')) +
   ylab("Normalized Signal")
 ggsave('normalized_traces.pdf', width = 7, height = 5)
