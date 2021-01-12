@@ -33,6 +33,7 @@ def init_db(config):
 class Experiment:
     def __init__(self, id, hplc, fplc, reduce = 1):
         self.id = id
+        self.version = 1
         self.hplc = hplc.iloc[::reduce]
         self.hplc.reset_index(inplace = True, drop = True)
 
@@ -47,7 +48,7 @@ class Experiment:
             data_types = 'HPLC and FPLC data.'
         else:
             data_types = 'HPLC data only.'
-        return f'Experiment "{self.id}" with {data_types}'
+        return f'Experiment "{self.id}", version {self.version}, with {data_types}'
 
     def show_tables(self):
         print(self.hplc)
@@ -64,6 +65,7 @@ class Experiment:
 
             doc = {
                 '_id': self.id,
+                'version': self.version,
                 'hplc': h_json,
                 'fplc': f_json,
             }
@@ -168,12 +170,13 @@ def pull_experiment(db, id):
     except ValueError:
         fplc = None
 
-    return Experiment(
-        id = doc['_id'],
-        hplc = hplc,
-        fplc = fplc,
-        reduce = 1
-    )
+    if doc['version'] == 1:
+        return Experiment(
+            id = doc['_id'],
+            hplc = hplc,
+            fplc = fplc,
+            reduce = 1
+        )
 
 def concat_experiments(exp_list):
     hplcs = []
@@ -222,6 +225,53 @@ def three_column_print(in_list):
     for i in in_list:
         print('{:<45}{:<45}{}'.format(i, next(in_list, ""), next(in_list, '')))
 
+def update_db(db):
+    if input('Did you back up your couchDB before running this option? Type "I backed up my database".\n').lower() != 'i backed up my database':
+        logging.error('Back up your database before upgrading.')
+        return
+
+    exp_list = update_experiment_list(db)
+    upgraded_experiments = []
+    for name in exp_list:
+        e = db.get(name)
+        try:
+
+            logging.info(f'Skipping modern experiment {e.id} (version {e.version})')
+        # old experiments didn't have a version number
+        except AttributeError:
+            logging.warning('Guessing flow rate based on total run time.')
+            if max(e['time']) < 20:
+                flow_rate = 0.3
+            else:
+                flow_rate = 0.5
+
+            hplc = pd.DataFrame(
+                {
+                    'Time': e['time'],
+                    'Signal': e['signal'],
+                    'Channel': e['channel'],
+                    'Sample': e['sample']
+                }
+            )
+
+            hplc = hplc.astype({
+                'Time': np.float64,
+                'Signal': np.float64,
+                'Channel': str,
+                'Sample': str
+            })
+            hplc['mL'] = hplc['Time'] * flow_rate
+            hplc['Normalized'] = hplc.groupby(['Sample', 'Channel']).transform(lambda x: ((x - x.min()) / (x[hplc.Time > 0.51].max() - x.min())))['Signal'].tolist()
+
+            new_exp = Experiment(e.id, hplc, None)
+
+            logging.debug(f'{e.id} becomes {new_exp}')
+
+            upgraded_experiments.append(new_exp)
+
+    logging.info(f'Uploading {upgraded_experiments}')
+
+
 def main(args):
     db = init_db(config)
 
@@ -234,6 +284,9 @@ def main(args):
 
     if args.mass_add:
         collect_hplc(args.mass_add, db)
+
+    if args.upgrade:
+        update_db(db)
 
 parser = argparse.ArgumentParser(
     description = 'Database management',
@@ -256,4 +309,10 @@ parser.add_argument(
     help = 'Add multiple experiments or multiple directories of experiments',
     type = str,
     nargs = '+'
+)
+
+parser.add_argument(
+    '--upgrade',
+    help = 'Download all experiments in the couchdb and upgrade them to modern, combined experiments. This is destructive! Backup first!',
+    action = 'store_true'
 )
