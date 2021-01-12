@@ -216,10 +216,18 @@ def main(args):
 	if not args.no_db:
 		logging.info('Adding experiment to visualization database...')
 		try:
-			from subcommands import backend
+			from subcommands import backend, config
 
 			db = backend.init_db(config.config)
-			backend.collect_hplc(os.path.abspath(new_fullpath), db, args.reduce)
+			if args.rename:
+				to_upload = backend.Experiment(args.rename, long_and_wide[0], None)
+			else:
+				to_upload = backend.Experiment(
+					id = os.path.split(new_fullpath)[-1].replace('_processed', ''),
+					hplc = long_and_wide[0],
+					fplc = None
+				)
+			to_upload.upload_to_couchdb(db)
 		except ModuleNotFoundError:
 			logging.error('No config. Skipping visualization db.')
 

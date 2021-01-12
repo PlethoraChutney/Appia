@@ -175,6 +175,19 @@ def pull_experiment(db, id):
         reduce = 1
     )
 
+def concat_experiments(exp_list):
+    hplcs = []
+
+    for exp in exp_list:
+        hplc = exp.hplc
+        hplc['Sample'] = f'{exp.id}: ' + hplc['Sample'].astype(str)
+        hplcs.append(hplc)
+
+    hplcs = pd.concat(hplcs)
+    concat_exp = Experiment('Combined', hplcs, None)
+
+    return concat_exp
+
 def collect_hplc(directory, db, reduce = 1):
     list_of_dirs = []
     list_of_experiments = []

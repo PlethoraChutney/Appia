@@ -3,7 +3,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import urllib
-from subcommands.backend import Experiment, collect_hplc, init_db, update_experiment_list, pull_experiment
+from subcommands.backend import *
 from subcommands.config import config
 
 db = init_db(config)
@@ -132,9 +132,10 @@ def update_output(hash):
         if len(experiment_name_list) == 1:
             graphs = pull_experiment(db, experiment_name_list[0]).get_plotly()
             return graphs
-
-        experiment_list = [pull_experiment(db, x) for x in experiment_name_list]
-        return Experiment(experiment_list).get_plotly()
+        else:
+            experiment_list = [pull_experiment(db, x) for x in experiment_name_list]
+            concat_experiment = concat_experiments(experiment_list)
+            return concat_experiment.get_plotly()
 
 # Make data downloadable
 
