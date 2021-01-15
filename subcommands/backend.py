@@ -73,6 +73,12 @@ class Experiment:
             db.save(doc)
         except couchdb.http.ResourceConflict:
             logging.error(f'Experiment "{self.id}" already in database.')
+            if input(f'Overwrite database copy of {self.id}? Y/N\n').lower() == 'y':
+                logging.info('Uploading new version')
+                remove_experiment(db, self.id)
+                self.upload_to_couchdb(db)
+            else:
+                logging.info('Skipping database upload.')
 
 # * 2.2 Experiment graph production --------------------------------------------
 
