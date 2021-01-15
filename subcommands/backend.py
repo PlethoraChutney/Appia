@@ -88,25 +88,32 @@ class Experiment:
 
             fplc = self.fplc
 
-            # this isn't ideal, as turning off only specific (i.e., odd) fractions
-            # creates strange fill behavior. Still, there's no easier way to do it.
-            fplc_graph = px.area(
-                data_frame = fplc,
-                x = 'mL',
-                y = 'Signal',
-                color = 'Fraction',
-                template = 'plotly_white'
-            )
+            # if you don't create a bunch of seperate GO objects, the fill is
+            # screwy
+            #
+            # plotly express would work, but if you turn off a middle fraction
+            # the fill also gets weird
+            fplc_graph = go.Figure()
+            for frac in set(fplc['Fraction']):
+                fplc_graph.add_trace(
+                    go.Scatter(
+                        x = fplc[fplc.Fraction == frac]['mL'],
+                        y = fplc[fplc.Fraction == frac]['Signal'],
+                        mode = 'lines',
+                        fill = 'tozeroy',
+                        visible = 'legendonly'
+                    )
+                )
             fplc_graph.add_trace(
                 go.Scatter(
                     x = fplc['mL'],
                     y = fplc['Signal'],
                     mode = 'lines',
                     showlegend = False,
-                    line = {'color': 'black'},
-                    hovertext= fplc['Fraction']
+                    line = {'color': 'black'}
                 )
             )
+            fplc_graph.update_layout(template = 'plotly_white')
             combined_graphs['FPLC'] = fplc_graph
 
             hplc_graphs = self.get_hplc()[1]
