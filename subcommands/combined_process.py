@@ -72,8 +72,8 @@ def main(args):
     logging.info('Done with df. Making and uploading experiment.')
     to_upload = backend.Experiment(args.experiment, c_df[0], c_df[1])
     to_upload.get_plotly()
-    # logging.debug(to_upload)
-    # to_upload.upload_to_couchdb(db)
+    logging.debug(to_upload)
+    to_upload.upload_to_couchdb(db)
 
 parser = argparse.ArgumentParser(
     description = 'Combined FPLC and HPLC processing',
