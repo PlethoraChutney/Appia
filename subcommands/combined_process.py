@@ -40,26 +40,27 @@ def combined_df(files, h_system):
             logging.error(f'Unexpected file extension in {file}. Please check your system and file arguments.')
             sys.exit(1)
 
-    if len(hplc_files) == 0 or len(fplc_files) != 1:
-        logging.error('Must have at least one HPLC file and exactly one FPLC file for combined processing')
-        sys.exit(2)
-
     # keep [0] because append_chroms returns a list of [long, wide] dfs
-    h_df = assemble_hplc.append_chroms(hplc_files, h_system)[0]
+    if hplc_files:
+        h_df = assemble_hplc.append_chroms(hplc_files, h_system)[0]
+        if 'Column Volume' not in h_df:
+            logging.error('Please re-export your HPLC data with the instrument method included. This is needed to calculate volume and CV for comparison with SEC data, which is reported in volume.')
+            sys.exit(4)
+
+        h_df.drop(['Time'], inplace = True, axis = 1)
+    else:
+        h_df = None
 
     # filter out unnecessary channels and the wash recordings from the AKTA
-    f_df = assemble_fplc.append_chroms(fplc_files)
-    f_df = f_df[f_df.Channel == 'mAU']
-    f_df = f_df[f_df.mL < 24.5]
+    if fplc_files:
+        f_df = assemble_fplc.append_chroms(fplc_files)
+        f_df = f_df[f_df.Channel == 'mAU']
+        f_df = f_df[f_df.mL < 24.5]
+        f_df['Fraction'] = f_df['inst_frac']
+        f_df.drop(['frac_mL', 'inst_frac'], inplace = True, axis = 1)
+    else:
+        f_df = None
 
-    if 'Column Volume' not in h_df:
-        logging.error('Please re-export your HPLC data with the instrument method included. This is needed to calculate volume and CV for comparison with SEC data, which is reported in volume.')
-        sys.exit(4)
-
-    # Get the same columns in each df
-    f_df['Fraction'] = f_df['inst_frac']
-    h_df.drop(['Time'], inplace = True, axis = 1)
-    f_df.drop(['frac_mL', 'inst_frac'], inplace = True, axis = 1)
     return (h_df, f_df)
 
 
@@ -69,8 +70,10 @@ def main(args):
     logging.info('Making combined dataframe')
     c_df = combined_df(args.files, args.system)
     logging.info('Done with df. Making and uploading experiment.')
-    test = backend.Experiment(args.experiment, c_df[0], c_df[1])
-    test.upload_to_couchdb(db)
+    to_upload = backend.Experiment(args.experiment, c_df[0], c_df[1])
+    to_upload.get_plotly()
+    # logging.debug(to_upload)
+    # to_upload.upload_to_couchdb(db)
 
 parser = argparse.ArgumentParser(
     description = 'Combined FPLC and HPLC processing',

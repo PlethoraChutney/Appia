@@ -33,32 +33,45 @@ def init_db(config):
 class Experiment:
     def __init__(self, id, hplc, fplc, reduce = 1):
         self.id = id
-        self.version = 1
-        self.hplc = hplc.iloc[::reduce]
-        self.hplc.reset_index(inplace = True, drop = True)
+        self.version = 2
+        if hplc is not None:
+            self.has_hplc = True
+            self.hplc = hplc.iloc[::reduce]
+            self.hplc.reset_index(inplace = True, drop = True)
+        else:
+            self.has_hplc = False
 
         if fplc is not None:
-            self.combined = True
+            self.has_fplc = True
             self.fplc = fplc.iloc[::reduce]
             self.fplc.reset_index(inplace = True, drop = True)
         else:
-            self.combined = False
+            self.has_fplc = False
     def __repr__(self):
-        if self.combined:
-            data_types = 'HPLC and FPLC data.'
-        else:
-            data_types = 'HPLC data only.'
-        return f'Experiment "{self.id}", version {self.version}, with {data_types}'
+        to_return = f'Experiment "{self.id}", version {self.version}, with '
+        if self.has_hplc:
+            to_return += 'HPLC '
+        if self.has_hplc and self.has_fplc:
+            to_return += 'and '
+        if self.has_fplc:
+            to_return += 'FPLC '
+        to_return += 'data.'
+
+        return to_return
 
     def show_tables(self):
-        print(self.hplc)
-        if self.combined:
+        if self.has_hplc:
+            print(self.hplc)
+        if self.has_fplc:
             print(self.fplc)
 
     def upload_to_couchdb(self, db):
         try:
-            h_json = self.hplc.to_json()
-            if self.combined:
+            if self.has_hplc:
+                h_json = self.hplc.to_json()
+            else:
+                h_json = ''
+            if self.has_fplc:
                 f_json = self.fplc.to_json()
             else:
                 f_json = ''
@@ -66,6 +79,8 @@ class Experiment:
             doc = {
                 '_id': self.id,
                 'version': self.version,
+                'has_fplc': self.has_fplc,
+                'has_hplc': self.has_hplc,
                 'hplc': h_json,
                 'fplc': f_json,
             }
@@ -83,66 +98,70 @@ class Experiment:
 # * 2.2 Experiment graph production --------------------------------------------
 
     def get_plotly(self):
-        if self.combined:
-            combined_graphs = {}
+        combined_graphs = {}
+        html_graphs = []
+        if self.has_fplc:
+            combined_graphs['FPLC'] = self.get_fplc()
 
-            fplc = self.fplc
-
-            # if you don't create a bunch of seperate GO objects, the fill is
-            # screwy
-            #
-            # plotly express would work, but if you turn off a middle fraction
-            # the fill also gets weird
-            fplc_graph = go.Figure()
-            for frac in set(fplc['Fraction']):
-                fplc_graph.add_trace(
-                    go.Scatter(
-                        x = fplc[fplc.Fraction == frac]['mL'],
-                        y = fplc[fplc.Fraction == frac]['Signal'],
-                        mode = 'lines',
-                        fill = 'tozeroy',
-                        visible = 'legendonly'
-                    )
-                )
-            fplc_graph.add_trace(
-                go.Scatter(
-                    x = fplc['mL'],
-                    y = fplc['Signal'],
-                    mode = 'lines',
-                    showlegend = False,
-                    line = {'color': 'black'}
-                )
-            )
-            fplc_graph.update_layout(template = 'plotly_white')
-            combined_graphs['FPLC'] = fplc_graph
-
-            hplc_graphs = self.get_hplc()[1]
+        if self.has_hplc:
+            hplc_graphs = self.get_hplc()
             for data_type in ['Signal', 'Normalized']:
                 combined_graphs[data_type] = hplc_graphs[data_type]
 
-            html_graphs = []
-            for data_type in combined_graphs.keys():
-                html_graphs.extend([
-                    html.H5(
-                        children = data_type,
-                        style = {'textAlign': 'center'}
-                    ),
-                    dcc.Graph(
-                        style={'height': 600},
-                        id=f'data-{data_type}',
-                        figure=combined_graphs[data_type]
-                    )
-                ])
-            return html_graphs
+        for data_type in combined_graphs.keys():
+            html_graphs.extend([
+                html.H5(
+                    children = data_type,
+                    style = {'textAlign': 'center'}
+                ),
+                dcc.Graph(
+                    style={'height': 600},
+                    id=f'data-{data_type}',
+                    figure=combined_graphs[data_type]
+                )
+            ])
 
-        else:
-            return self.get_hplc()[0]
+
+        return html_graphs
+
+
+    def get_fplc(self):
+        combined_graphs = {}
+
+        fplc = self.fplc
+
+        # if you don't create a bunch of seperate GO objects, the fill is
+        # screwy
+        #
+        # plotly express would work, but if you turn off a middle fraction
+        # the fill also gets weird
+        fplc_graph = go.Figure()
+        for frac in set(fplc['Fraction']):
+            fplc_graph.add_trace(
+                go.Scatter(
+                    x = fplc[fplc.Fraction == frac]['mL'],
+                    y = fplc[fplc.Fraction == frac]['Signal'],
+                    mode = 'lines',
+                    fill = 'tozeroy',
+                    visible = 'legendonly'
+                )
+            )
+        fplc_graph.add_trace(
+            go.Scatter(
+                x = fplc['mL'],
+                y = fplc['Signal'],
+                mode = 'lines',
+                showlegend = False,
+                line = {'color': 'black'}
+            )
+        )
+        fplc_graph.update_layout(template = 'plotly_white')
+        return fplc_graph
 
     def get_hplc(self):
         hplc = self.hplc.sort_values(['Sample', 'mL'], ascending = [True, True])
 
         raw_graphs = {}
-        html_graphs = []
         for data_type in ['Signal', 'Normalized']:
             fig = px.line(
                 data_frame = hplc,
@@ -155,20 +174,7 @@ class Experiment:
             fig.layout.yaxis2.update(matches = None)
             raw_graphs[data_type] = fig
 
-        for data_type in raw_graphs.keys():
-            html_graphs.extend([
-                html.H5(
-                    children = data_type,
-                    style = {'textAlign': 'center'}
-                ),
-                dcc.Graph(
-                    style={'height': 600},
-                    id=f'data-{data_type}',
-                    figure=raw_graphs[data_type]
-                )
-            ])
-
-        return (html_graphs, raw_graphs)
+        return raw_graphs
 
 
 
@@ -177,24 +183,31 @@ class Experiment:
 
 def pull_experiment(db, id):
     doc = db.get(id)
-    hplc = pd.read_json(doc['hplc'])
-    try:
+    if doc['has_hplc']:
+        hplc = pd.read_json(doc['hplc'])
+    else:
+        hplc = None
+    if doc['has_fplc']:
         fplc = pd.read_json(doc['fplc'])
-    except ValueError:
+    else:
         fplc = None
 
-    if doc['version'] == 1:
+    if doc['version'] == 2:
         return Experiment(
             id = doc['_id'],
             hplc = hplc,
             fplc = fplc,
             reduce = 1
         )
+    else:
+        logging.error('Out of date experiment. Perform db migration.')
 
 def concat_experiments(exp_list):
     hplcs = []
 
     for exp in exp_list:
+        if not self.has_hplc:
+            continue
         hplc = exp.hplc
         hplc['Sample'] = f'{exp.id}: ' + hplc['Sample'].astype(str)
         hplcs.append(hplc)
@@ -246,12 +259,22 @@ def update_db(db):
     exp_list = update_experiment_list(db)
     upgraded_experiments = []
     for name in exp_list:
+        logging.debug(f'Upgrading experiment {name}')
         e = db.get(name)
         try:
+            if e['version'] == 2:
+                logging.info(f'Skipping modern experiment {e["_id"]} (version {e["version"]})')
+            elif e["version"] == 1:
+                if e["fplc"] == '':
+                    fplc = None
+                else:
+                    fplc = pd.read_json(e["fplc"])
 
-            logging.info(f'Skipping modern experiment {e.id} (version {e.version})')
+                hplc = pd.read_json(e['hplc'])
+
+                upgraded_experiments.append(Experiment(e["_id"], hplc, fplc))
         # old experiments didn't have a version number
-        except AttributeError:
+        except KeyError:
             logging.warning('Guessing flow rate based on total run time.')
             if max(e['time']) < 20:
                 flow_rate = 0.3
