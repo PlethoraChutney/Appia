@@ -121,13 +121,33 @@ def main(args):
         for file in file_list:
             newdir = file[:-4].replace(' ', '_')
             os.mkdir(newdir)
-            subprocess.run(['python', os.path.join(script_path, "assemble_fplc.py"), file, '--copy-manual', '-o', os.path.join(newdir, "fplcs.csv")])
+            subprocess.run(['python', os.path.join(script_path, "assemble_fplc.py"), file, '--copy-manual', '-o', os.path.join(newdir, "fplcs.csv"), '-d'])
             shutil.move(file, os.path.join(newdir, file))
         sys.exit(0)
 
     logging.info('Generating compiled trace csv...')
     compiled = append_chroms(file_list)
+
     compiled.to_csv(outfile, index = False)
+
+    if not args.no_db:
+        if len(file_list) > 1:
+            logging.error('Only upload experiments with one FPLC trace. You can combine them in the web interface.')
+            sys.exit(2)
+        from subcommands import backend, config
+        logging.info('Uploading to database')
+
+        to_upload = compiled[compiled.Channel == 'mAU']
+        to_upload = to_upload[to_upload.mL < 24.5]
+        to_upload['Fraction'] = to_upload['inst_frac']
+        to_upload.drop(['frac_mL', 'inst_frac'], inplace = True, axis = 1)
+
+        id = os.path.split(file_list[0])[1][:-4].replace(' ', '_')
+
+        db = backend.init_db(config.config)
+        exp = backend.Experiment(id, None, to_upload)
+        exp.upload_to_couchdb(db)
+
     if args.wide_table:
         compiled.pivot('mL', 'Channel', 'Signal').to_csv(newdir + '_wide.csv')
     logging.info('Done with csv...')
@@ -179,6 +199,11 @@ parser.add_argument(
 parser.add_argument(
     '--wide-table',
     help= 'Save an additional table that is in \'wide\' format.',
+    action = 'store_true'
+)
+parser.add_argument(
+    '-d', '--no-db',
+    help = 'Do not upload to visualization database',
     action = 'store_true'
 )
 parser.add_argument(

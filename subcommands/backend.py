@@ -206,7 +206,7 @@ def concat_experiments(exp_list):
     hplcs = []
 
     for exp in exp_list:
-        if not self.has_hplc:
+        if not exp.has_hplc:
             continue
         hplc = exp.hplc
         hplc['Sample'] = f'{exp.id}: ' + hplc['Sample'].astype(str)
