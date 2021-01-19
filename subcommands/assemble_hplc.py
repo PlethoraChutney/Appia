@@ -33,6 +33,19 @@ def append_chroms(file_list, system):
 		'5_150': 3
 	}
 
+
+	def rename_channels(channel):
+		if 'ex280/em350' in channel:
+			return 'Trp'
+		elif 'ex488/em509' in channel:
+			return 'GFP'
+		else:
+			# the channels by default start with the name of the fluorescence
+			# detector as well as which channel letter they're assigned.
+			# i.e., '2475ChA '. We want to cut out those 8 characters as they provide
+			# no useful information
+			return channel[8:]
+
 	chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 
 	if system == 'waters':
@@ -70,6 +83,10 @@ def append_chroms(file_list, system):
 
 				to_append['mL'] = to_append['Time']*flow_rates[column]
 				to_append['Column Volume'] = to_append['mL']/column_volumes[column]
+
+			to_append = to_append.assign(
+				Channel = lambda df: df.Channel.apply(rename_channels)
+			)
 
 			chroms = chroms.append(to_append, ignore_index = False)
 	elif system == 'shimadzu':
