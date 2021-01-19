@@ -156,6 +156,7 @@ class Experiment:
             )
         )
         fplc_graph.update_layout(template = 'plotly_white')
+        fplc_graph.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
         return fplc_graph
 
     def get_hplc(self):
@@ -172,6 +173,7 @@ class Experiment:
                 template = 'plotly_white'
             )
             fig.layout.yaxis2.update(matches = None)
+            fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
             raw_graphs[data_type] = fig
 
         return raw_graphs

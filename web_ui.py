@@ -82,10 +82,7 @@ def serve_layout():
                             id = 'experiment_dropdown',
                             options = [{'label': x, 'value': x} for x in update_experiment_list(db)],
                             multi = True
-                        ),
-                        html.Hr(),
-                        html.A(html.Button('Download data', id = 'download-button'), href='',
-                        id='download-link', download='rawdata.csv', target='_blank')]
+                        )]
                     )
                 ]
             ),
@@ -137,17 +134,6 @@ def update_output(hash):
             concat_experiment = concat_experiments(experiment_list)
             return concat_experiment.get_plotly()
 
-# Make data downloadable
-
-# @app.callback(
-#     dash.dependencies.Output('download-link', 'href'),
-#     [dash.dependencies.Input('root-location', 'hash')]
-# )
-def update_download_link(hash):
-    df = Experiment(db.get(hash.replace('#', ''))).as_pandas_df()
-    csv_string = df.to_csv(index=False, encoding = 'utf-8')
-    csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
-    return csv_string
 
 if __name__ == '__main__':
     app.run_server(debug=False)
