@@ -12,7 +12,8 @@ experiment_name = str_remove(basename(args[1]), '_processed')
 
 data <- read.csv(file = long_trace_filename, header = TRUE) %>%
   mutate(Channel = if_else(grepl('ex280/em350', Channel), 'Trp',
-                           if_else(grepl('ex488/em509', Channel), 'GFP', as.character(Channel))))
+                           if_else(grepl('ex488/em509', Channel), 'GFP', as.character(Channel)))) %>% 
+  filter(Time > 0.5)
 
 # 2 Plot ------------------------------------------------------------------
 
@@ -37,21 +38,21 @@ if (length(levels(as.factor(data$Sample))) > 12) {
 }
                        
 
-ggplot(data = data, aes(x = Time, y = Signal)) +
+ggplot(data = data, aes(x = mL, y = Signal)) +
   theme_minimal() +
   color_scheme +
   geom_line(aes(color = Sample)) +
-  facet_grid(Channel ~ ., scales = "free") +
+  facet_grid(rows = vars(Channel), scales = "free") +
   ggtitle(str_c(experiment_name, ' Raw Signal')) +
-  xlab("Time (minutes)")
+  xlab("Volume (mL)")
 ggsave('fsec_traces.pdf', width = 7, height = 5)
 
-ggplot(data = data, aes(x = Time, y = Normalized)) +
+ggplot(data = data, aes(x = mL, y = Normalized)) +
   theme_minimal() +
   color_scheme +
   geom_line(aes(color = Sample)) +
-  facet_grid(Channel ~ ., scales = "free") +
-  xlab("Time (minutes)") +
+  facet_grid(rows = vars(Channel), scales = "free") +
+  xlab("Volume (mL)") +
   coord_cartesian(ylim = c(0, 1)) +
   ggtitle(str_c(experiment_name, ' Normalized Signal')) +
   ylab("Normalized Signal")
