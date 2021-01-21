@@ -10,7 +10,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
 import plotly.graph_objects as go
-from subcommands.config import config
+from subcommands import config
 import json
 
 # 1 Database initialization ----------------------------------------------------
@@ -99,13 +99,18 @@ class Experiment:
 # * 2.2 Experiment graph production --------------------------------------------
 
     def get_plotly(self):
+        db = init_db(config.config)
         combined_graphs = {}
         html_graphs = []
         if self.has_fplc:
             combined_graphs['FPLC'] = self.get_fplc()
 
         if self.has_hplc:
-            hplc_graphs = self.get_hplc()
+            if max(self.hplc['mL'] > 15):
+                column = '10_300'
+            else:
+                column = '5_150'
+            hplc_graphs = self.get_hplc(db, column)
             for data_type in ['Signal', 'Normalized']:
                 combined_graphs[data_type] = hplc_graphs[data_type]
 
@@ -160,7 +165,8 @@ class Experiment:
         fplc_graph.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
         return fplc_graph
 
-    def get_hplc(self):
+    def get_hplc(self, db, column):
+        calibrations = get_calibrations(db, column)
         hplc = self.hplc.sort_values(['Sample', 'mL'], ascending = [True, True])
 
         raw_graphs = {}
@@ -175,6 +181,22 @@ class Experiment:
             )
             fig.layout.yaxis2.update(matches = None)
             fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+            for ml, size in zip(calibrations['mL'], calibrations['Size']):
+                fig.add_shape(type='line',
+                    yref="paper",
+                    xref="x",
+                    y0 = 0,
+                    y1 = 1,
+                    x0=ml,
+                    x1=ml,
+                    layer = 'below',
+                    line=dict(color='grey', width=1, dash = 'dot'))
+                fig.add_annotation(
+                    yref = 'paper',
+                    x=ml,
+                    y=1.06,
+                    showarrow = False,
+                    text = size)
             raw_graphs[data_type] = fig
 
         return raw_graphs
@@ -332,7 +354,7 @@ def update_db(db):
 
 
 def main(args):
-    db = init_db(config)
+    db = init_db(config.config)
 
     if args.list:
         three_column_print(update_experiment_list(db))

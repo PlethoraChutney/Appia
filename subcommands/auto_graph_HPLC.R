@@ -16,8 +16,8 @@ data <- read.csv(file = long_trace_filename, header = TRUE) %>%
   filter(Time > 0.5)
 
 cal_10_300 <- tibble(
-    mL = c(3, 7, 14, 22),
-    Size = c(100, 50, 25, 12)
+    mL = c(15.949, 17.1495, 18.2675),
+    Size = c(75, 29, 6.5)
   )
 cal_5_150 <- tibble(
     mL = c(0.7, 1.2, 2, 2.1),
@@ -58,7 +58,7 @@ data %>%
   geom_vline(data = calibrations, aes(xintercept = mL), color = 'grey', linetype = 'dashed') +
   scale_x_continuous('Volume (mL)', 
                      sec.axis = sec_axis(trans = ~.,
-                                         name = 'Calibrations (MDa)',
+                                         name = 'Calibrations (kDa)',
                                          breaks = calibrations$mL,
                                          labels = calibrations$Size)
   ) +
@@ -76,7 +76,7 @@ data %>%
   geom_vline(data = calibrations, aes(xintercept = mL), color = 'grey', linetype = 'dashed') +
   scale_x_continuous('Volume (mL)', 
                      sec.axis = sec_axis(trans = ~.,
-                                         name = 'Standards (MDa)',
+                                         name = 'Standards (kDa)',
                                          breaks = calibrations$mL,
                                          labels = calibrations$Size)
                      ) +
