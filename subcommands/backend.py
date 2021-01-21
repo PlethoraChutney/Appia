@@ -11,6 +11,7 @@ import dash_html_components as html
 import plotly.express as px
 import plotly.graph_objects as go
 from subcommands.config import config
+import json
 
 # 1 Database initialization ----------------------------------------------------
 
@@ -253,6 +254,22 @@ def three_column_print(in_list):
     for i in in_list:
         print('{:<45}{:<45}{}'.format(i, next(in_list, ""), next(in_list, '')))
 
+def upload_calibrations(db, in_json):
+    with open(in_json) as json_file:
+        calibrations = json.load(json_file)
+
+    calibrations['_id'] = 'calibrations'
+    assert isinstance(calibrations, dict)
+    try:
+        db.delete(db['calibrations'])
+    except couchdb.http.ResourceNotFound:
+        pass
+    db.save(calibrations)
+
+def get_calibrations(db, column):
+    calibrations = db.get('calibrations')
+    return calibrations[column]
+
 def update_db(db):
     if input('Did you back up your couchDB before running this option? Type "I backed up my database".\n').lower() != 'i backed up my database':
         logging.error('Back up your database before upgrading.')
@@ -330,6 +347,20 @@ def main(args):
     if args.upgrade:
         update_db(db)
 
+    if args.calibrate:
+        if args.calibrate == 'check':
+            calibrations = db['calibrations']
+            for column in ['5_150', '10_300']:
+                print(column)
+                print('  mL\tSize (MDa)')
+                for i in range(len(calibrations[column]['mL'])):
+                    print('  {:<12}{}'.format(
+                        calibrations[column]["mL"][i],
+                        calibrations[column]["Size"][i])
+                    )
+        else:
+            upload_calibrations(db, args.calibrate)
+
 parser = argparse.ArgumentParser(
     description = 'Database management',
     add_help=False
@@ -357,4 +388,13 @@ parser.add_argument(
     '--upgrade',
     help = 'Download all experiments in the couchdb and upgrade them to modern, combined experiments. This is destructive! Backup first!',
     action = 'store_true'
+)
+
+parser.add_argument(
+    '--calibrate',
+    help = 'Upload new size marker calibrations from JSON file, or check current calibrations.',
+    type = str,
+    nargs = '?',
+    default = False,
+    const = 'check'
 )
