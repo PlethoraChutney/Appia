@@ -187,16 +187,18 @@ class Experiment:
                     xref="x",
                     y0 = 0,
                     y1 = 1,
-                    x0=ml,
-                    x1=ml,
+                    x0 = ml,
+                    x1 = ml,
                     layer = 'below',
                     line=dict(color='grey', width=1, dash = 'dot'))
                 fig.add_annotation(
                     yref = 'paper',
-                    x=ml,
-                    y=1.06,
+                    x = ml,
+                    y = 1.06,
+                    textangle = -45,
                     showarrow = False,
                     text = size)
+
             raw_graphs[data_type] = fig
 
         return raw_graphs
