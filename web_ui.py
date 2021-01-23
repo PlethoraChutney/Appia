@@ -2,11 +2,10 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-import urllib
 from subcommands.backend import *
-from subcommands.config import config
+from subcommands import config
 
-db = init_db(config)
+db = init_db(config.config)
 
 # 1 Change root and title ------------------------------------------------------
 
@@ -59,7 +58,7 @@ def serve_layout():
                     style = {'textAlign': 'center'}
                 ),
                 html.Div(
-                    children=f'Simple traces from the comfort of your bench.',
+                    children='Simple traces from the comfort of your bench.',
                     style = {'textAlign': 'center'}
                 ),
                 html.Div(

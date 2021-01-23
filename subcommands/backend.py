@@ -88,8 +88,38 @@ class Experiment:
 
             db.save(doc)
         except couchdb.http.ResourceConflict:
-            logging.error(f'Experiment "{self.id}" already in database.')
-            if input(f'Overwrite database copy of {self.id}? Y/N\n').lower() == 'y':
+            logging.warning(f'Experiment "{self.id}" already in database.')
+            old_experiment = pull_experiment(db, self.id)
+
+            need_overwrite = False
+            if old_experiment.has_hplc and self.has_hplc:
+                logging.warning('New and old experiment have HPLC data.')
+                need_overwrite = True
+            elif self.has_hplc:
+                logging.info('Adding new HPLC data')
+                logging.debug(f'Old experiment: {old_experiment}')
+                logging.debug(f'New experiment: {self}')
+                old_experiment.hplc = self.hplc
+                old_experiment.has_hplc = True
+                logging.debug(f'Combined experiment: {old_experiment}')
+
+            if old_experiment.has_fplc and self.has_fplc:
+                logging.warning('New and old experiment have FPLC data.')
+                need_overwrite = True
+            elif self.has_fplc:
+                logging.info('Adding new FPLC data.')
+                logging.debug(f'Old experiment: {old_experiment}')
+                logging.debug(f'New experiment: {self}')
+                old_experiment.fplc = self.fplc
+                old_experiment.has_fplc = True
+                logging.debug(f'Combined experiment: {old_experiment}')
+
+            if not need_overwrite:
+                logging.info(f'Updating experiment {self.id}')
+                print(old_experiment)
+                remove_experiment(db, self.id)
+                old_experiment.upload_to_couchdb(db)
+            elif input(f'Overwrite database copy of {self.id}? Y/N\n').lower() == 'y':
                 logging.info('Uploading new version')
                 remove_experiment(db, self.id)
                 self.upload_to_couchdb(db)
@@ -385,6 +415,17 @@ def main(args):
         else:
             upload_calibrations(db, args.calibrate)
 
+    if args.inspect:
+        for exp_name in args.inspect:
+            try:
+                experiment = pull_experiment(db, exp_name)
+            # pull_experiment throws a TypeError when the experiment is not found
+            except TypeError:
+                logging.error(f'Cannot find experiment {exp_name}')
+                continue
+            print(experiment)
+            experiment.show_tables()
+
 parser = argparse.ArgumentParser(
     description = 'Database management',
     add_help=False
@@ -404,6 +445,13 @@ parser.add_argument(
 parser.add_argument(
     '--mass-add',
     help = 'Add multiple experiments or multiple directories of experiments',
+    type = str,
+    nargs = '+'
+)
+
+parser.add_argument(
+    '-i', '--inspect',
+    help = 'Print information about experiments',
     type = str,
     nargs = '+'
 )
