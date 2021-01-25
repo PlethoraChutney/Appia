@@ -13,11 +13,12 @@ max_frac <- as.integer(args[3])
 low_ml <- as.integer(args[4])
 high_ml <- as.integer(args[5])
 
-data <- read_csv(args[1], col_types = 'dcddcci') %>%
-  mutate(inst_frac = if_else(inst_frac < min_frac, 'Waste', if_else(inst_frac > max_frac, 'Waste', as.character(inst_frac))))
+data <- read_csv(args[1], col_types = 'dfddfd') %>%
+  mutate(Fraction = if_else(Fraction < min_frac, 'Waste', if_else(Fraction > max_frac, 'Waste', as.character(Fraction)))) %>% 
+  mutate(Fraction = as.factor(Fraction))
 
-if (length(levels(data$Sample)) > 12) {
-  color_scheme = scale_color_viridis_d(aesthetics = c('fill', 'color'))
+if (length(levels(data$Fraction)) > 12) {
+  color_scheme = scale_fill_viridis_d(limits = levels(data$Fraction)[1:length(levels(data$Fraction))-1])
 } else {
   color_scheme = scale_fill_manual(values = c(
     '#1f77b4', # blue
@@ -87,10 +88,25 @@ if (max_frac > 0) {
     ggplot() +
     coord_cartesian(xlim = c(low_ml, high_ml)) +
     theme_minimal() +
-    color_scheme +
+    scale_fill_manual(
+      values = c(
+        '#1f77b4', # blue
+        '#ff7f0e', # orange
+        '#17becf', # cyan
+        '#e377c2', # pink
+        '#2ca02c', # green
+        '#d62728', # red
+        '#9467bd', # purple
+        '#7f7f7f', # grey
+        '#bcbd22', # yellow-green
+        '#8c564b',  # brown
+        'dark blue',
+        'black'
+      ), limits = as.factor(min_frac:max_frac)
+    ) +
     labs(fill = 'Fraction') +
-    geom_ribbon(aes(x = mL, ymin = 0, ymax = Signal, fill = factor(inst_frac))) +
+    geom_ribbon(aes(x = mL, ymin = 0, ymax = Signal, fill = Fraction)) +
     geom_line(aes(x = mL, y = Signal)) +
-    facet_grid(Sample ~ ., scales = 'free')
+    facet_grid(rows = vars(Sample), scales = 'free')
   ggsave(filename = file.path(out.dir, paste('mAU_fractions_', no.ext, '.pdf', sep = '')), width = 6, height = 4)
 }

@@ -29,7 +29,7 @@ def get_file_list(directory):
 # * 1.1 Data tidying -----------------------------------------------------------
 
 def append_chroms(file_list):
-    chroms = pd.DataFrame(columns = ['mL', 'Channel', 'Signal', 'frac_mL', 'Fraction', 'Sample', 'inst_frac'])
+    chroms = pd.DataFrame(columns = ['mL', 'Channel', 'Signal', 'Fraction', 'Sample'])
     for file in file_list:
         fplc_trace = pd.read_csv(
             file, skiprows = 1,
@@ -86,6 +86,9 @@ def append_chroms(file_list):
         for i in range(len(frac_mL)):
             long_trace.loc[long_trace['mL'] > frac_mL[i], 'inst_frac'] = i + 2
 
+        long_trace['Fraction'] = long_trace['inst_frac']
+        long_trace.drop(['frac_mL', 'inst_frac'], inplace = True, axis = 1)
+
         # Hard code a Superose 6 10_300 CV
         long_trace['Column Volume'] = long_trace['mL']/24
         chroms = chroms.append(long_trace, ignore_index = True)
@@ -139,8 +142,6 @@ def main(args):
 
         to_upload = compiled[compiled.Channel == 'mAU']
         to_upload = to_upload[to_upload.mL < 24.5]
-        to_upload['Fraction'] = to_upload['inst_frac']
-        to_upload.drop(['frac_mL', 'inst_frac'], inplace = True, axis = 1)
 
         id = os.path.split(file_list[0])[1][:-4].replace(' ', '_')
 

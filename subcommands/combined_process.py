@@ -56,8 +56,6 @@ def combined_df(files, h_system):
         f_df = assemble_fplc.append_chroms(fplc_files)
         f_df = f_df[f_df.Channel == 'mAU']
         f_df = f_df[f_df.mL < 24.5]
-        f_df['Fraction'] = f_df['inst_frac']
-        f_df.drop(['frac_mL', 'inst_frac'], inplace = True, axis = 1)
     else:
         f_df = None
 

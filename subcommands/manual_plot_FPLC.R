@@ -9,8 +9,9 @@ max_frac <- 20 # everything after this fraction will be 'Waste'
 low_ml <- 5 # these values set the x-axis limits
 high_ml <- 25
 
-data <- read_csv('fplcs.csv', col_types = 'dcddcci') %>%
-  mutate(inst_frac = if_else(inst_frac < min_frac, 'Waste', if_else(inst_frac > max_frac, 'Waste', as.character(inst_frac))))
+data <- read_csv('fplcs.csv', col_types = 'dfddfd') %>%
+  mutate(Fraction = if_else(Fraction < min_frac, 'Waste', if_else(Fraction > max_frac, 'Waste', as.character(Fraction)))) %>% 
+  mutate(Fraction = as.factor(Fraction))
 
 # 2 Plot ------------------------------------------------------------------
 
@@ -34,8 +35,8 @@ data %>%
     '#8c564b', # brown
     'dark blue',
     'black'
-  ), limits = min_frac : max_frac) +
+  ), limits = as.factor(min_frac : max_frac)) +
   labs(fill = 'Fraction') +
-  geom_ribbon(aes(x = mL, ymin = 0, ymax = Signal, fill = factor(inst_frac))) +
+  geom_ribbon(aes(x = mL, ymin = 0, ymax = Signal, fill = Fraction)) +
   geom_line(aes(x = mL, y = Signal))
 ggsave(filename = 'manual_fplc.pdf', width = 6, height = 4)
