@@ -60,6 +60,10 @@ def append_chroms(file_list, system):
 				header = None,
 				dtype = {'Time': np.float64, 'Signal': np.float64}
 			)
+			logging.debug(to_append)
+			if to_append.shape[0] == 0:
+				logging.error(f'File {file} is empty. Ignoring that file.')
+				continue
 			sample_info = pd.read_csv(
 				file,
 				delim_whitespace = True,
