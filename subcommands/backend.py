@@ -207,6 +207,8 @@ class Experiment:
                 # i.e., '2475ChA '. We want to cut out those 8 characters as they provide
                 # no useful information
                 return channel[8:]
+            else:
+                return channel
 
         calibrations = get_calibrations(db, column)
         hplc = self.hplc.sort_values(['Sample', 'mL'], ascending = [True, True])
