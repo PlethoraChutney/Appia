@@ -209,7 +209,10 @@ class Experiment:
                 facet_row = 'Channel',
                 template = 'plotly_white'
             )
-            fig.layout.yaxis2.update(matches = None)
+            try:
+                fig.layout.yaxis2.update(matches = None)
+            except AttributeError:
+                pass
             fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
             for ml, size in zip(calibrations['mL'], calibrations['Size']):
                 fig.add_shape(type='line',
