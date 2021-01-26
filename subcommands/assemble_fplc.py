@@ -6,25 +6,23 @@ import argparse
 import subprocess
 import shutil
 import logging
+from glob import glob
 
 # 1 Data import ----------------------------------------------------------------
 
-def get_file_list(directory):
-    file_list = []
+def get_file_list(globs):
+    globbed_files = []
+    for pattern in globs:
+        globbed_files.extend(glob(pattern))
+    logging.debug(f'Globbed files: {globbed_files}')
+    files = [os.path.abspath(x) for x in globbed_files if x.endswith('.csv')]
+    files = list(set(files))
+    logging.debug(f'Final file list: {files}')
 
-    if len(directory) > 1:
-        file_list = [os.path.abspath(x) for x in directory]
-    elif os.path.isdir(directory[0]):
-        for file in os.listdir(directory[0]):
-            if file.endswith(".csv"):
-                file_list.append(os.path.normpath(os.path.join(directory[0], file)))
-    elif os.path.isfile(directory[0]):
-        if directory[0].endswith('.csv'):
-            file_list.append(os.path.normpath(directory[0]))
 
-    logging.info(f'Found {len(file_list)} files')
+    logging.info(f'Found {len(files)} files')
 
-    return file_list
+    return list(files)
 
 # * 1.1 Data tidying -----------------------------------------------------------
 
@@ -173,7 +171,7 @@ parser = argparse.ArgumentParser(
 parser.set_defaults(func = main)
 parser.add_argument(
     'file_list',
-    help = 'Files to compare. If given a directory, all .csvs in that directory.',
+    help = 'Files to compare.',
     nargs = '+'
 )
 parser.add_argument(
