@@ -6,7 +6,7 @@ library(ggplot2)
 
 long_trace_filename <- "long_chromatograms.csv"
 
-data <- read.csv(file = long_trace_filename, header = TRUE) %>% 
+data <- read.csv(file = long_trace_filename, header = TRUE) %>%
   pivot_longer(cols = c(Signal, Normalized), names_to = 'Normalization', values_to = 'Signal')
 
 cal_10_300 <- tibble(
@@ -48,13 +48,13 @@ if (length(levels(as.factor(data$Sample))) > 12) {
 
 
 data %>%
-  filter(Time > 0.5) %>% 
+  filter(Time > 0.5) %>%
   ggplot(aes(x = mL, y = Signal)) +
   theme_minimal() +
   geom_vline(data = calibrations, aes(xintercept = mL), color = 'grey', linetype = 'dashed') +
-  scale_x_continuous('Volume (mL)', 
+  scale_x_continuous('Volume (mL)',
                      sec.axis = sec_axis(trans = ~.,
-                                         name = 'Calibrations (kDa)',
+                                         name = 'Standards (kDa)',
                                          breaks = calibrations$mL,
                                          labels = calibrations$Size)
   ) +
