@@ -196,8 +196,23 @@ class Experiment:
         return fplc_graph
 
     def get_hplc(self, db, column):
+        def rename_channels(channel):
+            if 'ex280/em350' in channel:
+                return 'Trp'
+            elif 'ex488/em509' in channel:
+                return 'GFP'
+            elif channel[0:4] == '2475':
+                # the channels by default start with the name of the fluorescence
+                # detector as well as which channel letter they're assigned.
+                # i.e., '2475ChA '. We want to cut out those 8 characters as they provide
+                # no useful information
+                return channel[8:]
+
         calibrations = get_calibrations(db, column)
         hplc = self.hplc.sort_values(['Sample', 'mL'], ascending = [True, True])
+        hplc = hplc.assign(
+            Channel = lambda df: df.Channel.apply(rename_channels)
+        )
 
         raw_graphs = {}
         for data_type in ['Signal', 'Normalized']:
