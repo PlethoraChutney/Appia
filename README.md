@@ -12,7 +12,7 @@ For a local user installation:
 1. Clone this repo
 2. run `python3 -m virtualenv venv`
 3. run `venv/Scripts/activate` or `source venv/Scripts/activate`
-4. run `python -m pip install -f requirements.txt`
+4. run `python -m pip install -r requirements.txt`
 5. You're ready to use Appia
 
 If you are also installing the web interface, then you'll need to log into the server
