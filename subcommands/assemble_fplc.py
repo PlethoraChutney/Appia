@@ -141,7 +141,10 @@ def main(args):
         to_upload = compiled[compiled.Channel == 'mAU']
         to_upload = to_upload[to_upload.mL < 24.5]
 
-        id = os.path.split(file_list[0])[1][:-4].replace(' ', '_')
+        if args.output:
+            id = os.path.split(args.output)[1][:-4]
+        else:
+            id = os.path.split(file_list[0])[1][:-4].replace(' ', '_')
 
         db = backend.init_db(config.config)
         exp = backend.Experiment(id, None, to_upload)
