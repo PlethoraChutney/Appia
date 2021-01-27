@@ -179,7 +179,8 @@ class Experiment:
                     y = fplc[fplc.Fraction == frac]['Signal'],
                     mode = 'lines',
                     fill = 'tozeroy',
-                    visible = 'legendonly'
+                    visible = 'legendonly',
+                    name = f'Fraction {frac}'
                 )
             )
         fplc_graph.add_trace(
