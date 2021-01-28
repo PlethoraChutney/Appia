@@ -179,7 +179,7 @@ parser.add_argument(
 )
 parser.add_argument(
     '-o', '--output',
-    help = 'Where to write the compiled traces. Default is fplcs.csv in the first input directory'
+    help = 'Where to write the compiled traces. Default is fplcs.csv in the first input directory. When given, the name (without .csv) is also used for the Experiment for upload to couchDB.'
 )
 parser.add_argument(
     '-f', '--fractions',

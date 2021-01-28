@@ -34,6 +34,9 @@ def init_db(config):
 class Experiment:
     def __init__(self, id, hplc, fplc, reduce = 1):
         self.id = id
+        # Experiments store their version so that we know how they need to change
+        # to comply with whatever the web-ui version is expecting. Right now this
+        # conversion needs to be done at the DB level, not on-the-fly.
         self.version = 2
         if hplc is not None:
             self.has_hplc = True
@@ -87,13 +90,18 @@ class Experiment:
             }
 
             db.save(doc)
+        # This exception handles the experiment already existing
         except couchdb.http.ResourceConflict:
             logging.warning(f'Experiment "{self.id}" already in database.')
             old_experiment = pull_experiment(db, self.id)
 
+            # if we're going to change something on the server, we need the user's
+            # permission. otherwise we can just add the data for the current Experiment
+            # to the db Experiment and re-upload
             need_overwrite = False
             if old_experiment.has_hplc and self.has_hplc:
                 logging.warning('New and old experiment have HPLC data.')
+                old_experiment.hplc = self.hplc
                 need_overwrite = True
             elif self.has_hplc:
                 logging.info('Adding new HPLC data')
@@ -105,6 +113,7 @@ class Experiment:
 
             if old_experiment.has_fplc and self.has_fplc:
                 logging.warning('New and old experiment have FPLC data.')
+                old_experiment.fplc = self.fplc
                 need_overwrite = True
             elif self.has_fplc:
                 logging.info('Adding new FPLC data.')
@@ -122,7 +131,10 @@ class Experiment:
             elif input(f'Overwrite database copy of {self.id}? Y/N\n').lower() == 'y':
                 logging.info('Uploading new version')
                 remove_experiment(db, self.id)
-                self.upload_to_couchdb(db)
+                # still upload the old Experiment, which we modified as necessary,
+                # because we don't want to replace a combined Experiment with one
+                # that only has fplc or hplc data.
+                old_experiment.upload_to_couchdb(db)
             else:
                 logging.info('Skipping database upload.')
 
@@ -162,15 +174,11 @@ class Experiment:
 
 
     def get_fplc(self):
-        combined_graphs = {}
-
         fplc = self.fplc
 
-        # if you don't create a bunch of seperate GO objects, the fill is
-        # screwy
-        #
-        # plotly express would work, but if you turn off a middle fraction
-        # the fill also gets weird
+        # Using GO primitives b/c plotly express creates traces which are zero
+        # outside the defined fraction region, resulting in strange fill behavior
+        # when non-continuous fractions are selected.
         fplc_graph = go.Figure()
         for frac in set(fplc['Fraction']):
             fplc_graph.add_trace(
@@ -180,10 +188,13 @@ class Experiment:
                     mode = 'lines',
                     fill = 'tozeroy',
                     visible = 'legendonly',
+                    # if you don't rename them, fraction numbering is off by one
                     name = f'Fraction {frac}'
                 )
             )
         fplc_graph.add_trace(
+            # want the overall FPLC curve as a separate trace so that it stays present
+            # to give overall sense of quality of trace
             go.Scatter(
                 x = fplc['mL'],
                 y = fplc['Signal'],
@@ -197,6 +208,7 @@ class Experiment:
         return fplc_graph
 
     def get_hplc(self, db, column):
+        # Realizing having this in two places is stupid. To-do.
         def rename_channels(channel):
             if 'ex280/em350' in channel:
                 return 'Trp'
@@ -228,9 +240,12 @@ class Experiment:
                 template = 'plotly_white'
             )
             try:
+                # without this, your channels are stuck using the same yaxis range
                 fig.layout.yaxis2.update(matches = None)
             except AttributeError:
+                # if the trace only has one channel, it doesn't have yaxis2
                 pass
+            # remove 'Channel=' from the facet labels
             fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
             for ml, size in zip(calibrations['mL'], calibrations['Size']):
                 fig.add_shape(type='line',
@@ -294,23 +309,6 @@ def concat_experiments(exp_list):
     concat_exp = Experiment('Combined', hplcs, None)
 
     return concat_exp
-
-def collect_hplc(directory, db, reduce = 1):
-    list_of_dirs = []
-    list_of_experiments = []
-
-    for sub_dir in [os.path.abspath(x[0]) for x in os.walk(directory) if x != directory]:
-        if os.path.isfile(os.path.join(sub_dir, 'long_chromatograms.csv')):
-            list_of_dirs.append(os.path.abspath(os.path.join(directory, sub_dir)))
-
-    for hplc_dir in list_of_dirs:
-        id = os.path.split(hplc_dir)[-1].replace('_processed', '')
-        hplc = pd.read_csv(os.path.join(hplc_dir, 'long_chromatograms.csv'))
-        list_of_experiments.append(Experiment(id, hplc, None, reduce))
-
-    for experiment in list_of_experiments:
-        logging.info(f'Adding experiment {experiment.id}')
-        experiment.upload_to_couchdb(db)
 
 def update_experiment_list(db):
     list_of_experiments = []
@@ -416,9 +414,6 @@ def main(args):
         for exp in args.delete:
             remove_experiment(db, exp)
 
-    if args.mass_add:
-        collect_hplc(args.mass_add, db)
-
     if args.upgrade:
         update_db(db)
 
@@ -460,12 +455,6 @@ parser.add_argument(
 parser.add_argument(
     '-d', '--delete',
     help = 'Delete experiment(s) by name',
-    type = str,
-    nargs = '+'
-)
-parser.add_argument(
-    '--mass-add',
-    help = 'Add multiple experiments or multiple directories of experiments',
     type = str,
     nargs = '+'
 )

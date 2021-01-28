@@ -39,12 +39,14 @@ def append_chroms(file_list, system):
 			return 'Trp'
 		elif 'ex488/em509' in channel:
 			return 'GFP'
-		else:
+		elif channel[0:4] == '2475':
 			# the channels by default start with the name of the fluorescence
 			# detector as well as which channel letter they're assigned.
 			# i.e., '2475ChA '. We want to cut out those 8 characters as they provide
 			# no useful information
 			return channel[8:]
+		else:
+			return channel
 
 	chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 
@@ -70,6 +72,8 @@ def append_chroms(file_list, system):
 				nrows = header_rows,
 				dtype = str
 			)
+			# pull sample info from the headers (in a separate df since the shape
+			# is inconsistent). Then add the data
 			sample_name = str(sample_info.loc[data_row]['SampleName'])
 			channel_ID = str(sample_info.loc[data_row]['Channel'])
 			to_append['Channel'] = channel_ID
@@ -79,7 +83,8 @@ def append_chroms(file_list, system):
 
 			if 'Instrument Method Name' in sample_info:
 				method = str(sample_info.loc[data_row]['Instrument Method Name'])
-
+				# Here's where we look up methods. If you're not using per-column
+				# methods, you'll have to change this and the above dict
 				if '10_300' in method:
 					column = '10_300'
 				elif '5_150' in method:
@@ -115,6 +120,10 @@ def append_chroms(file_list, system):
 				names = ['Stat'] + channel_names + ['Units'],
 				engine = 'python'
 			)
+			# Similar to the Waters method, we need two dfs, but this time b/c of the
+			# data types. Also, shimadzu instruments are presented as a single long
+			# df with no way to distinguish the two channels. So you need to check
+			# the total data points and split the df in two there
 			sample_info.set_index('Stat', inplace = True)
 			to_append['Sample'] = str(sample_info.loc['Sample ID:'][0])
 			number_samples = int(sample_info.loc['Total Data Points:'][0])
@@ -188,6 +197,7 @@ def main(args):
 	try:
 		from subcommands import config
 	except ImportError:
+		no_config = True
 		logging.warning('You must have a config file named config.py in subcommands to use the visualization database and slack bot.')
 	logging.debug(args)
 	script_location = os.path.dirname(os.path.realpath(__file__))
@@ -237,10 +247,10 @@ def main(args):
 
 # * 2.3 Add traces to couchdb --------------------------------------------------
 
-	if not args.no_db:
+	if not args.no_db and not no_config:
 		logging.info('Adding experiment to visualization database...')
 		try:
-			from subcommands import backend, config
+			from subcommands import backend
 
 			db = backend.init_db(config.config)
 			if args.rename:
@@ -264,6 +274,7 @@ def main(args):
 	# send both R plots to the chromatography channel in slack
 	# channel and bot token need to be in the config file with the
 	# couchdb setup
+# * 2.5 Send plots to Slack ----------------------------------------------------
 	if args.post_to_slack:
 		logging.info('Posting to slack')
 		try:
