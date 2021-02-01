@@ -175,34 +175,49 @@ class Experiment:
 
     def get_fplc(self):
         fplc = self.fplc
+        samples = set(fplc['Sample'])
 
         # Using GO primitives b/c plotly express creates traces which are zero
         # outside the defined fraction region, resulting in strange fill behavior
         # when non-continuous fractions are selected.
         fplc_graph = go.Figure()
-        for frac in set(fplc['Fraction']):
+        if len(samples) == 1:
+            for frac in set(fplc['Fraction']):
+                fplc_graph.add_trace(
+                    go.Scatter(
+                        x = fplc[fplc.Fraction == frac]['mL'],
+                        y = fplc[fplc.Fraction == frac]['Signal'],
+                        mode = 'lines',
+                        fill = 'tozeroy',
+                        visible = 'legendonly',
+                        # if you don't rename them, fraction numbering is off by one
+                        name = f'Fraction {frac}'
+                    )
+                )
+        if len(samples) == 1:
             fplc_graph.add_trace(
+                # want the overall FPLC curve as a separate trace so that it stays present
+                # to give overall sense of quality of trace
                 go.Scatter(
-                    x = fplc[fplc.Fraction == frac]['mL'],
-                    y = fplc[fplc.Fraction == frac]['Signal'],
+                    x = fplc['mL'],
+                    y = fplc['Signal'],
                     mode = 'lines',
-                    fill = 'tozeroy',
-                    visible = 'legendonly',
-                    # if you don't rename them, fraction numbering is off by one
-                    name = f'Fraction {frac}'
+                    showlegend = False,
+                    line = {'color': 'black'}
                 )
             )
-        fplc_graph.add_trace(
-            # want the overall FPLC curve as a separate trace so that it stays present
-            # to give overall sense of quality of trace
-            go.Scatter(
-                x = fplc['mL'],
-                y = fplc['Signal'],
-                mode = 'lines',
-                showlegend = False,
-                line = {'color': 'black'}
-            )
-        )
+        else:
+            for sample in samples:
+                fplc_graph.add_trace(
+                    # comparisons need to be in the legend and have color
+                    go.Scatter(
+                        x = fplc[fplc.Sample == sample]['mL'],
+                        y = fplc[fplc.Sample == sample]['Signal'],
+                        mode = 'lines',
+                        showlegend = True,
+                        name = sample
+                    )
+                )
         fplc_graph.update_layout(template = 'plotly_white')
         fplc_graph.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
         return fplc_graph
@@ -297,16 +312,22 @@ def pull_experiment(db, id):
 
 def concat_experiments(exp_list):
     hplcs = []
+    fplcs = []
 
     for exp in exp_list:
-        if not exp.has_hplc:
-            continue
-        hplc = exp.hplc
-        hplc['Sample'] = f'{exp.id}: ' + hplc['Sample'].astype(str)
-        hplcs.append(hplc)
+        if exp.has_hplc:
+            hplc = exp.hplc
+            hplc['Sample'] = f'{exp.id}: ' + hplc['Sample'].astype(str)
+            hplcs.append(hplc)
+
+        if exp.has_fplc:
+            fplc = exp.fplc
+            fplc['Sample'] = exp.id
+            fplcs.append(fplc)
 
     hplcs = pd.concat(hplcs)
-    concat_exp = Experiment('Combined', hplcs, None)
+    fplcs = pd.concat(fplcs)
+    concat_exp = Experiment('Combined', hplcs, fplcs)
 
     return concat_exp
 
