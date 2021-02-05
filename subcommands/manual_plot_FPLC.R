@@ -1,19 +1,45 @@
 library(tidyverse)
-library(ggplot2)
-library(devEMF)
 
-# 1 Import ----------------------------------------------------------------
+# 1 Common Modifications --------------------------------------------------
 
-min_frac <- 10 # everything before this fraction will be 'Waste'
-max_frac <- 20 # everything after this fraction will be 'Waste'
-low_ml <- 5 # these values set the x-axis limits
+# fractions to highlight/fill
+# to make a list in R, use c(item, item, item)
+fractions <- (10:15)
+
+# these values set the x-axis limits
+low_ml <- 5 
 high_ml <- 25
 
-data <- read_csv('fplcs.csv', col_types = 'dfddfd') %>%
-  mutate(Fraction = if_else(Fraction < min_frac, 'Waste', if_else(Fraction > max_frac, 'Waste', as.character(Fraction)))) %>% 
+# processed .csv file
+filename <- 'fplcs.csv'
+
+# 2 Import ----------------------------------------------------------------
+
+data <- read_csv(filename, col_types = 'dfddfd') %>%
   mutate(Fraction = as.factor(Fraction))
 
-# 2 Plot ------------------------------------------------------------------
+# 3 Color Scheme ----------------------------------------------------------
+if (length(fractions) > 12) {
+  color_scheme <- scale_fill_discrete(limits = as.factor(fractions), na.translate = FALSE)
+} else {
+  color_scheme <- scale_fill_manual(
+    values = c(
+      '#17becf', # cyan
+      '#ff7f0e', # orange
+      '#e377c2', # pink
+      '#1f77b4', # blue
+      '#2ca02c', # green
+      '#d62728', # red
+      '#9467bd', # purple
+      '#7f7f7f', # grey
+      '#bcbd22', # yellow-green
+      '#8c564b', # brown
+      'dark blue',
+      'black'),
+    limits = as.factor(fractions))
+}
+
+# 4 Plot ------------------------------------------------------------------
 
 data %>%
   filter(Channel == 'mAU') %>%
@@ -22,20 +48,7 @@ data %>%
   ggplot() +
   coord_cartesian(xlim = c(low_ml, high_ml)) +
   theme_minimal() +
-  scale_fill_manual(values = c(
-    '#17becf', # cyan
-    '#ff7f0e', # orange
-    '#e377c2', # pink
-    '#1f77b4', # blue
-    '#2ca02c', # green
-    '#d62728', # red
-    '#9467bd', # purple
-    '#7f7f7f', # grey
-    '#bcbd22', # yellow-green
-    '#8c564b', # brown
-    'dark blue',
-    'black'
-  ), limits = as.factor(min_frac : max_frac)) +
+  color_scheme +
   labs(fill = 'Fraction') +
   geom_ribbon(aes(x = mL, ymin = 0, ymax = Signal, fill = Fraction)) +
   geom_line(aes(x = mL, y = Signal))
