@@ -325,8 +325,15 @@ def concat_experiments(exp_list):
             fplc['Sample'] = exp.id
             fplcs.append(fplc)
 
-    hplcs = pd.concat(hplcs)
-    fplcs = pd.concat(fplcs)
+    # pd.concat throws a ValueError if there are no objects to concatenate
+    try:
+        hplcs = pd.concat(hplcs)
+    except ValueError:
+        hplcs = None
+    try:
+        fplcs = pd.concat(fplcs)
+    except ValueError:
+        fplcs = None
     concat_exp = Experiment('Combined', hplcs, fplcs)
 
     return concat_exp
