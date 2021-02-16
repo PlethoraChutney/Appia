@@ -262,23 +262,24 @@ class Experiment:
                 pass
             # remove 'Channel=' from the facet labels
             fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
-            for ml, size in zip(calibrations['mL'], calibrations['Size']):
-                fig.add_shape(type='line',
-                    yref="paper",
-                    xref="x",
-                    y0 = 0,
-                    y1 = 1,
-                    x0 = ml,
-                    x1 = ml,
-                    layer = 'below',
-                    line=dict(color='grey', width=1, dash = 'dot'))
-                fig.add_annotation(
-                    yref = 'paper',
-                    x = ml,
-                    y = 1.06,
-                    textangle = -45,
-                    showarrow = False,
-                    text = size)
+            if calibrations is not None:
+                for ml, size in zip(calibrations['mL'], calibrations['Size']):
+                    fig.add_shape(type='line',
+                        yref="paper",
+                        xref="x",
+                        y0 = 0,
+                        y1 = 1,
+                        x0 = ml,
+                        x1 = ml,
+                        layer = 'below',
+                        line=dict(color='grey', width=1, dash = 'dot'))
+                    fig.add_annotation(
+                        yref = 'paper',
+                        x = ml,
+                        y = 1.06,
+                        textangle = -45,
+                        showarrow = False,
+                        text = size)
 
             raw_graphs[data_type] = fig
 
@@ -370,7 +371,7 @@ def upload_calibrations(db, in_json):
 def get_calibrations(db, column):
     calibrations = db.get('calibrations')
     if calibrations is None:
-        return []
+        return None
     return calibrations[column]
 
 def update_db(db):

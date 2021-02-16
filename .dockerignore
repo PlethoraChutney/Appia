@@ -1,3 +1,4 @@
 *-tests/
 *.bat
 *.ps1
+couchdb/
