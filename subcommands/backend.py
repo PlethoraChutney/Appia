@@ -369,6 +369,8 @@ def upload_calibrations(db, in_json):
 
 def get_calibrations(db, column):
     calibrations = db.get('calibrations')
+    if calibrations is None:
+        return []
     return calibrations[column]
 
 def update_db(db):

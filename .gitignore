@@ -11,3 +11,4 @@ config.py
 */__pycache__/*
 appia-env/
 test*csv
+couchdb/data
