@@ -196,6 +196,7 @@ def main(args):
 	# must also be named `config` and have the relevant keys and values
 	try:
 		from subcommands import config
+		no_config = False
 	except ImportError:
 		no_config = True
 		logging.warning('You must have a config file named config.py in subcommands to use the visualization database and slack bot.')
