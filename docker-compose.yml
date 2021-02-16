@@ -18,4 +18,4 @@ services:
     image: traces
     container_name: traces
     ports:
-      - 8080:8080
+      - 13128:8080
