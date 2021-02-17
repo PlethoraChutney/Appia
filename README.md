@@ -8,23 +8,21 @@ data using ggplot in R. Options to copy a manual file for plot tweaking are
 available.
 
 ## Installation
-For a local user installation:
-1. Clone this repo
-2. run `python3 -m virtualenv venv`
-3. run `venv/Scripts/activate` or `source venv/Scripts/activate`
-4. run `python -m pip install -r requirements.txt`
-5. Create the file `subcommands/config.py` (see `example_config.py` for help) and
-add the password for your server's couchdb installation.
-
-You're ready to go!
-
-Setting up the server side is easy too!
+### Server installation
 1. Install docker
 2. Create a docker-compose file from the template (change the username and password!)
 3. Create an appia `config.py` from `subcommands/example_config.pyt`
 4. Set the host in `subcommands/config.py` to `couchdb` and update the username
 and password
 5. Run `docker-compose up`
+
+### Local/processing-only installation:
+1. Clone this repo
+2. Run `python3 -m virtualenv venv`
+3. Run `venv/Scripts/activate` or `source venv/Scripts/activate`
+4. Run `python -m pip install -r requirements.txt`
+5. Create the file `subcommands/config.py` (see `example_config.py` for help) and
+add the host/username/password for your server's couchdb installation (if using).
 
 ## HPLC Processing
 Appia reads `.arw` or `.asc` files (from Waters and Shimadzu HPLCs, respectively)
