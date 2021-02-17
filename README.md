@@ -13,12 +13,18 @@ For a local user installation:
 2. run `python3 -m virtualenv venv`
 3. run `venv/Scripts/activate` or `source venv/Scripts/activate`
 4. run `python -m pip install -r requirements.txt`
-5. You're ready to use Appia
+5. Create the file `subcommands/config.py` (see `example_config.py` for help) and
+add the password for your server's couchdb installation.
 
-If you are also installing the web interface, then you'll need to log into the server
-and serve `web_ui.py` however you like. One option is `waitress_serve.py`. You'll
-also need to install and configure CouchDB, and set up your server to deliver
-the plotly dash flask app at `/traces`
+You're ready to go!
+
+Setting up the server side is easy too!
+1. Install docker
+2. Create a docker-compose file from the template (change the username and password!)
+3. Create an appia `config.py` from `subcommands/example_config.pyt`
+4. Set the host in `subcommands/config.py` to `couchdb` and update the username
+and password
+5. Run `docker-compose up`
 
 ## HPLC Processing
 Appia reads `.arw` or `.asc` files (from Waters and Shimadzu HPLCs, respectively)
