@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   couchdb:
-    image: couchdb
+    image: couchdb:3.1.1
     container_name: traces-couchdb
     volumes:
       - ./couchdb/data:/opt/couchdb/data
@@ -15,7 +15,7 @@ services:
   traces:
     depends_on:
       - couchdb
-    image: traces
-    container_name: traces
+    image: plethorachutney/appia
+    container_name: appia
     ports:
       - 13128:8080
