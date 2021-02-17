@@ -1,4 +1,6 @@
 *-tests/
 *.bat
 *.ps1
+*.R
 couchdb/
+venv/

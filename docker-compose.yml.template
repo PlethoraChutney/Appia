@@ -3,7 +3,7 @@ version: '3.8'
 services:
   couchdb:
     image: couchdb:3.1.1
-    container_name: traces-couchdb
+    container_name: appia-couchdb
     volumes:
       - ./couchdb/data:/opt/couchdb/data
       - ./couchdb/config:/opt/couchdb/etc/local.d/
@@ -12,10 +12,10 @@ services:
     environment:
       - COUCHDB_USER=admin
       - COUCHDB_PASSWORD=password
-  traces:
+  appia:
     depends_on:
       - couchdb
     image: plethorachutney/appia
-    container_name: appia
+    container_name: appia-web
     ports:
       - 13128:8080
