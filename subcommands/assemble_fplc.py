@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import sys
 import os
@@ -20,7 +19,11 @@ def get_file_list(globs):
     logging.debug(f'Final file list: {files}')
 
 
-    logging.info(f'Found {len(files)} files')
+    if len(files) > 0:
+        logging.info(f'Found {len(files)} files')
+    else:
+        logging.error(f'Failed to find any files. Please check file globs: {globs}')
+        sys.exit(5)
 
     return list(files)
 

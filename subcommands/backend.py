@@ -1,9 +1,6 @@
 import numpy as np
 import pandas as pd
-import sys
-import os
 import couchdb
-import dash
 import logging
 import argparse
 import dash_core_components as dcc

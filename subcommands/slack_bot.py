@@ -1,13 +1,9 @@
-import sys
-import os
 import logging
 from slack import WebClient
 from slack.errors import SlackApiError
 
 def get_client(config):
-    try:
-        chromatography_channel = config['chromatography_channel']
-    except KeyError as e:
+    if 'chromatography_channel' not in config.keys():
         logging.error('Include the name or ID of your chromatography channel in config. Skipping Slack integration.')
         return
 

@@ -4,7 +4,6 @@ import os
 import sys
 import argparse
 import logging
-import pandas as pd
 
 
 def combined_df(files, h_system):
