@@ -470,6 +470,13 @@ def main(args):
             print(experiment)
             experiment.show_tables()
 
+    if args.download:
+        exp = pull_experiment(db, args.download)
+        if exp.has_hplc:
+            exp.hplc.to_csv(f'{exp.id}_hplc.csv')
+        if exp.has_fplc:
+            exp.fplc.to_csv(f'{exp.id}_fplc.csv')
+
 parser = argparse.ArgumentParser(
     description = 'Database management',
     add_help=False
@@ -492,6 +499,12 @@ parser.add_argument(
     help = 'Print information about experiments',
     type = str,
     nargs = '+'
+)
+
+parser.add_argument(
+    '--download',
+    help = 'Save an experiment from the database as a .csv',
+    type = str
 )
 
 parser.add_argument(
