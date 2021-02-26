@@ -473,9 +473,9 @@ def main(args):
     if args.download:
         exp = pull_experiment(db, args.download)
         if exp.has_hplc:
-            exp.hplc.to_csv(f'{exp.id}_hplc.csv')
+            exp.hplc.to_csv(f'{exp.id}_hplc.csv', index = False)
         if exp.has_fplc:
-            exp.fplc.to_csv(f'{exp.id}_fplc.csv')
+            exp.fplc.to_csv(f'{exp.id}_fplc.csv', index = False)
 
 parser = argparse.ArgumentParser(
     description = 'Database management',
