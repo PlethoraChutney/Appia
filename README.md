@@ -52,10 +52,11 @@ You will need to change the `channel_names` list as you see fit in `assemble_hpl
 Example default HPLC plot
 
 ### Automated Processing
-By adding an export method to the end of your Waters chromatography run, the data
-processing can be automated. In the export method, set a report PDF to save to
-a specified file and the data to save to another file. The PDF contents are not
-important; they are used so that the FileSystemWatcher can tell that a run is over.
+By adding an export method to the end of your Waters chromatography run, the
+data processing can be automated. In the export method, set a report PDF to save
+to a specified directory and the data to save to another directory. The PDF
+contents are not important; they are used so that the FileSystemWatcher can tell
+that a run is over.
 
 Launch the result_monitor.ps1 script, with the paths modified appropriately. When
 a PDF gets saved to the reports directory, depending on the name of the PDF file,
