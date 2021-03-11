@@ -227,10 +227,14 @@ def main(args):
 	if not args.no_move:
 		logging.info(f'Found {len(file_list)} files. Moving to {readable_dir}...')
 		new_fullpath = readable_dir
-		os.makedirs(new_fullpath)
+		try:
+			os.makedirs(new_fullpath)
+		except FileExistsError:
+			new_fullpath = new_fullpath + '2'
+			os.makedirs(new_fullpath)
 
 		for file in file_list:
-			shutil.move(file, os.path.join(readable_dir, os.path.basename(file)))
+			shutil.move(file, os.path.join(new_fullpath, os.path.basename(file)))
 	else:
 		logging.info(f'Found {len(file_list)} files. Processing in place...')
 		new_fullpath = directory
@@ -262,7 +266,7 @@ def main(args):
 					hplc = long_and_wide[0],
 					fplc = None
 				)
-			to_upload.upload_to_couchdb(db)
+			to_upload.upload_to_couchdb(db, args.overwrite)
 		except ModuleNotFoundError:
 			logging.error('No config. Skipping visualization db.')
 
@@ -345,4 +349,9 @@ parser.add_argument(
 	type = str.lower,
 	choices = ['waters', 'shimadzu'],
 	default = 'waters'
+)
+parser.add_argument(
+	'--overwrite',
+	help = "Overwrite database copy of experiment",
+	action = 'store_true'
 )

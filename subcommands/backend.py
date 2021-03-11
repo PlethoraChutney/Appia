@@ -66,7 +66,7 @@ class Experiment:
         if self.has_fplc:
             print(self.fplc)
 
-    def upload_to_couchdb(self, db):
+    def upload_to_couchdb(self, db, overwrite = False):
         try:
             if self.has_hplc:
                 h_json = self.hplc.to_json()
@@ -125,7 +125,13 @@ class Experiment:
                 print(old_experiment)
                 remove_experiment(db, self.id)
                 old_experiment.upload_to_couchdb(db)
+            if overwrite:
+                safe = True
             elif input(f'Overwrite database copy of {self.id}? Y/N\n').lower() == 'y':
+                safe = True
+            else:
+                safe = False
+            if safe:
                 logging.info('Uploading new version')
                 remove_experiment(db, self.id)
                 # still upload the old Experiment, which we modified as necessary,
