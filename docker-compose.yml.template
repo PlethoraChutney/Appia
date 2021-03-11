@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  couchdb:
+    image: couchdb:3.1.1
+    container_name: appia-couchdb
+    volumes:
+      - ./couchdb/data:/opt/couchdb/data
+      - ./couchdb/config:/opt/couchdb/etc/local.d/
+    ports:
+      - 5984:5984
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=password
+  appia:
+    depends_on:
+      - couchdb
+    image: plethorachutney/appia
+    container_name: appia-web
+    ports:
+      - 13128:8080

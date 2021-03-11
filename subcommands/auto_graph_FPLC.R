@@ -1,5 +1,4 @@
 suppressMessages(library(tidyverse))
-library(ggplot2)
 
 # 1 Import ----------------------------------------------------------------
 
@@ -8,32 +7,31 @@ library(ggplot2)
 args = commandArgs(trailingOnly = TRUE)
 no.ext <- str_sub(basename(args[1]), end = -5)
 out.dir <- dirname(args[1])
-min_frac <- as.integer(args[2])
-max_frac <- as.integer(args[3])
+fractions <- as.integer(args[2]):as.integer(args[3])
 low_ml <- as.integer(args[4])
 high_ml <- as.integer(args[5])
 
-data <- read_csv(args[1], col_types = 'dcddcci') %>%
-  mutate(inst_frac = if_else(inst_frac < min_frac, 'Waste', if_else(inst_frac > max_frac, 'Waste', as.character(inst_frac))))
+data <- read_csv(args[1], col_types = 'dfddfd') %>%
+  mutate(Fraction = as.factor(Fraction))
 
-if (length(levels(data$Sample)) > 12) {
-  color_scheme = scale_color_viridis_d(aesthetics = c('fill', 'color'))
+if (length(fractions) > 12) {
+  color_scheme = scale_fill_discrete(limits = as.factor(fractions), na.translate = FALSE)
 } else {
-  color_scheme = scale_fill_manual(values = c(
-    '#1f77b4', # blue
-    '#ff7f0e', # orange
-    '#17becf', # cyan
-    '#e377c2', # pink
-    '#2ca02c', # green
-    '#d62728', # red
-    '#9467bd', # purple
-    '#7f7f7f', # grey
-    '#bcbd22', # yellow-green
-    '#8c564b',  # brown
-    'dark blue',
-    'black'
-  ), aesthetics = c('fill', 'color')
-  )
+  color_scheme <- scale_fill_manual(
+    values = c(
+      '#17becf', # cyan
+      '#ff7f0e', # orange
+      '#e377c2', # pink
+      '#1f77b4', # blue
+      '#2ca02c', # green
+      '#d62728', # red
+      '#9467bd', # purple
+      '#7f7f7f', # grey
+      '#bcbd22', # yellow-green
+      '#8c564b', # brown
+      'dark blue',
+      'black'),
+    limits = as.factor(fractions))
 }
 
 # 2 Plot ------------------------------------------------------------------
@@ -66,7 +64,7 @@ ggsave(filename = file.path(out.dir, paste('all_samples_', no.ext, '.pdf', sep =
 
 # * 2.2 mAU fraction plots ------------------------------------------------
 
-if (max_frac == 0) {
+if (length(fractions) == 1 & fractions[1] == 0) {
   data %>%
     filter(Channel == 'mAU') %>%
     filter(mL > (low_ml - 10) & mL < (high_ml + 10)) %>%
@@ -77,9 +75,7 @@ if (max_frac == 0) {
     geom_line(aes(x = mL, y = Signal)) +
     facet_grid(Sample ~ ., scales = 'free')
   ggsave(filename = file.path(out.dir, paste('mAU_', no.ext, '.pdf', sep = '')), width = 6, height = 4)
-}
-
-if (max_frac > 0) {
+} else {
   data %>%
     filter(Channel == 'mAU') %>%
     filter(mL > (low_ml - 10) & mL < (high_ml + 10)) %>%
@@ -89,8 +85,7 @@ if (max_frac > 0) {
     theme_minimal() +
     color_scheme +
     labs(fill = 'Fraction') +
-    geom_ribbon(aes(x = mL, ymin = 0, ymax = Signal, fill = factor(inst_frac))) +
-    geom_line(aes(x = mL, y = Signal)) +
-    facet_grid(Sample ~ ., scales = 'free')
+    geom_ribbon(aes(x = mL, ymin = 0, ymax = Signal, fill = Fraction)) +
+    geom_line(aes(x = mL, y = Signal))
   ggsave(filename = file.path(out.dir, paste('mAU_fractions_', no.ext, '.pdf', sep = '')), width = 6, height = 4)
 }

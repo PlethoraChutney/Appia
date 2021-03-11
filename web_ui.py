@@ -2,11 +2,10 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-import urllib
-from subcommands.backend import Experiment, collect_experiments, init_db, update_experiment_list
-from subcommands.config import config
+from subcommands.backend import *
+from subcommands import config
 
-db = init_db(config)
+db = init_db(config.config)
 
 # 1 Change root and title ------------------------------------------------------
 
@@ -55,11 +54,11 @@ def serve_layout():
                 className = 'graph-title',
                 children = [
                 html.H1(
-                    children='Baconguis HPLC Reader',
+                    children='Baconguis Chromatography Reader',
                     style = {'textAlign': 'center'}
                 ),
                 html.Div(
-                    children=f'Simple traces from the comfort of your bench.',
+                    children='Simple traces from the comfort of your bench.',
                     style = {'textAlign': 'center'}
                 ),
                 html.Div(
@@ -82,10 +81,7 @@ def serve_layout():
                             id = 'experiment_dropdown',
                             options = [{'label': x, 'value': x} for x in update_experiment_list(db)],
                             multi = True
-                        ),
-                        html.Hr(),
-                        html.A(html.Button('Download data', id = 'download-button'), href='',
-                        id='download-link', download='rawdata.csv', target='_blank')]
+                        )]
                     )
                 ]
             ),
@@ -130,22 +126,13 @@ def update_output(hash):
         experiment_name_list = hash_string.split('+')
 
         if len(experiment_name_list) == 1:
-            return Experiment(db.get(experiment_name_list[0])).get_plotly()
+            graphs = pull_experiment(db, experiment_name_list[0]).get_plotly()
+            return graphs
+        else:
+            experiment_list = [pull_experiment(db, x) for x in experiment_name_list]
+            concat_experiment = concat_experiments(experiment_list)
+            return concat_experiment.get_plotly()
 
-        experiment_list = [Experiment(db.get(x)) for x in experiment_name_list]
-        return Experiment(experiment_list).get_plotly()
-
-# Make data downloadable
-
-@app.callback(
-    dash.dependencies.Output('download-link', 'href'),
-    [dash.dependencies.Input('root-location', 'hash')]
-)
-def update_download_link(hash):
-    df = Experiment(db.get(hash.replace('#', ''))).as_pandas_df()
-    csv_string = df.to_csv(index=False, encoding = 'utf-8')
-    csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
-    return csv_string
 
 if __name__ == '__main__':
-    app.run_server(debug=False)
+    app.run_server(debug=False, port = '8080')

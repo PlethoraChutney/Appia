@@ -8,5 +8,8 @@ Old/
 *.pdf
 config.py
 *.lnk
-*/__pycache__/*
+__pycache__
 appia-env/
+test*csv
+couchdb/data
+docker-compose.yml
