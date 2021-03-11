@@ -51,6 +51,16 @@ You will need to change the `channel_names` list as you see fit in `assemble_hpl
 ![Example 2D Trace](HPLC-tests/2d_example_plot.png)
 Example default HPLC plot
 
+### Automated Processing
+By adding an export method to the end of your Waters chromatography run, the data
+processing can be automated. In the export method, set a report PDF to save to
+a specified file and the data to save to another file. The PDF contents are not
+important; they are used so that the FileSystemWatcher can tell that a run is over.
+
+Launch the result_monitor.ps1 script, with the paths modified appropriately. When
+a PDF gets saved to the reports directory, depending on the name of the PDF file,
+the HPLC script is run in the appropriate result directory.
+
 ### 3D Processing
 The 3D scripts will automatically determine if your samle was run with an excitation
 or emission scan, separate the data into two groups, and plot each group independently.
