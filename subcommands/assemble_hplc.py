@@ -230,7 +230,13 @@ def main(args):
 		try:
 			os.makedirs(new_fullpath)
 		except FileExistsError:
-			new_fullpath = new_fullpath + '2'
+			logging.info(f'{os.path.split(new_fullpath)[1]} already exists.')
+			i = 2
+			while os.path.exists(new_fullpath + '_' + str(i)):
+				i += 1
+
+			new_fullpath = new_fullpath + '_' + str(i)
+			logging.info(f'Creating new dir at {os.path.split(new_fullpath)[1]}.')
 			os.makedirs(new_fullpath)
 
 		for file in file_list:
@@ -262,7 +268,9 @@ def main(args):
 				to_upload = backend.Experiment(args.rename, long_and_wide[0], None)
 			else:
 				to_upload = backend.Experiment(
-					id = os.path.split(new_fullpath)[-1].replace('_processed', ''),
+					# split on "_processed" in case someone incremented new_fullpath during
+					# processing, and because sample names can have "_"
+					id = os.path.split(new_fullpath)[-1].split('_processed')[0],
 					hplc = long_and_wide[0],
 					fplc = None
 				)
