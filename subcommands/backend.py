@@ -373,9 +373,10 @@ def upload_calibrations(db, in_json):
 
 def get_calibrations(db, column):
     calibrations = db.get('calibrations')
-    if calibrations is None:
+    try:
+        return calibrations[column]
+    except TypeError:
         return None
-    return calibrations[column]
 
 def update_db(db):
     if input('Did you back up your couchDB before running this option? Type "I backed up my database".\n').lower() != 'i backed up my database':
