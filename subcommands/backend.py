@@ -454,15 +454,18 @@ def main(args):
 
     if args.calibrate:
         if args.calibrate == 'check':
-            calibrations = db['calibrations']
-            for column in ['5_150', '10_300']:
-                print(column)
-                print('  mL\tSize (MDa)')
-                for i in range(len(calibrations[column]['mL'])):
-                    print('  {:<12}{}'.format(
-                        calibrations[column]["mL"][i],
-                        calibrations[column]["Size"][i])
-                    )
+            try:
+                calibrations = db['calibrations']
+                for column in ['5_150', '10_300']:
+                    print(column)
+                    print('  mL\tSize (MDa)')
+                    for i in range(len(calibrations[column]['mL'])):
+                        print('  {:<12}{}'.format(
+                            calibrations[column]["mL"][i],
+                            calibrations[column]["Size"][i])
+                        )
+            except couchdb.http.ResourceNotFound:
+                logging.warning('No calibrations currently in database.')
         else:
             upload_calibrations(db, args.calibrate)
 
