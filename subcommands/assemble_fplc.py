@@ -124,7 +124,7 @@ def main(args):
         print('Please include the name of the file in outfile, i.e., \'path/to/[name].csv\'')
         sys.exit(1)
 
-    if os.path.isfile(outfile):
+    if os.path.isfile(outfile) and not args.overwrite:
         if input(f'Are you sure you want to overwrite the file {os.path.abspath(outfile)}?\n[Y]es / [N]o\n').upper() != 'Y':
             sys.exit(0)
 
@@ -163,7 +163,7 @@ def main(args):
 
         db = backend.init_db(config.config)
         exp = backend.Experiment(id, None, to_upload)
-        exp.upload_to_couchdb(db)
+        exp.upload_to_couchdb(db, args.overwrite)
 
     if args.wide_table:
         compiled.pivot('mL', 'Channel', 'Signal').to_csv(newdir + '_wide.csv')
@@ -226,5 +226,10 @@ parser.add_argument(
 parser.add_argument(
     '--mass-export',
     help = 'Analyze each input file seperately. Default false. Will not make wide table, will copy manual R script and make default plots. Ignores -o, -s, -f, -m flags.',
+    action = 'store_true'
+)
+parser.add_argument(
+    '--overwrite',
+    help = 'Overwrite local file and experiment in couchdb if they exist',
     action = 'store_true'
 )

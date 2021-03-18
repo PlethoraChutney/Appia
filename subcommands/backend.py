@@ -67,6 +67,7 @@ class Experiment:
             print(self.fplc)
 
     def upload_to_couchdb(self, db, overwrite = False):
+        logging.info(f'Uploading {self.id} to couchdb')
         try:
             if self.has_hplc:
                 h_json = self.hplc.to_json()
@@ -77,6 +78,7 @@ class Experiment:
             else:
                 f_json = ''
 
+            logging.debug('Preparing doc')
             doc = {
                 '_id': self.id,
                 'version': self.version,
@@ -86,6 +88,7 @@ class Experiment:
                 'fplc': f_json,
             }
 
+            logging.debug('Uploading doc')
             db.save(doc)
         # This exception handles the experiment already existing
         except couchdb.http.ResourceConflict:
@@ -122,7 +125,7 @@ class Experiment:
 
             if not need_overwrite:
                 logging.info(f'Updating experiment {self.id}')
-                print(old_experiment)
+                logging.debug(old_experiment)
                 remove_experiment(db, self.id)
                 old_experiment.upload_to_couchdb(db)
             if overwrite:
@@ -295,7 +298,6 @@ class Experiment:
 
 def pull_experiment(db, id):
     doc = db.get(id)
-    logging.debug(doc)
     try:
         hplc = pd.read_json(doc['hplc'])
     except ValueError:
