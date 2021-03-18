@@ -121,9 +121,10 @@ def update_output(value):
     [dash.dependencies.Input('root-location', 'hash')]
 )
 def update_output(hash):
-    if hash is not None:
+    if hash != '':
         hash_string = hash.replace('#', '')
         experiment_name_list = hash_string.split('+')
+        logging.debug(experiment_name_list)
 
         if len(experiment_name_list) == 1:
             graphs = pull_experiment(db, experiment_name_list[0]).get_plotly()

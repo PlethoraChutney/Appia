@@ -295,6 +295,7 @@ class Experiment:
 
 def pull_experiment(db, id):
     doc = db.get(id)
+    logging.debug(doc)
     try:
         hplc = pd.read_json(doc['hplc'])
     except ValueError:
@@ -304,15 +305,18 @@ def pull_experiment(db, id):
     except ValueError:
         fplc = None
 
-    if doc['version'] == 2:
-        return Experiment(
-            id = doc['_id'],
-            hplc = hplc,
-            fplc = fplc,
-            reduce = 1
-        )
-    else:
-        logging.error('Out of date experiment. Perform db migration.')
+    try:
+        if doc['version'] == 2:
+            return Experiment(
+                id = doc['_id'],
+                hplc = hplc,
+                fplc = fplc,
+                reduce = 1
+            )
+        else:
+            logging.error('Out of date experiment. Perform db migration.')
+    except KeyError:
+        logging.error('No version number. Check experiment ID and perform db migration.')
 
 def concat_experiments(exp_list):
     hplcs = []
