@@ -297,11 +297,11 @@ def pull_experiment(db, id):
     doc = db.get(id)
     try:
         hplc = pd.read_json(doc['hplc'])
-    except KeyError:
+    except ValueError:
         hplc = None
     try:
         fplc = pd.read_json(doc['fplc'])
-    except KeyError:
+    except ValueError:
         fplc = None
 
     if doc['version'] == 2:
