@@ -295,13 +295,13 @@ class Experiment:
 
 def pull_experiment(db, id):
     doc = db.get(id)
-    if doc['has_hplc']:
+    try:
         hplc = pd.read_json(doc['hplc'])
-    else:
+    except KeyError:
         hplc = None
-    if doc['has_fplc']:
+    try:
         fplc = pd.read_json(doc['fplc'])
-    else:
+    except KeyError:
         fplc = None
 
     if doc['version'] == 2:
