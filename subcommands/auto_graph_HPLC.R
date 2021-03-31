@@ -41,13 +41,6 @@ data %>%
   ggplot(aes(x = mL, y = Signal)) +
   theme_minimal() +
   geom_vline(data = calibrations, aes(xintercept = mL), color = 'grey', linetype = 'dashed') +
-  scale_x_continuous('Volume (mL)', 
-                     sec.axis = sec_axis(trans = ~.,
-                                         name = 'Calibrations (kDa)',
-                                         breaks = calibrations$mL,
-                                         labels = calibrations$Size)
-  ) +
-  theme(axis.title.x.top = element_text(size = 8)) +
   color_scheme +
   geom_line(aes(color = Sample)) +
   facet_grid(rows = vars(Channel), scales = "free") +
@@ -59,13 +52,6 @@ data %>%
   ggplot(aes(x = mL, y = Normalized)) +
   theme_minimal() +
   geom_vline(data = calibrations, aes(xintercept = mL), color = 'grey', linetype = 'dashed') +
-  scale_x_continuous('Volume (mL)', 
-                     sec.axis = sec_axis(trans = ~.,
-                                         name = 'Standards (kDa)',
-                                         breaks = calibrations$mL,
-                                         labels = calibrations$Size)
-                     ) +
-  theme(axis.title.x.top = element_text(size = 8)) +
   color_scheme +
   geom_line(aes(color = Sample)) +
   facet_grid(rows = vars(Channel), scales = "free") +
