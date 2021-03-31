@@ -9,21 +9,6 @@ long_trace_filename <- "long_chromatograms.csv"
 data <- read.csv(file = long_trace_filename, header = TRUE) %>%
   pivot_longer(cols = c(Signal, Normalized), names_to = 'Normalization', values_to = 'Signal')
 
-cal_10_300 <- tibble(
-  mL = c(15.949, 16.345, 17.1495, 17.337, 18.2675),
-  Size = c(75, 43, 29, 13.7, 6.5)
-)
-cal_5_150 <- tibble(
-  mL = c(0.7, 1.2, 2, 2.1),
-  Size = c(100, 50, 25, 12)
-)
-
-if( max(data$mL) > 20) {
-  calibrations <- cal_10_300
-} else {
-  calibrations <- cal_5_150
-}
-
 # 2 Plot ------------------------------------------------------------------
 
 if (length(levels(as.factor(data$Sample))) > 12) {
