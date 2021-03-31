@@ -15,7 +15,7 @@ data <- read_csv(args[1], col_types = 'dfddfd') %>%
   mutate(Fraction = as.factor(Fraction))
 
 if (length(fractions) > 12) {
-  color_scheme = scale_fill_discrete(limits = as.factor(fractions), na.translate = FALSE)
+  color_scheme = scale_fill_discrete(limits = as.character(fractions), na.translate = FALSE)
 } else {
   color_scheme <- scale_fill_manual(
     values = c(
@@ -31,7 +31,7 @@ if (length(fractions) > 12) {
       '#8c564b', # brown
       'dark blue',
       'black'),
-    limits = as.factor(fractions))
+    limits = as.character(fractions))
 }
 
 # 2 Plot ------------------------------------------------------------------

@@ -15,21 +15,6 @@ data <- read.csv(file = long_trace_filename, header = TRUE) %>%
                            if_else(grepl('ex488/em509', Channel), 'GFP', as.character(Channel)))) %>% 
   filter(Time > 0.5)
 
-cal_10_300 <- tibble(
-    mL = c(15.949, 17.1495, 18.2675),
-    Size = c(75, 29, 6.5)
-  )
-cal_5_150 <- tibble(
-    mL = c(0.7, 1.2, 2, 2.1),
-    Size = c(100, 50, 25, 12)
-  )
-
-if( max(data$mL) > 20) {
-  calibrations <- cal_10_300
-} else {
-  calibrations <- cal_5_150
-}
-
 # 2 Plot ------------------------------------------------------------------
 
 if (length(levels(as.factor(data$Sample))) > 12) {
