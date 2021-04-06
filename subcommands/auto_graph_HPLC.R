@@ -40,7 +40,6 @@ if (length(levels(as.factor(data$Sample))) > 12) {
 data %>% 
   ggplot(aes(x = mL, y = Signal)) +
   theme_minimal() +
-  geom_vline(data = calibrations, aes(xintercept = mL), color = 'grey', linetype = 'dashed') +
   color_scheme +
   geom_line(aes(color = Sample)) +
   facet_grid(rows = vars(Channel), scales = "free") +
@@ -51,7 +50,6 @@ ggsave('fsec_traces.pdf', width = 7, height = 5)
 data %>% 
   ggplot(aes(x = mL, y = Normalized)) +
   theme_minimal() +
-  geom_vline(data = calibrations, aes(xintercept = mL), color = 'grey', linetype = 'dashed') +
   color_scheme +
   geom_line(aes(color = Sample)) +
   facet_grid(rows = vars(Channel), scales = "free") +

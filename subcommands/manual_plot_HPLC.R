@@ -36,7 +36,6 @@ data %>%
   filter(Time > 0.5) %>%
   ggplot(aes(x = mL, y = Signal)) +
   theme_minimal() +
-  geom_vline(data = calibrations, aes(xintercept = mL), color = 'grey', linetype = 'dashed') +
   color_scheme +
   geom_line(aes(color = Sample)) +
   facet_grid(Normalization ~ Channel, scales = "free")
