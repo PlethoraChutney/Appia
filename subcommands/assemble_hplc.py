@@ -21,7 +21,7 @@ def get_file_list(directory, extension):
 # 2 Data processing functions --------------------------------------------------
 
 
-def append_chroms(file_list, system):
+def append_chroms(file_list, system, norm_range, strict):
 
 	flow_rates = {
 		'10_300': 0.5,
@@ -74,12 +74,12 @@ def append_chroms(file_list, system):
 			)
 			# pull sample info from the headers (in a separate df since the shape
 			# is inconsistent). Then add the data
+
+
 			sample_name = str(sample_info.loc[data_row]['SampleName'])
 			channel_ID = str(sample_info.loc[data_row]['Channel'])
 			to_append['Channel'] = channel_ID
 			to_append['Sample'] = sample_name
-			to_append['Normalized'] = to_append.groupby(['Sample', 'Channel']).transform(lambda x: ((x - x.min()) / (x[to_append.Time > 0.51].max() - x.min())))['Signal'].tolist()
-			to_append.fillna(0, inplace = True)
 
 			if 'Instrument Method Name' in sample_info:
 				method = str(sample_info.loc[data_row]['Instrument Method Name'])
@@ -92,6 +92,25 @@ def append_chroms(file_list, system):
 
 				to_append['mL'] = to_append['Time']*flow_rates[column]
 				to_append['Column Volume'] = to_append['mL']/column_volumes[column]
+
+			# normalization
+			def normalizer(df):
+				ranged_df = df.loc[(min_ml < df.mL) & (df.mL < max_ml)]
+				if strict:
+					min_sig = ranged_df.Signal.min()
+				else:
+					min_sig = df.Signal.min()
+				max_sig = ranged_df.Signal.max()
+
+				df['Normalized'] = (df.Signal - min_sig)/(max_sig - min_sig)
+				return df
+
+
+			ml_range = to_append['mL'].tolist()
+			min_ml = max([min(ml_range), min(norm_range)])
+			max_ml = min([max(ml_range), max(norm_range)])
+			to_append = to_append.groupby(['Sample', 'Channel']).apply(normalizer)
+			to_append.fillna(0, inplace = True)
 
 			to_append = to_append.assign(
 				Channel = lambda df: df.Channel.apply(rename_channels)
@@ -250,7 +269,7 @@ def main(args):
 	logging.info('Assembling traces...')
 
 	file_list = get_file_list(new_fullpath, system_extensions[args.system])
-	long_and_wide = append_chroms(file_list, args.system)
+	long_and_wide = append_chroms(file_list, args.system, args.normalize, args.strict_normalize)
 	file_name = os.path.join(new_fullpath, 'long_chromatograms.csv')
 	long_and_wide[0].to_csv(file_name, index = False)
 	file_name = os.path.join(new_fullpath, 'wide_chromatograms.csv')
@@ -322,6 +341,19 @@ parser.add_argument(
 parser.add_argument(
 	'-d', '--no-db',
 	help = 'Do not add to couchdb',
+	action = 'store_true',
+	default = False
+)
+parser.add_argument(
+	'-n', '--normalize',
+	help = 'Range of values over which to normalize traces. In mL, not time. You must give two arguments; give lower/higher than max/min for full trace. Default from 0.5 to the end of the run.',
+	nargs = 2,
+	type = float,
+	default = [0.5, 1000]
+)
+parser.add_argument(
+	'--strict-normalize',
+	help = 'Typically, normalize only take the max from a user-specified range. Strict makes it take the min, also, meaning some regions may go below zero.',
 	action = 'store_true',
 	default = False
 )
