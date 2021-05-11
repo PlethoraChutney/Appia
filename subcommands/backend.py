@@ -183,11 +183,19 @@ class Experiment:
         fplc = self.fplc
         samples = set(fplc['Sample'])
 
+        def normalizer(df):
+            min_sig = df.Signal.min()
+            max_sig = df.Signal.max()
+
+            df['Normalized'] = (df.Signal - min_sig)/(max_sig - min_sig)
+            return df
+
         # Using GO primitives b/c plotly express creates traces which are zero
         # outside the defined fraction region, resulting in strange fill behavior
         # when non-continuous fractions are selected.
-        fplc_graph = go.Figure()
+        
         if len(samples) == 1:
+            fplc_graph = go.Figure()
             for frac in set(fplc['Fraction']):
                 fplc_graph.add_trace(
                     go.Scatter(
@@ -200,7 +208,6 @@ class Experiment:
                         name = f'Fraction {frac}'
                     )
                 )
-        if len(samples) == 1:
             fplc_graph.add_trace(
                 # want the overall FPLC curve as a separate trace so that it stays present
                 # to give overall sense of quality of trace
@@ -213,17 +220,21 @@ class Experiment:
                 )
             )
         else:
-            for sample in samples:
-                fplc_graph.add_trace(
-                    # comparisons need to be in the legend and have color
-                    go.Scatter(
-                        x = fplc[fplc.Sample == sample]['mL'],
-                        y = fplc[fplc.Sample == sample]['Signal'],
-                        mode = 'lines',
-                        showlegend = True,
-                        name = sample
-                    )
-                )
+            fplc = fplc.groupby('Sample').apply(normalizer).melt(
+                id_vars = ['mL', 'Sample'], value_vars = ['Signal', 'Normalized'], var_name = 'Normalization',
+                value_name = 'Value')
+            fplc_graph = px.line(
+                data_frame = fplc,
+                x = 'mL',
+                y = 'Value',
+                color = 'Sample',
+                facet_row = 'Normalization',
+                template = 'plotly_white'
+            )
+            fplc_graph.layout.yaxis2.update(matches = None)
+            # remove 'Channel=' from the facet labels
+            fplc_graph.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+
         fplc_graph.update_layout(template = 'plotly_white')
         fplc_graph.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
         return fplc_graph
