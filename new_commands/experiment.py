@@ -80,16 +80,5 @@ class Experiment:
 
         return doc
 
-    def upload_to_couchdb(self, db, overwrite = False):
-        logging.info(f'Uploading {self.id} to couchdb')
-        doc = self.jsonify()
-
-        try:
-            db.save(doc)
-        except couchdb.http.ResourceConflict:
-            logging.warning(f'Experiment "{self.id}" already in database.')
-
-
-
 
 exp = Experiment('test')
