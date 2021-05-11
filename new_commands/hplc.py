@@ -67,4 +67,50 @@ def append_waters(file_list):
 
     return chroms
 
-append_waters(get_files('HPLC-tests/*')['arw'])
+def append_shim(file_list, channel_mapping):
+    chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
+
+    channel_names = list(channel_mapping.keys())
+
+    for i in range(len(file_list)):
+
+        loading_bar(i, (len(file_list) - 1))
+        file = file_list[i]
+
+        to_append = pd.read_csv(
+            file,
+            sep = '\t',
+            skiprows = 16,
+            names = ['Signal'],
+            header = None,
+            dtype = np.float32
+        )
+
+        sample_info = pd.read_csv(
+            file,
+            sep = '\t',
+            nrows = 16,
+            names = ['Stat'] + channel_names + ['Units'],
+            engine = 'python'
+        )
+
+        sample_info.set_index('Stat', inplace = True)
+
+        number_samples = int(sample_info.loc['Total Data Points:'][0])
+        sampling_interval = float(sample_info.loc['Sampling Rate:'][0])
+        seconds_list = [x * sampling_interval for x in range(number_samples)] * len(channel_names)
+
+        to_append['Sample'] = str(sample_info.loc['Sample ID:'][0])
+        to_append['Channel'] = [x for x in channel_names for i in range(number_samples)]
+        to_append['Time'] = [x/60 for x in seconds_list]
+
+        chroms = chroms.append(to_append, ignore_index = True, sort = True)
+
+    chroms = chroms[['Time', 'Signal', 'Channel', 'Sample']]
+    chroms = chroms.replace(channel_mapping)
+
+    return chroms
+
+file_lists = get_files('HPLC-tests/*')
+append_waters(file_lists['arw'])
+append_shim(file_lists['asc'], {'A': 'GFP', 'B': 'Trp'})
