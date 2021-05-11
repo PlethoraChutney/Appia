@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import argparse
 import logging
+from math import floor
 
 # 1 Import functions -----------------------------------------------------------
 
@@ -20,6 +21,14 @@ def get_file_list(directory, extension):
 
 # 2 Data processing functions --------------------------------------------------
 
+def loading_bar(current, total):
+	if logging.root.level > 20:
+		pass
+	else:
+		percent = floor(current/total*10)
+		print('    '*percent + '><((((°>', end = '\r')
+		if current == total:
+			print()
 
 def append_chroms(file_list, system, norm_range, strict):
 
@@ -53,7 +62,9 @@ def append_chroms(file_list, system, norm_range, strict):
 	if system == 'waters':
 		header_rows = 2
 		data_row = 0
-		for file in file_list:
+		for i in range(len(file_list)):
+			loading_bar(i, len(file_list)-1)
+			file = file_list[i]
 			to_append = pd.read_csv(
 				file,
 				delim_whitespace = True,
