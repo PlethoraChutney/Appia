@@ -1,11 +1,7 @@
 import pandas as pd
 import numpy as np
-import os
-import shutil
-import subprocess
 import logging
-from .core import *
-from .experiment import Experiment
+from .core import loading_bar
 
 flow_rates = {
     '10_300': 0.5,
