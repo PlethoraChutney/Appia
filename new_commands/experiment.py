@@ -109,7 +109,9 @@ class Experiment:
         if self.hplc is None:
             raise ValueError('No HPLC data')
 
-        hplc = self.hplc.pivot_table(values = 'Value', index = ['mL', 'Sample', 'Channel'])
+        # this arcane string of pandas commands is the equivalent of pivot_wider from tidyverse
+        # from https://medium.com/@durgaswaroop/reshaping-pandas-dataframes-melt-and-unmelt-9f57518c7738;.'/
+        hplc = self.hplc.pivot(index = ['mL', 'Sample', 'Channel', 'Time'], columns = ['Normalization'])['Value'].reset_index()
         hplc = hplc.groupby(['Sample', 'Channel']).apply(lambda x: normalizer(x, norm_range, strict))
         hplc = hplc.melt(
             id_vars = ['mL', 'Sample', 'Channel', 'Time'],
@@ -121,9 +123,11 @@ class Experiment:
 
     def renormalize_fplc(self, norm_range, strict):
         if self.fplc is None:
-            raise ValueError('No FPLC data')
+            raise
+         ValueError('No FPLC data')
 
-        fplc = self.fplc.groupby(['Sample', 'Channel']).apply(lambda x: normalizer(x, norm_range, strict))
+        fplc = self.fplc.pivot(index = ['mL', 'Sample'], columns = ['Normalization'])['Value'].reset_index()
+        fplc = fplc.groupby(['Sample', 'Channel']).apply(lambda x: normalizer(x, norm_range, strict))
         fplc = fplc.melt(
             id_vars = ['mL', 'Sample'],
             value_vars = ['Signal', 'Normalized'],

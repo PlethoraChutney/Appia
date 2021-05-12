@@ -65,9 +65,11 @@ def append_waters(file_list):
             to_append['Column Volume'] = to_append['mL']/column_volumes[column]
 
         chroms = chroms.append(to_append, ignore_index = False)
+
+    chroms = chroms.groupby(['Sample', 'Channel']).apply(normalizer)
     chroms = chroms.melt(
         id_vars = ['mL', 'Sample', 'Channel', 'Time'],
-        value_vars = 'Signal',
+        value_vars = ['Signal', 'Normalized'],
         var_name = 'Normalization',
         value_name = 'Value'
     )
