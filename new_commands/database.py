@@ -15,6 +15,14 @@ def init_db(config):
 
     return(db)
 
+def update_experiment_list(db):
+    return [x['id'] for x in db.view('_all_docs')]
+
+def three_column_print(in_list):
+    in_list = iter(in_list)
+    for i in in_list:
+        print('{:<45}{:<45}{}'.format(i, next(in_list, ""), next(in_list, '')))
+
 def pull_experiment(db, id):
     doc = db.get(id)
     new_exp = Experiment(id)
