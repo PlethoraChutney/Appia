@@ -110,7 +110,3 @@ def append_shim(file_list, channel_mapping):
     chroms = chroms.replace(channel_mapping)
 
     return chroms
-
-file_lists = get_files('HPLC-tests/*')
-append_waters(file_lists['arw'])
-append_shim(file_lists['asc'], {'A': 'GFP', 'B': 'Trp'})

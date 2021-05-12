@@ -79,6 +79,3 @@ class Experiment:
         }
 
         return doc
-
-
-exp = Experiment('test')
