@@ -41,7 +41,7 @@ class Experiment:
             raise TypeError('FPLC input is not a pandas dataframe')
 
     def __repr__(self):
-        to_return = f'Experiment "{self.id}", version {self.version}, with '
+        to_return = f'Experiment "{self.id}" with '
         if self.hplc is not None:
             to_return += 'HPLC '
         if self.hplc is not None and self.fplc is not None:
@@ -79,3 +79,30 @@ class Experiment:
         }
 
         return doc
+
+    def concat_experiments(exp_list):
+        hplcs = []
+        fplcs = []
+
+        for exp in [x for x in exp_list if x.hplc is not None]:
+            hplc = exp.hplc
+            hplc['Sample'] = f'{exp.id}: ' + hplc['Sample'].astype(str)
+            hplcs.append(hplc)
+
+        for exp in [x for x in exp_list if x.fplc is not None]:
+            fplc = exp.fplc
+            fplc['Sample'] = exp.id
+            fplcs.append(fplc)
+
+        concat_exp = Experiment('concat')
+        try:
+            concat_exp.hplc = pd.concat(hplcs)
+        except ValueError:
+            pass
+
+        try:
+            concat_exp.fplc = pd.concat(fplcs)
+        except ValueError:
+            pass
+        
+        return concat_exp

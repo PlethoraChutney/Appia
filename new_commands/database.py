@@ -1,4 +1,19 @@
+import couchdb
 from experiment import Experiment
+
+def init_db(config):
+    user = config['user']
+    password = config['password']
+    host = config['host']
+    couchserver = couchdb.Server(f'http://{user}:{password}@{host}:5984')
+
+    dbname = 'traces'
+    if dbname in couchserver:
+        db = couchserver[dbname]
+    else:
+        db = couchserver.create(dbname)
+
+    return(db)
 
 def pull_experiment(db, id):
     doc = db.get(id)
