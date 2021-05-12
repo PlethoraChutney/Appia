@@ -1,5 +1,7 @@
+from new_commands.core import normalizer
 import pandas as pd
-from database import pull_experiment
+from .database import pull_experiment
+from core import *
 
 class Experiment:
     def __init__(self, id):
@@ -17,9 +19,7 @@ class Experiment:
 
     @hplc.setter
     def hplc(self, df):
-        if self.hplc:
-            raise ValueError(f'Experiment {self.id} already has an HPLC')
-        elif isinstance(df, pd.DataFrame):
+        if isinstance(df, pd.DataFrame):
             self._hplc = df
         else:
             raise TypeError('HPLC input is not a pandas dataframe')
@@ -33,9 +33,7 @@ class Experiment:
 
     @fplc.setter
     def fplc(self, df):
-        if self.fplc:
-            raise ValueError(f'Experiment {self.id} already has an FPLC')
-        elif isinstance(df, pd.DataFrame):
+        if isinstance(df, pd.DataFrame):
             self._fplc = df
         else:
             raise TypeError('FPLC input is not a pandas dataframe')
@@ -106,3 +104,29 @@ class Experiment:
             pass
         
         return concat_exp
+
+    def renormalize_hplc(self, norm_range, strict):
+        if self.hplc is None:
+            raise ValueError('No HPLC data')
+
+        hplc = self.hplc.groupby(['Sample', 'Channel']).apply(lambda x: normalizer(x, norm_range, strict))
+        hplc = hplc.melt(
+            id_vars = ['mL', 'Sample'],
+            value_vars = ['Signal', 'Normalized'],
+            var_name = 'Normalization',
+            value_name = 'Value'
+        )
+        self.hplc = hplc
+
+    def renormalize_fplc(self, norm_range, strict):
+        if self.fplc is None:
+            raise ValueError('No FPLC data')
+
+        fplc = self.fplc.groupby(['Sample', 'Channel']).apply(lambda x: normalizer(x, norm_range, strict))
+        fplc = fplc.melt(
+            id_vars = ['mL', 'Sample'],
+            value_vars = ['Signal', 'Normalized'],
+            var_name = 'Normalization',
+            value_name = 'Value'
+        )
+        self.fplc = fplc

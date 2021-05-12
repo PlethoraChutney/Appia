@@ -38,3 +38,18 @@ def get_files(globs):
     return {'arw': arw,
             'asc': asc,
             'csv': csv}
+
+def normalizer(df, norm_range = None, strict = False):
+    if not norm_range:
+        norm_range = [0.5, df.mL.max()]
+
+    ranged_df = df.loc[(df.mL > min(norm_range)) & (df.mL < max(norm_range))]
+    if strict:
+        min_sig = df.Signal.min()
+    else:
+        min_sig = ranged_df.Signal.min()
+    max_sig = ranged_df.Signal.max()
+
+    df['Normalized'] = (df.Signal - min_sig)/(max_sig - min_sig)
+
+    return df

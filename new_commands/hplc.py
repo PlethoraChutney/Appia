@@ -4,7 +4,8 @@ import os
 import shutil
 import subprocess
 import logging
-from core import loading_bar
+from .core import *
+from .experiment import Experiment
 
 flow_rates = {
     '10_300': 0.5,
@@ -104,9 +105,35 @@ def append_shim(file_list, channel_mapping):
         to_append['Channel'] = [x for x in channel_names for i in range(number_samples)]
         to_append['Time'] = [x/60 for x in seconds_list]
 
+        # this is obviously not strictly true
+        if to_append.Time.max() < 20:
+            column = '5_150'
+        else:
+            column = '10_300'
+
+        to_append['mL'] = to_append['Time']*flow_rates[column]
+        to_append['Column Volume'] = to_append['mL']/column_volumes[column]
+
         chroms = chroms.append(to_append, ignore_index = True, sort = True)
 
     chroms = chroms[['Time', 'Signal', 'Channel', 'Sample']]
     chroms = chroms.replace(channel_mapping)
+    
 
     return chroms
+
+def make_experiment(df, id, norm_range = None):
+    df = df.groupby(['Sample', 'Channel']).apply(lambda x: normalizer(x, norm_range))
+    df = df.melt(
+        id_vars = ['mL', 'Sample'],
+        value_vars = ['Signal', 'Normalized'],
+        var_name = 'Normalization',
+        value_name = 'Value'
+    )
+
+    if exp is None:
+        exp = Experiment(id)
+
+    exp.hplc = df
+
+    return exp

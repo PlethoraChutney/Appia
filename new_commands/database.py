@@ -1,5 +1,4 @@
 import couchdb
-from experiment import Experiment
 
 def init_db(config):
     user = config['user']
@@ -26,15 +25,17 @@ def three_column_print(in_list):
 def pull_experiment(db, id):
     doc = db.get(id)
     new_exp = Experiment(id)
-        try:
-            new_exp.hplc = pd.read_json(doc['hplc'])
-        except ValueError:
-            pass
 
-        try:
-            new_exp.fplc = pd.read_json(doc['fplc'])
-        except ValueError:
-            pass
+    try:
+        new_exp.hplc = pd.read_json(doc['hplc'])
+    except ValueError:
+        pass
+
+    try:
+        new_exp.fplc = pd.read_json(doc['fplc'])
+    except ValueError:
+        pass
+
     try:
         if doc['version'] == 2:
             logging.info('Upgrading from Experiment v2')

@@ -13,3 +13,4 @@ appia-env/
 test*csv
 couchdb/data
 docker-compose.yml
+testing-commands.py
