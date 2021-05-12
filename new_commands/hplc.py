@@ -65,6 +65,12 @@ def append_waters(file_list):
             to_append['Column Volume'] = to_append['mL']/column_volumes[column]
 
         chroms = chroms.append(to_append, ignore_index = False)
+    chroms = chroms.melt(
+        id_vars = ['mL', 'Sample', 'Channel', 'Time'],
+        value_vars = 'Signal',
+        var_name = 'Normalization',
+        value_name = 'Value'
+    )
 
     return chroms
 
@@ -118,22 +124,12 @@ def append_shim(file_list, channel_mapping):
 
     chroms = chroms[['Time', 'Signal', 'Channel', 'Sample']]
     chroms = chroms.replace(channel_mapping)
-    
 
-    return chroms
-
-def make_experiment(df, id, norm_range = None):
-    df = df.groupby(['Sample', 'Channel']).apply(lambda x: normalizer(x, norm_range))
-    df = df.melt(
-        id_vars = ['mL', 'Sample'],
-        value_vars = ['Signal', 'Normalized'],
+    chroms = chroms.melt(
+        id_vars = ['mL', 'Sample', 'Channel', 'Time'],
+        value_vars = 'Signal',
         var_name = 'Normalization',
         value_name = 'Value'
     )
 
-    if exp is None:
-        exp = Experiment(id)
-
-    exp.hplc = df
-
-    return exp
+    return chroms

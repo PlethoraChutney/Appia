@@ -1,7 +1,7 @@
 from new_commands.core import normalizer
 import pandas as pd
 from .database import pull_experiment
-from core import *
+from .core import *
 
 class Experiment:
     def __init__(self, id):
@@ -109,9 +109,10 @@ class Experiment:
         if self.hplc is None:
             raise ValueError('No HPLC data')
 
-        hplc = self.hplc.groupby(['Sample', 'Channel']).apply(lambda x: normalizer(x, norm_range, strict))
+        hplc = self.hplc.pivot_table(values = 'Value', index = ['mL', 'Sample', 'Channel'])
+        hplc = hplc.groupby(['Sample', 'Channel']).apply(lambda x: normalizer(x, norm_range, strict))
         hplc = hplc.melt(
-            id_vars = ['mL', 'Sample'],
+            id_vars = ['mL', 'Sample', 'Channel', 'Time'],
             value_vars = ['Signal', 'Normalized'],
             var_name = 'Normalization',
             value_name = 'Value'

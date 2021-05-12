@@ -48,8 +48,10 @@ def normalizer(df, norm_range = None, strict = False):
         min_sig = df.Signal.min()
     else:
         min_sig = ranged_df.Signal.min()
+
     max_sig = ranged_df.Signal.max()
 
     df['Normalized'] = (df.Signal - min_sig)/(max_sig - min_sig)
+    df.Normalized = df.Normalized.fillna(0)
 
     return df
