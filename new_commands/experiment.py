@@ -29,7 +29,7 @@ class Experiment:
         try:
             return self._fplc
         except AttributeError:
-            return none
+            return None
 
     @fplc.setter
     def fplc(self, df):
