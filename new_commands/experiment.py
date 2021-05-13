@@ -2,6 +2,7 @@ from new_commands.core import normalizer
 import pandas as pd
 from .database import pull_experiment
 from .core import *
+from math import floor
 
 class Experiment:
     def __init__(self, id):
@@ -78,33 +79,6 @@ class Experiment:
 
         return doc
 
-    def concat_experiments(exp_list):
-        hplcs = []
-        fplcs = []
-
-        for exp in [x for x in exp_list if x.hplc is not None]:
-            hplc = exp.hplc
-            hplc['Sample'] = f'{exp.id}: ' + hplc['Sample'].astype(str)
-            hplcs.append(hplc)
-
-        for exp in [x for x in exp_list if x.fplc is not None]:
-            fplc = exp.fplc
-            fplc['Sample'] = exp.id
-            fplcs.append(fplc)
-
-        concat_exp = Experiment('concat')
-        try:
-            concat_exp.hplc = pd.concat(hplcs)
-        except ValueError:
-            pass
-
-        try:
-            concat_exp.fplc = pd.concat(fplcs)
-        except ValueError:
-            pass
-        
-        return concat_exp
-
     def renormalize_hplc(self, norm_range, strict):
         if self.hplc is None:
             raise ValueError('No HPLC data')
@@ -140,3 +114,43 @@ class Experiment:
             value_name = 'Value'
         )
         self.fplc = fplc
+
+    def reduce_hplc(self, num_points):
+        # reduce the number of points in the hplc trace to num_points per sample/channel/norm
+
+        def reduction_factor(df, num_ponts):
+            total_points = df.shape[0]
+            reduction_factor = floor(total_points/num_points)
+            return df[::reduction_factor]
+
+        try:
+            self.hplc = self.hplc.groupby(['Channel', 'Sample', 'Normalization']).apply(lambda x: reduction_factor(x, num_points))
+        except AttributeError:
+            return
+
+def concat_experiments(exp_list):
+        hplcs = []
+        fplcs = []
+
+        for exp in [x for x in exp_list if x.hplc is not None]:
+            hplc = exp.hplc
+            hplc['Sample'] = f'{exp.id}: ' + hplc['Sample'].astype(str)
+            hplcs.append(hplc)
+
+        for exp in [x for x in exp_list if x.fplc is not None]:
+            fplc = exp.fplc
+            fplc['Sample'] = exp.id
+            fplcs.append(fplc)
+
+        concat_exp = Experiment('concat')
+        try:
+            concat_exp.hplc = pd.concat(hplcs)
+        except ValueError:
+            pass
+
+        try:
+            concat_exp.fplc = pd.concat(fplcs)
+        except ValueError:
+            pass
+        
+        return concat_exp
