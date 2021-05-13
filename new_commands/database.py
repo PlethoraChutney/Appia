@@ -22,6 +22,7 @@ class Config:
 class Database:
     def __init__(self, config) -> None:
         self.config = config
+        self.version = 3
         couchserver = couchdb.Server(f'http://{config.cuser}:{config.cpass}@{config.chost}:5984')
 
         dbname = 'traces'
@@ -54,7 +55,7 @@ class Database:
         try:
             if doc['version'] == 2:
                 logging.info('Upgrading from Experiment v2')
-            elif doc['version'] != 3:
+            elif doc['version'] != self.version:
                 logging.error('Out of date experiment. Perform db migration.')
         except KeyError:
             logging.error('No version number. Check experiment ID and perform db migration.')
