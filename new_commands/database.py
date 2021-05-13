@@ -60,6 +60,8 @@ class Database:
         except KeyError:
             logging.error('No version number. Check experiment ID and perform db migration.')
 
+        return new_exp
+
     def remove_experiment(self, exp_id):
         try:
             self.db.delete(self.db[exp_id])
