@@ -35,9 +35,11 @@ def get_files(globs):
     asc = [x for x in files if x.endswith('.asc')]
     csv = [x for x in files if x.endswith('.csv')]
 
-    return {'arw': arw,
-            'asc': asc,
-            'csv': csv}
+    return {
+        'arw': arw,
+        'asc': asc,
+        'csv': csv
+    }
 
 def normalizer(df, norm_range = None, strict = False):
     if not norm_range:
@@ -55,3 +57,8 @@ def normalizer(df, norm_range = None, strict = False):
     df.Normalized = df.Normalized.fillna(0)
 
     return df
+
+def three_column_print(in_list):
+    in_list = iter(in_list)
+    for i in in_list:
+        print('{:<45}{:<45}{}'.format(i, next(in_list, ""), next(in_list, '')))
