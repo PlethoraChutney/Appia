@@ -1,4 +1,8 @@
 import couchdb
+import logging
+import pandas as pd
+from .experiment import Experiment
+import json
 
 def init_db(config):
     user = config['user']
@@ -75,7 +79,7 @@ def upload_to_couchdb(exp, db, overwrite = False):
             else:
                 merged_exp.hplc = exp.hplc
         else:
-            merged_exp.hplc = old.hplc
+            merged_exp.hplc = old_exp.hplc
 
         if exp.fplc is not None:
             if old_exp.fplc is not None:
@@ -86,9 +90,22 @@ def upload_to_couchdb(exp, db, overwrite = False):
             else:
                 merged_exp.fplc = exp.fplc
         else:
-            merged_exp.fplc = old.fplc
+            merged_exp.fplc = old_exp.fplc
 
         remove_experiment(exp.id)
         doc = merged_exp.jsonify()
         db.save(doc)
 
+class Config:
+    def __init__(self, config_file) -> None:
+        with open(config_file) as conf:
+            config = json.load(conf)
+
+        self.cuser = config['user']
+        self.cpass = config['password']
+        self.chost = config['host']
+        self.slack_token = config['token']
+        self.slack_channel = config['chromatography_channel']
+
+    def __repr__(self) -> str:
+        return f'config object for host {self.chost}'

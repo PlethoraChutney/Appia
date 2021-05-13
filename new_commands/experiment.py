@@ -1,11 +1,9 @@
-from new_commands.core import normalizer
 import pandas as pd
-from .database import pull_experiment
 from .core import *
 from math import floor
 
 class Experiment:
-    def __init__(self, id):
+    def __init__(self, id) -> None:
         self.id = id
         self.version = 3
         self._hplc = None
@@ -73,8 +71,8 @@ class Experiment:
         doc = {
             '_id': self.id,
             'version': self.version,
-            'hplc': h_json,
-            'fplc': f_json
+            'hplc': hplc_json,
+            'fplc': fplc_json
         }
 
         return doc
