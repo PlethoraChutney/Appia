@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from .core import normalizer
+from core import normalizer
 
 def append_fplc(file_list):
 

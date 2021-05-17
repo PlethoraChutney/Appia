@@ -1,5 +1,5 @@
 import pandas as pd
-from .core import *
+from core import *
 from math import floor
 
 class Experiment:
@@ -18,7 +18,7 @@ class Experiment:
 
     @hplc.setter
     def hplc(self, df):
-        if isinstance(df, pd.DataFrame):
+        if isinstance(df, pd.DataFrame) or df is None:
             self._hplc = df
         else:
             raise TypeError('HPLC input is not a pandas dataframe')
@@ -32,7 +32,7 @@ class Experiment:
 
     @fplc.setter
     def fplc(self, df):
-        if isinstance(df, pd.DataFrame):
+        if isinstance(df, pd.DataFrame) or df is None:
             self._fplc = df
         else:
             raise TypeError('FPLC input is not a pandas dataframe')
@@ -125,6 +125,9 @@ class Experiment:
             self.hplc = self.hplc.groupby(['Channel', 'Sample', 'Normalization']).apply(lambda x: reduction_factor(x, num_points))
         except AttributeError:
             return
+
+    def rename_channels(self, channel_name_dict):
+        self.hplc = self.hplc.replace({'Channel': channel_name_dict})
 
 def concat_experiments(exp_list):
         hplcs = []

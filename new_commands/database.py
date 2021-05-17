@@ -1,8 +1,8 @@
 import couchdb
 import logging
 import pandas as pd
-from .experiment import Experiment
-from .core import three_column_print
+from experiment import Experiment
+from core import three_column_print
 import json
 
 class Config:
@@ -68,7 +68,7 @@ class Database:
         except couchdb.http.ResourceNotFound:
             logging.error(f'Could not find experiment {exp_id}')
 
-    def upload_to_couchdb(self, exp, overwrite = False):
+    def upload_experiment(self, exp, overwrite = False):
         logging.info(f'Uploading {exp.id} to couchdb')
         doc = exp.jsonify()
 
