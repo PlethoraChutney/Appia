@@ -39,7 +39,6 @@ channel_dict = {
 def get_hplc_graphs(exp):
     exp.rename_channels(channel_dict)
     raw_graphs = []
-    print(exp.hplc)
 
     for norm in ['Signal', 'Normalized']:
 
@@ -131,6 +130,11 @@ def serve_layout():
                             options = [{'label': x, 'value': x} for x in db.update_experiment_list()],
                             multi = True
                         )]
+                    ),
+                    html.Button(
+                        'Renormalize HPLC',
+                        id = 'renom-hplc',
+                        style = {'width': '100%', 'padding-left': 'auto'}
                     )
                 ]
             ),
