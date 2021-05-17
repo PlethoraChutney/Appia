@@ -1,5 +1,5 @@
 import pandas as pd
-from core import *
+from .core import *
 from math import floor
 
 class Experiment:

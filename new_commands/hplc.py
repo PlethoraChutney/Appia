@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import logging
-from core import loading_bar, normalizer
+from .core import loading_bar, normalizer
 
 flow_rates = {
     '10_300': 0.5,

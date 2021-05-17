@@ -1,8 +1,8 @@
 import couchdb
 import logging
 import pandas as pd
-from experiment import Experiment
-from core import three_column_print
+from .experiment import Experiment
+from .core import three_column_print
 import json
 
 class Config:
