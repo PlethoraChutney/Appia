@@ -118,7 +118,6 @@ def serve_layout():
             html.Div(
                 className = 'sidebar',
                 children = [
-                    dcc.Store('curr_range'),
                     html.H5(
                         style = {'paddingTop': '10px', 'textAlign': 'center'},
                         children = 'Pick experiment:'
@@ -134,9 +133,10 @@ def serve_layout():
                     ),
                     html.Button(
                         'Renormalize HPLC',
-                        id = 'renom-hplc',
+                        id = 'renorm-hplc',
                         style = {'width': '100%', 'padding-left': 'auto'}
-                    )
+                    ),
+                    dcc.Store('curr_range')
                 ]
             ),
             html.Div(
@@ -167,10 +167,20 @@ def update_output(value):
 
 @app.callback(
     dash.dependencies.Output('main_graphs', 'children'),
-    [dash.dependencies.Input('root-location', 'hash')]
+    [
+        dash.dependencies.Input('root-location', 'hash'),
+        dash.dependencies.Input('renorm-hplc', 'n_clicks'),
+        dash.dependencies.Input('curr_range', 'data')
+    ]
 )
-def update_output(hash):
+def update_output(hash, n_clicks, curr_range):
+    changed = [p['prop_id'] for p in dash.callback_context.triggered][0]
+
+    if changed == 'curr_range.data':
+        raise dash.exceptions.PreventUpdate
+
     if hash != '':
+        
         hash_string = hash.replace('#', '')
         experiment_name_list = hash_string.split('+')
         logging.debug(experiment_name_list)
@@ -180,7 +190,28 @@ def update_output(hash):
         else:
             exp = concat_experiments(experiment_name_list)
 
+        if changed == 'renorm-hplc.n_clicks':
+            exp.renormalize_hplc(curr_range, False)
+
+        
         return get_plotly(exp)
 
+@app.callback(
+    dash.dependencies.Output('curr_range', 'data'),
+    dash.dependencies.Input('data-Signal', 'relayoutData'),
+    dash.dependencies.State('curr_range', 'data')
+)
+def refresh_xrange(relayout_data, stored_data):
+    if relayout_data == None:
+        raise dash.exceptions.PreventUpdate
+
+    try:
+        data = [relayout_data['xaxis.range[0]'], relayout_data['xaxis.range[1]']]
+    except KeyError:
+        data = None
+
+    return data
+    
+
 if __name__ == '__main__':
-    app.run_server(debug = False, port = '8080')
+    app.run_server(debug = True, port = '8080')
