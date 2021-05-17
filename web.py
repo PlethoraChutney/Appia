@@ -118,6 +118,7 @@ def serve_layout():
             html.Div(
                 className = 'sidebar',
                 children = [
+                    dcc.Store('curr_range'),
                     html.H5(
                         style = {'paddingTop': '10px', 'textAlign': 'center'},
                         children = 'Pick experiment:'
