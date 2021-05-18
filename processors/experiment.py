@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 from .core import *
 from math import floor
 
@@ -132,20 +133,31 @@ class Experiment:
     def hplc_csv(self, outfile):
         if outfile[-4:] == '.csv':
             outfile = outfile[:-4]
+        if self.hplc is not None:
+            self.hplc.to_csv(outfile + '-long.csv', index = False)
 
-        self.hplc.to_csv(outfile + '_long.csv', index = False)
+            wide = self.hplc.copy()
+            wide = wide.loc[wide['Normalization'] == 'Signal']
+            wide['Sample'] = wide['Sample'].astype(str) + ' ' + wide['Channel']
+            wide.drop(['Channel', 'Normalization'], axis = 1)
+            wide = wide.pivot_table(
+                index = 'Time',
+                columns = 'Sample',
+                values = 'Value'
+            )
 
-        wide = self.hplc.copy()
-        wide = wide.loc[wide['Normalization'] == 'Signal']
-        wide['Sample'] = wide['Sample'].astype(str) + ' ' + wide['Channel']
-        wide.drop(['Channel', 'Normalization'], axis = 1)
-        wide = wide.pivot_table(
-            index = 'Time',
-            columns = 'Sample',
-            values = 'Value'
-        )
+            wide.to_csv(outfile + '-wide.csv', index = True)
 
-        wide.to_csv(outfile + '_wide.csv', index = True)
+    def fplc_csv(self, outfile):
+        if outfile[-4:] != '.csv':
+            outfile = outfile + '.csv'
+        
+        if self.fplc is not None:
+            self.fplc.to_csv(outfile)
+
+    def save_csvs(self, path):
+        self.hplc_csv(os.path.join(path, f'{self.id}_hplc'))
+        self.fplc_csv(os.path.join(path, f'{self.id}_fplc'))
 
 
 def concat_experiments(exp_list):

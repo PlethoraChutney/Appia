@@ -3,6 +3,8 @@ import os
 from .core import normalizer
 
 def append_fplc(file_list):
+    if isinstance(file_list, str):
+        file_list = [file_list]
 
     chroms = pd.DataFrame(columns = ['mL', 'CV', 'Channel', 'Signal', 'Fraction', 'Sample'])
     for file in file_list:
