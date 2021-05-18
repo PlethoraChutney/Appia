@@ -4,39 +4,21 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
 import plotly.graph_objects as go
+from urllib.parse import parse_qs
 from new_commands.database import Database, Config
 from new_commands.experiment import concat_experiments
 
-app = dash.Dash(__name__, url_base_pathname = '/traces/')
+url_basename = '/traces/'
+app = dash.Dash(__name__, url_base_pathname = url_basename)
 server = app.server
 db = Database(Config('new_commands/local-config.json'))
-
-app.index_string = '''
-<!DOCTYPE html>
-<html>
-    <head>
-        {%metas%}
-        <title>Troll - Traces</title>
-        {%favicon%}
-        {%css%}
-    </head>
-    <body>
-        {%app_entry%}
-        <footer>
-            {%config%}
-            {%scripts%}
-            {%renderer%}
-        </footer>
-    </body>
-</html>
-'''
 
 channel_dict = {
     '2475ChA ex280/em350': 'Trp',
     '2475ChB ex488/em509': 'GFP'
 }
 
-def get_hplc_graphs(exp, range = None):
+def get_hplc_graphs(exp, view_range = None):
     exp.rename_channels(channel_dict)
     raw_graphs = []
 
@@ -63,20 +45,20 @@ def get_hplc_graphs(exp, range = None):
 
         raw_graphs.append(fig)
 
-        if range is not None:
-            fig.update_xaxes(autorange = False, range = range)
+        if view_range is not None:
+            fig.update_xaxes(autorange = False, range = view_range)
 
     return raw_graphs
 
 def get_fplc_graphs(exp):
     return None
 
-def get_plotly(exp, range = None):
+def get_plotly(exp, view_range = None):
     combined_graphs = {}
     html_graphs = []
     
     if exp.hplc is not None:
-        combined_graphs['Signal'], combined_graphs['Normalized'] = get_hplc_graphs(exp, range)
+        combined_graphs['Signal'], combined_graphs['Normalized'] = get_hplc_graphs(exp, view_range)
 
     if exp.fplc is not None:
         combined_graphs['FPLC'] = get_fplc_graphs(exp)
@@ -95,6 +77,43 @@ def get_plotly(exp, range = None):
             ])
 
     return html_graphs
+
+def parse_query(q_string):
+    q_string = parse_qs(q_string.replace('?', ''))
+
+    if 'norm-range' in q_string.keys():
+        norm_range = q_string['norm-range'][0].split('-')
+        norm_range = [float(x) for x in norm_range]
+    else:
+        norm_range = None
+
+    if 'view-range' in q_string.keys():
+        view_range = q_string['view-range'][0].split('-')
+        view_range = [float(x) for x in view_range]
+    else:
+        view_range = None
+
+    return norm_range, view_range
+
+app.index_string = '''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>Troll - Traces</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
 
 def serve_layout():
     return html.Div(
@@ -151,11 +170,13 @@ def serve_layout():
 
 app.layout = serve_layout
 
+# Update graph experiment title
+
 @app.callback(
     dash.dependencies.Output('output-container', 'children'),
     [dash.dependencies.Input('root-location', 'pathname')])
 def update_output(pathname):
-    experiment_name = pathname.replace('/traces/', '').replace('+', ' and ')
+    experiment_name = pathname.replace(url_basename, '').replace('+', ' and ')
     return f'{experiment_name}'
 
 # Make URL pathname the experiment name(s)
@@ -167,6 +188,8 @@ def update_output(pathname):
 def update_output(value):
     if value is not None:
         return '+'.join(value)
+
+# load graphs, normalize experiment, update query string
 
 @app.callback(
     dash.dependencies.Output('main_graphs', 'children'),
@@ -187,11 +210,10 @@ def update_output(pathname, search_string, n_clicks):
         path_string = pathname.replace('/traces/', '')
         experiment_name_list = path_string.split('+')
         
-        try:
-            split_search = search_string.replace('?', '').split('-')
-            norm_range = [float(x) for x in split_search]
-        except ValueError:
-            norm_range = None
+        norm_range, view_range = parse_query(search_string)
+
+        if changed == 'renorm-hplc.n_clicks':
+            norm_range = view_range
 
         if len(experiment_name_list) == 1:
             exp = db.pull_experiment(experiment_name_list[0])
@@ -199,22 +221,25 @@ def update_output(pathname, search_string, n_clicks):
             exp_list = [db.pull_experiment(x) for x in experiment_name_list]
             exp = concat_experiments(exp_list)
 
-        if changed == 'renorm-hplc.n_clicks':
+        if norm_range is not None:
             exp.renormalize_hplc(norm_range, False)
-
         
-        return get_plotly(exp, norm_range)
+        return get_plotly(exp, view_range)
 
 @app.callback(
     dash.dependencies.Output('root-location', 'search'),
-    dash.dependencies.Input('data-Signal', 'relayoutData'),
-    dash.dependencies.State('curr_range', 'data')
+    [
+        dash.dependencies.Input('data-Signal', 'relayoutData'),
+        dash.dependencies.Input('root-location', 'search'),
+        dash.dependencies.Input('renorm-hplc', 'n_clicks')
+    ]
 )
-def refresh_xrange(relayout_data, stored_data):
-    if relayout_data == None:
+def refresh_xrange(relayout_data, search_string, n_clicks):
+    changed = [p['prop_id'] for p in dash.callback_context.triggered][0]
+
+    if relayout_data == None or changed == 'root-location.search':
         raise dash.exceptions.PreventUpdate
 
-    print(relayout_data)
     try:
         data = [relayout_data['xaxis.range[0]'], relayout_data['xaxis.range[1]']]
     except KeyError:
@@ -224,10 +249,19 @@ def refresh_xrange(relayout_data, stored_data):
         except KeyError:
             raise dash.exceptions.PreventUpdate
 
-    try:
-        return '?' + '-'.join([str(x) for x in data])
-    except TypeError:
-        return ''
+    norm_range, view_range = parse_query(search_string)
+
+    new_q_string = '?'
+
+    if changed == 'renorm-hplc.n_clicks':
+        new_q_string = new_q_string + f'norm-range={view_range[0]}-{view_range[1]}&'
+    elif norm_range is not None:
+        new_q_string = new_q_string + f'norm-range={norm_range[0]}-{norm_range[1]}&'
+
+    if data is not None:
+        new_q_string = new_q_string + f'view-range={data[0]}-{data[1]}'
+
+    return new_q_string
     
 
 if __name__ == '__main__':
