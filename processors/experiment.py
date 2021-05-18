@@ -130,6 +130,7 @@ class Experiment:
 
         try:
             self.hplc = self.hplc.groupby(['Channel', 'Sample', 'Normalization']).apply(lambda x: reduction_factor(x, num_points))
+            self.hplc = self.hplc.reset_index(drop = True)
         except AttributeError:
             return
 
@@ -154,16 +155,21 @@ class Experiment:
 
             wide.to_csv(outfile + '-wide.csv', index = True)
 
+            return outfile + '-long.csv'
+
     def fplc_csv(self, outfile):
         if outfile[-4:] != '.csv':
             outfile = outfile + '.csv'
         
         if self.fplc is not None:
             self.fplc.to_csv(outfile)
+            return outfile
 
     def save_csvs(self, path):
-        self.hplc_csv(os.path.join(path, f'{self.id}_hplc'))
-        self.fplc_csv(os.path.join(path, f'{self.id}_fplc'))
+        hplc_csv = self.hplc_csv(os.path.join(path, f'{self.id}_hplc'))
+        fplc_csv = self.fplc_csv(os.path.join(path, f'{self.id}_fplc'))
+
+        return hplc_csv, fplc_csv
 
 
 def concat_experiments(exp_list):

@@ -2,12 +2,13 @@ import argparse
 import os
 import sys
 import logging
+import subprocess
 from processors import hplc, fplc, experiment, core
 
 def main(args):
     file_list = core.get_files(args.files)
 
-    # Make Experiment
+    # Make Experiment ------------------------------------------------------------
     if args.id:
         exp = experiment.Experiment(args.id)
     
@@ -53,7 +54,17 @@ def main(args):
         sys.exit(1)
 
     out_dir = os.path.abspath(os.path.expanduser(args.output_dir))
-    exp.save_csvs(out_dir)
+    hplc_csv, fplc_csv = exp.save_csvs(out_dir)
+
+    # Make Plots -----------------------------------------------------------------
+    if not args.no_plots:
+        if hplc_csv:
+            script_location = os.path.dirname(os.path.realpath(__file__))
+            logging.info('Making HPLC plots')
+            subprocess.run(['Rscript', os.path.join(os.path.normpath(script_location), '..', 'plotters', 'auto_graph_HPLC.R'), os.path.normpath(hplc_csv), args.ml[0], args.ml[1]])
+
+    if not args.no_db:
+        exp.reduce_hplc(args.reduce)
 
     
 
@@ -81,7 +92,9 @@ parser.add_argument(
 )
 parser.add_argument(
     '-r', '--reduce',
-    help = 'Reduce web HPLC data points to this many total. Default 1000. CSV files are saved at full temporal resolution regardless.'
+    help = 'Reduce web HPLC data points to this many total. Default 1000. CSV files are saved at full temporal resolution regardless.',
+    type = int,
+    default = 1000
 )
 parser.add_argument(
     '-d', '--no-db',
@@ -127,8 +140,8 @@ parser.add_argument(
 parser.add_argument(
     '-m', '--ml',
     nargs = 2,
-    default = [5, 25],
-    type = int,
+    default = ['5', '25'],
+    type = str,
     help = 'Inclusive range for auto-plot x-axis, in mL. Default is 5 to 25. 0 0 selects full range.'
 )
 
