@@ -150,45 +150,52 @@ app.layout = serve_layout
 
 @app.callback(
     dash.dependencies.Output('output-container', 'children'),
-    [dash.dependencies.Input('root-location', 'hash')])
-def update_output(hash):
-    experiment_name = hash.replace('#', '').replace('+', ' and ')
+    [dash.dependencies.Input('root-location', 'pathname')])
+def update_output(pathname):
+    experiment_name = pathname.replace('/traces/', '').replace('+', ' and ')
     return f'{experiment_name}'
 
-# Make URL hash the experiment name(s)
+# Make URL pathname the experiment name(s)
 
 @app.callback(
-    dash.dependencies.Output('root-location', 'hash'),
+    dash.dependencies.Output('root-location', 'pathname'),
     [dash.dependencies.Input('experiment_dropdown', 'value')]
 )
 def update_output(value):
     if value is not None:
-        return '#' + '+'.join(value)
+        return '+'.join(value)
 
 @app.callback(
     dash.dependencies.Output('main_graphs', 'children'),
     [
-        dash.dependencies.Input('root-location', 'hash'),
-        dash.dependencies.Input('renorm-hplc', 'n_clicks'),
-        dash.dependencies.Input('curr_range', 'data')
+        dash.dependencies.Input('root-location', 'pathname'),
+        dash.dependencies.Input('root-location', 'search'),
+        dash.dependencies.Input('renorm-hplc', 'n_clicks')
     ]
 )
-def update_output(hash, n_clicks, curr_range):
+def update_output(pathname, n_clicks, curr_range):
     changed = [p['prop_id'] for p in dash.callback_context.triggered][0]
 
-    if changed == 'curr_range.data':
+    if changed == 'root-location.search':
         raise dash.exceptions.PreventUpdate
 
-    if hash != '':
+    if pathname != '':
         
-        hash_string = hash.replace('#', '')
-        experiment_name_list = hash_string.split('+')
-        logging.debug(experiment_name_list)
+        path_string = pathname.replace('/traces/', '')
+        experiment_name_list = path_string.split('+')
+        
+        try:
+            search_strings = curr_range.replace('?', '').split('-')
+            curr_range = [float(x) for x in search_strings]
+        except AttributeError:
+            curr_range = None
+        print(curr_range)
 
         if len(experiment_name_list) == 1:
             exp = db.pull_experiment(experiment_name_list[0])
         else:
-            exp = concat_experiments(experiment_name_list)
+            exp_list = [db.pull_experiment(x) for x in experiment_name_list]
+            exp = concat_experiments(exp_list)
 
         if changed == 'renorm-hplc.n_clicks':
             exp.renormalize_hplc(curr_range, False)
@@ -197,7 +204,7 @@ def update_output(hash, n_clicks, curr_range):
         return get_plotly(exp)
 
 @app.callback(
-    dash.dependencies.Output('curr_range', 'data'),
+    dash.dependencies.Output('root-location', 'search'),
     dash.dependencies.Input('data-Signal', 'relayoutData'),
     dash.dependencies.State('curr_range', 'data')
 )
@@ -210,7 +217,10 @@ def refresh_xrange(relayout_data, stored_data):
     except KeyError:
         data = None
 
-    return data
+    try:
+        return '?' + '-'.join([str(x) for x in data])
+    except TypeError:
+        return ''
     
 
 if __name__ == '__main__':
