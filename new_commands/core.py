@@ -27,7 +27,6 @@ def get_files(globs):
     else:
         for pattern in globs:
             globbed_files.extend(glob(pattern))
-            print(pattern)
 
     logging.debug(f'Globbed files: {globbed_files}')
     files = [os.path.abspath(x) for x in globbed_files]

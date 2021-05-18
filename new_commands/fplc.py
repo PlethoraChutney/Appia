@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from core import normalizer
+from .core import normalizer
 
 def append_fplc(file_list):
 
@@ -64,5 +64,4 @@ def append_fplc(file_list):
             value_name = 'Value'
         )
 
-        print(chroms)
         return chroms

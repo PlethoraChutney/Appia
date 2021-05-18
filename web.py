@@ -51,7 +51,64 @@ def get_hplc_graphs(exp, view_range = None):
     return raw_graphs
 
 def get_fplc_graphs(exp):
-    return None
+    fplc = exp.fplc
+
+    if fplc is None:
+        return None
+
+    
+    fplc = fplc.loc[(fplc.Normalization == 'Signal') & (fplc.Channel == 'mAU')]
+
+    samples = set(fplc['Sample'])
+
+    # Using GO primitives b/c plotly express creates traces which are zero
+    # outside the defined fraction region, resulting in strange fill behavior
+    # when non-continuous fractions are selected.
+    
+    if len(samples) == 1:
+        fplc_graph = go.Figure()
+        for frac in set(fplc['Fraction']):
+            fplc_graph.add_trace(
+                go.Scatter(
+                    x = fplc[fplc.Fraction == frac]['mL'],
+                    y = fplc[fplc.Fraction == frac]['Value'],
+                    mode = 'lines',
+                    fill = 'tozeroy',
+                    visible = 'legendonly',
+                    # if you don't rename them, fraction numbering is off by one
+                    name = f'Fraction {frac}'
+                )
+            )
+        fplc_graph.add_trace(
+            # want the overall FPLC curve as a separate trace so that it stays present
+            # to give overall sense of quality of trace
+            go.Scatter(
+                x = fplc['mL'],
+                y = fplc['Value'],
+                mode = 'lines',
+                showlegend = False,
+                line = {'color': 'black'}
+            )
+        )
+    else:
+        fplc_graph = px.line(
+            data_frame = fplc,
+            x = 'mL',
+            y = 'Value',
+            color = 'Sample',
+            facet_row = 'Normalization',
+            template = 'plotly_white'
+        )
+        try:
+            fplc_graph.layout.yaxis2.update(matches = None)
+        except AttributeError:
+            pass
+        # remove 'Channel=' from the facet labels
+        fplc_graph.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+
+    fplc_graph.update_layout(template = 'plotly_white')
+    fplc_graph.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+    return fplc_graph
 
 def get_plotly(exp, view_range = None):
     combined_graphs = {}
@@ -243,6 +300,7 @@ def refresh_xrange(relayout_data, search_string, n_clicks):
     try:
         data = [relayout_data['xaxis.range[0]'], relayout_data['xaxis.range[1]']]
     except KeyError:
+        print(relayout_data)
         try:
             if relayout_data['xaxis2.autorange']:
                 data = None
