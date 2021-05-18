@@ -52,6 +52,12 @@ class Experiment:
 
         return to_return
 
+    def extend_hplc(self, hplc):
+        if not isinstance(hplc, pd.DataFrame):
+            raise TypeError(f'Tried to extend experiment hplc with {type(hplc)}')
+
+        self.hplc = pd.concat([self.hplc, hplc])
+
     def show_tables(self):
         print('HPLC:')
         print(self.hplc)

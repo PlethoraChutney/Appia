@@ -19,7 +19,7 @@ def append_waters(file_list):
     chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 
     for i in range(len(file_list)):
-        loading_bar(i, (len(file_list) - 1))
+        loading_bar(i+1, (len(file_list)), extension = ' Waters files')
         file = file_list[i]
         to_append = pd.read_csv(
 				file,
@@ -30,7 +30,7 @@ def append_waters(file_list):
 				dtype = {'Time': np.float32, 'Signal': np.float32}
 			)
         if to_append.shape[0] == 0:
-            logging.error(f'File {file} is empty. Ignoring that file.')
+            logging.warning(f'File {file} is empty. Ignoring that file.')
             continue
         sample_info = pd.read_csv(
             file,
@@ -44,6 +44,7 @@ def append_waters(file_list):
 
         sample_name = str(sample_info.loc[0]['SampleName'])
         channel_ID = str(sample_info.loc[0]['Channel'])
+        set_name = str(sample_info.loc[0]['Sample Set Name'])
         to_append['Channel'] = channel_ID
         to_append['Sample'] = sample_name
 
@@ -70,7 +71,7 @@ def append_waters(file_list):
         value_name = 'Value'
     )
 
-    return chroms
+    return chroms, set_name
 
 def append_shim(file_list, channel_mapping):
     chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
@@ -79,7 +80,7 @@ def append_shim(file_list, channel_mapping):
 
     for i in range(len(file_list)):
 
-        loading_bar(i, (len(file_list) - 1))
+        loading_bar(i+1, (len(file_list)), extension = ' Shimadzu files')
         file = file_list[i]
 
         to_append = pd.read_csv(
@@ -104,6 +105,7 @@ def append_shim(file_list, channel_mapping):
         number_samples = int(sample_info.loc['Total Data Points:'][0])
         sampling_interval = float(sample_info.loc['Sampling Rate:'][0])
         seconds_list = [x * sampling_interval for x in range(number_samples)] * len(channel_names)
+        set_name = str(sample_info.loc['Acquisition Date and Time:'][0]).replace('/', '-').replace(' ', '_').replace(':', '-')
 
         to_append['Sample'] = str(sample_info.loc['Sample ID:'][0])
         to_append['Channel'] = [x for x in channel_names for i in range(number_samples)]
@@ -120,7 +122,7 @@ def append_shim(file_list, channel_mapping):
 
         chroms = chroms.append(to_append, ignore_index = True, sort = True)
 
-    chroms = chroms[['Time', 'Signal', 'Channel', 'Sample']]
+    chroms = chroms[['Time', 'Signal', 'Channel', 'Sample', 'mL']]
     chroms = chroms.replace(channel_mapping)
 
     chroms = chroms.melt(
@@ -130,4 +132,4 @@ def append_shim(file_list, channel_mapping):
         value_name = 'Value'
     )
 
-    return chroms
+    return chroms, set_name

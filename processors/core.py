@@ -3,7 +3,7 @@ from glob import glob
 import logging
 import os
 
-def loading_bar(current, total, force = False):
+def loading_bar(current, total, extension = '', force = False):
     try:
         log_level = logging.root.level
     except NameError:
@@ -12,10 +12,14 @@ def loading_bar(current, total, force = False):
     if log_level > 20 and not force:
         pass
     else:
-        percent = floor(current/total * 10)
+        try:
+            percent = floor(current/total * 10)
+        except ZeroDivisionError:
+            percent = 10
+
         loading_str = '    ' * percent + '><((((°>'
 
-        print(f'{loading_str:<48}*  {current}/{total}', end = '\r')
+        print(f'{loading_str:<48}*  {current}/{total}', end = f'{extension}\r')
         if current == total:
             print()
 

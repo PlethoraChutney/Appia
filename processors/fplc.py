@@ -1,13 +1,17 @@
 import pandas as pd
 import os
-from .core import normalizer
+from .core import normalizer, loading_bar
 
 def append_fplc(file_list):
     if isinstance(file_list, str):
         file_list = [file_list]
 
     chroms = pd.DataFrame(columns = ['mL', 'CV', 'Channel', 'Signal', 'Fraction', 'Sample'])
-    for file in file_list:
+    for i in range(len(file_list)):
+
+        loading_bar(i+1, (len(file_list)), extension = ' AKTA files')
+        file = file_list[i]
+
         fplc_trace = pd.read_csv(
             file, skiprows = 1,
             header = [1],
