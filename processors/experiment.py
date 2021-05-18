@@ -129,6 +129,25 @@ class Experiment:
     def rename_channels(self, channel_name_dict):
         self.hplc = self.hplc.replace({'Channel': channel_name_dict})
 
+    def hplc_csv(self, outfile):
+        if outfile[-4:] == '.csv':
+            outfile = outfile[:-4]
+
+        self.hplc.to_csv(outfile + '_long.csv', index = False)
+
+        wide = self.hplc.copy()
+        wide = wide.loc[wide['Normalization'] == 'Signal']
+        wide['Sample'] = wide['Sample'].astype(str) + ' ' + wide['Channel']
+        wide.drop(['Channel', 'Normalization'], axis = 1)
+        wide = wide.pivot_table(
+            index = 'Time',
+            columns = 'Sample',
+            values = 'Value'
+        )
+
+        wide.to_csv(outfile + '_wide.csv', index = True)
+
+
 def concat_experiments(exp_list):
         hplcs = []
         fplcs = []
