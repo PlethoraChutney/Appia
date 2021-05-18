@@ -5,8 +5,8 @@ import dash_html_components as html
 import plotly.express as px
 import plotly.graph_objects as go
 from urllib.parse import parse_qs
-from new_commands.database import Database, Config
-from new_commands.experiment import concat_experiments
+from processors.database import Database, Config
+from processors.experiment import concat_experiments
 
 url_basename = '/traces/'
 app = dash.Dash(__name__, url_base_pathname = url_basename)
