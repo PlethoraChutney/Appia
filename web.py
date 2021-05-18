@@ -210,6 +210,7 @@ def serve_layout():
                             multi = True
                         )]
                     ),
+                    html.Hr(),
                     html.Button(
                         'Renormalize HPLC',
                         id = 'renorm-hplc',
