@@ -9,7 +9,7 @@ from new_commands.experiment import concat_experiments
 
 app = dash.Dash(__name__, url_base_pathname = '/traces/')
 server = app.server
-db = Database(Config('subcommands/local_config.json'))
+db = Database(Config('new_commands/local-config.json'))
 
 app.index_string = '''
 <!DOCTYPE html>
@@ -173,23 +173,24 @@ def update_output(value):
         dash.dependencies.Input('renorm-hplc', 'n_clicks')
     ]
 )
-def update_output(pathname, n_clicks, curr_range):
+def update_output(pathname, search_string, n_clicks):
     changed = [p['prop_id'] for p in dash.callback_context.triggered][0]
 
-    if changed == 'root-location.search':
+    if changed == 'root-location.search' or changed is None:
         raise dash.exceptions.PreventUpdate
 
     if pathname != '':
         
         path_string = pathname.replace('/traces/', '')
         experiment_name_list = path_string.split('+')
+        print(experiment_name_list)
         
         try:
-            search_strings = curr_range.replace('?', '').split('-')
-            curr_range = [float(x) for x in search_strings]
-        except AttributeError:
-            curr_range = None
-        print(curr_range)
+            split_search = search_string.replace('?', '').split('-')
+            norm_range = [float(x) for x in split_search]
+        except ValueError:
+            norm_range = None
+        print(norm_range)
 
         if len(experiment_name_list) == 1:
             exp = db.pull_experiment(experiment_name_list[0])
@@ -198,7 +199,7 @@ def update_output(pathname, n_clicks, curr_range):
             exp = concat_experiments(exp_list)
 
         if changed == 'renorm-hplc.n_clicks':
-            exp.renormalize_hplc(curr_range, False)
+            exp.renormalize_hplc(norm_range, False)
 
         
         return get_plotly(exp)

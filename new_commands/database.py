@@ -7,14 +7,22 @@ import json
 
 class Config:
     def __init__(self, config_file) -> None:
+
         with open(config_file) as conf:
             config = json.load(conf)
 
-        self.cuser = config['user']
-        self.cpass = config['password']
-        self.chost = config['host']
-        self.slack_token = config['token']
-        self.slack_channel = config['chromatography_channel']
+        try:
+            self.cuser = config['user']
+            self.cpass = config['password']
+            self.chost = config['host']
+        except KeyError:
+            logging.warning('Missing information to connect to CouchDB')
+        
+        try:
+            self.slack_token = config['token']
+            self.slack_channel = config['chromatography_channel']
+        except KeyError:
+            logging.warning('Missing information for Slack bot')
 
     def __repr__(self) -> str:
         return f'config object for host {self.chost}'
