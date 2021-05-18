@@ -36,7 +36,7 @@ channel_dict = {
     '2475ChB ex488/em509': 'GFP'
 }
 
-def get_hplc_graphs(exp):
+def get_hplc_graphs(exp, range = None):
     exp.rename_channels(channel_dict)
     raw_graphs = []
 
@@ -63,17 +63,20 @@ def get_hplc_graphs(exp):
 
         raw_graphs.append(fig)
 
+        if range is not None:
+            fig.update_xaxes(autorange = False, range = range)
+
     return raw_graphs
 
 def get_fplc_graphs(exp):
     return None
 
-def get_plotly(exp):
+def get_plotly(exp, range = None):
     combined_graphs = {}
     html_graphs = []
     
     if exp.hplc is not None:
-        combined_graphs['Signal'], combined_graphs['Normalized'] = get_hplc_graphs(exp)
+        combined_graphs['Signal'], combined_graphs['Normalized'] = get_hplc_graphs(exp, range)
 
     if exp.fplc is not None:
         combined_graphs['FPLC'] = get_fplc_graphs(exp)
@@ -183,14 +186,12 @@ def update_output(pathname, search_string, n_clicks):
         
         path_string = pathname.replace('/traces/', '')
         experiment_name_list = path_string.split('+')
-        print(experiment_name_list)
         
         try:
             split_search = search_string.replace('?', '').split('-')
             norm_range = [float(x) for x in split_search]
         except ValueError:
             norm_range = None
-        print(norm_range)
 
         if len(experiment_name_list) == 1:
             exp = db.pull_experiment(experiment_name_list[0])
@@ -202,7 +203,7 @@ def update_output(pathname, search_string, n_clicks):
             exp.renormalize_hplc(norm_range, False)
 
         
-        return get_plotly(exp)
+        return get_plotly(exp, norm_range)
 
 @app.callback(
     dash.dependencies.Output('root-location', 'search'),
@@ -213,10 +214,15 @@ def refresh_xrange(relayout_data, stored_data):
     if relayout_data == None:
         raise dash.exceptions.PreventUpdate
 
+    print(relayout_data)
     try:
         data = [relayout_data['xaxis.range[0]'], relayout_data['xaxis.range[1]']]
     except KeyError:
-        data = None
+        try:
+            if relayout_data['xaxis2.autorange']:
+                data = None
+        except KeyError:
+            raise dash.exceptions.PreventUpdate
 
     try:
         return '?' + '-'.join([str(x) for x in data])
