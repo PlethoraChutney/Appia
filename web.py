@@ -213,9 +213,13 @@ def serve_layout():
                     html.Button(
                         'Renormalize HPLC',
                         id = 'renorm-hplc',
-                        style = {'width': '100%', 'padding-left': 'auto'}
+                        style = {'width': '100%'}
                     ),
-                    dcc.Store('curr_range')
+                    html.Button(
+                        'Reset HPLC',
+                        id = 'reset-hplc',
+                        style = {'width': '100%'}
+                    )
                 ]
             ),
             html.Div(
@@ -253,10 +257,11 @@ def update_output(value):
     [
         dash.dependencies.Input('root-location', 'pathname'),
         dash.dependencies.Input('root-location', 'search'),
-        dash.dependencies.Input('renorm-hplc', 'n_clicks')
+        dash.dependencies.Input('renorm-hplc', 'n_clicks'),
+        dash.dependencies.Input('reset-hplc', 'n_clicks')
     ]
 )
-def update_output(pathname, search_string, n_clicks):
+def update_output(pathname, search_string, n_clicks, reset):
     changed = [p['prop_id'] for p in dash.callback_context.triggered][0]
 
     if changed == 'root-location.search' or changed is None:
@@ -288,19 +293,23 @@ def update_output(pathname, search_string, n_clicks):
     [
         dash.dependencies.Input('data-Signal', 'relayoutData'),
         dash.dependencies.Input('root-location', 'search'),
-        dash.dependencies.Input('renorm-hplc', 'n_clicks')
+        dash.dependencies.Input('renorm-hplc', 'n_clicks'),
+        dash.dependencies.Input('reset-hplc', 'n_clicks')
     ]
 )
-def refresh_xrange(relayout_data, search_string, n_clicks):
+def refresh_xrange(relayout_data, search_string, n_clicks, reset):
     changed = [p['prop_id'] for p in dash.callback_context.triggered][0]
 
     if relayout_data == None or changed == 'root-location.search':
         raise dash.exceptions.PreventUpdate
+        
+    if changed == 'reset-hplc.n_clicks':
+        return ''
+    
 
     try:
         data = [relayout_data['xaxis.range[0]'], relayout_data['xaxis.range[1]']]
     except KeyError:
-        print(relayout_data)
         try:
             if relayout_data['xaxis2.autorange']:
                 data = None
