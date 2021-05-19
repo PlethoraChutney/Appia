@@ -128,7 +128,21 @@ def main(args):
         exp.reduce_hplc(args.reduce)
         db.upload_experiment(exp, args.overwrite)
 
-    
+    if args.post_to_slack:
+        config = Config(args.post_to_slack)
+
+        if config.slack:
+            from processors import slackbot
+
+            client = slackbot.get_client(config)
+
+            if client is not None:
+                slackbot.send_graphs(
+                    config,
+                    client,
+                    os.path.join(out_dir, 'fsec_traces.pdf')
+                )
+
 
 parser = argparse.ArgumentParser(
     description = 'Process chromatography data',
@@ -225,7 +239,7 @@ plot_group.add_argument(
 )
 plot_group.add_argument(
 	'-s', '--post-to-slack',
-	help = "Send completed plots to Slack",
-	action = 'store_true',
-	default = False
+	help = "Send completed plots to Slack. Need a config JSON with slack token and channel, same default as db.",
+	nargs = '?',
+    const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json')
 )

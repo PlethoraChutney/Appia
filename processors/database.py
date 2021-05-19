@@ -15,14 +15,18 @@ class Config:
             self.cuser = config['user']
             self.cpass = config['password']
             self.chost = config['host']
+            self.couch = True
         except KeyError:
-            logging.warning('Missing information to connect to CouchDB')
+            logging.warning('Config missing information to connect to CouchDB')
+            self.couch = False
         
         try:
             self.slack_token = config['token']
             self.slack_channel = config['chromatography_channel']
+            self.slack = True
         except KeyError:
-            logging.warning('Missing information for Slack bot')
+            logging.warning('Config missing information for Slack bot')
+            self.slack = False
 
     def __repr__(self) -> str:
         return f'config object for host {self.chost}'
