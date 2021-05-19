@@ -1,32 +1,38 @@
 import couchdb
 import logging
 import pandas as pd
+import os
 from .experiment import Experiment
 from .core import three_column_print
 import json
 
 class Config:
-    def __init__(self, config_file) -> None:
+    def __init__(self, config_file = None) -> None:
 
-        with open(config_file) as conf:
-            config = json.load(conf)
+        if config_file is None:
+            self.cuser = os.environ['COUCHDB_USER']
+            self.cpass = os.environ['COUCHDB_PASSWORD']
+            self.chost = os.environ['COUCHDB_HOST']
+        else:
+            with open(config_file) as conf:
+                config = json.load(conf)
 
-        try:
-            self.cuser = config['user']
-            self.cpass = config['password']
-            self.chost = config['host']
-            self.couch = True
-        except KeyError:
-            logging.warning('Config missing information to connect to CouchDB')
-            self.couch = False
-        
-        try:
-            self.slack_token = config['token']
-            self.slack_channel = config['chromatography_channel']
-            self.slack = True
-        except KeyError:
-            logging.warning('Config missing information for Slack bot')
-            self.slack = False
+            try:
+                self.cuser = config['user']
+                self.cpass = config['password']
+                self.chost = config['host']
+                self.couch = True
+            except KeyError:
+                logging.warning('Config missing information to connect to CouchDB')
+                self.couch = False
+            
+            try:
+                self.slack_token = config['token']
+                self.slack_channel = config['chromatography_channel']
+                self.slack = True
+            except KeyError:
+                logging.warning('Config missing information for Slack bot')
+                self.slack = False
 
     def __repr__(self) -> str:
         return f'config object for host {self.chost}'

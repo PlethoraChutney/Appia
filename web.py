@@ -11,7 +11,7 @@ from processors.experiment import concat_experiments
 url_basename = '/traces/'
 app = dash.Dash(__name__, url_base_pathname = url_basename)
 server = app.server
-db = Database(Config('docker-config.json'))
+db = Database(Config())
 
 channel_dict = {
     '2475ChA ex280/em350': 'Trp',
