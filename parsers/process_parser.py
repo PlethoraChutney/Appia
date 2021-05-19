@@ -114,12 +114,12 @@ def main(args):
         if exp.hplc is not None:
             shutil.copyfile(
                 os.path.join(script_location, 'plotters', 'manual_plot_HPLC.R'),
-                out_dir
+                os.path.join(out_dir, f'{exp.id}_manual-plot-HPLC.R')
             )
         if exp.fplc is not None:
             shutil.copyfile(
                 os.path.join(script_location, 'plotters', 'manual_plot_FPLC.R'),
-                out_dir
+                os.path.join(out_dir, f'{exp.id}_manual-plot-FPLC.R')
             )
 
     if args.config:

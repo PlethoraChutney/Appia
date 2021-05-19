@@ -11,12 +11,11 @@ low_ml <- 5
 high_ml <- 25
 
 # processed .csv file
-filename <- 'fplcs.csv'
+filename <- Sys.glob('*_fplc.csv')[1]
 
 # 2 Import ----------------------------------------------------------------
 
-data <- read_csv(filename, col_types = 'dfddfd') %>%
-  mutate(Fraction = as.factor(Fraction))
+data <- read_csv(filename, col_types = 'ddffffd')
 
 # 3 Color Scheme ----------------------------------------------------------
 if (length(fractions) > 12) {
@@ -42,7 +41,7 @@ if (length(fractions) > 12) {
 # 4 Plot ------------------------------------------------------------------
 
 data %>%
-  filter(Channel == 'mAU') %>%
+  filter(Channel == 'mAU' & Normalization == 'Signal') %>%
   filter(mL > (low_ml - 10) & mL < (high_ml + 10)) %>%
   group_by(Sample) %>%
   ggplot() +
@@ -50,6 +49,6 @@ data %>%
   theme_minimal() +
   color_scheme +
   labs(fill = 'Fraction') +
-  geom_ribbon(aes(x = mL, ymin = 0, ymax = Signal, fill = Fraction)) +
-  geom_line(aes(x = mL, y = Signal))
+  geom_ribbon(aes(x = mL, ymin = 0, ymax = Value, fill = Fraction)) +
+  geom_line(aes(x = mL, y = Value))
 ggsave(filename = 'manual_fplc.pdf', width = 6, height = 4)

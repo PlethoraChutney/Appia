@@ -4,10 +4,15 @@ library(ggplot2)
 
 # 1 Import ----------------------------------------------------------------
 
-long_trace_filename <- "long_chromatograms.csv"
+long_trace_filename <- Sys.glob('*_hplc-long.csv')[1]
 
-data <- read.csv(file = long_trace_filename, header = TRUE) %>%
-  pivot_longer(cols = c(Signal, Normalized), names_to = 'Normalization', values_to = 'Signal')
+channel_list <- list(
+  'Trp' = '2475ChA ex280/em350',
+  'GFP' = '2475ChB ex488/em509'
+)
+
+data <- read_csv(file = long_trace_filename, col_types = 'dffdfd') %>% 
+  mutate(Channel = fct_recode(Channel, !!!channel_list))
 
 # 2 Plot ------------------------------------------------------------------
 
@@ -34,9 +39,9 @@ if (length(levels(as.factor(data$Sample))) > 12) {
 
 data %>%
   filter(Time > 0.5) %>%
-  ggplot(aes(x = mL, y = Signal)) +
+  ggplot(aes(x = mL, y = Value)) +
   theme_minimal() +
   color_scheme +
   geom_line(aes(color = Sample)) +
-  facet_grid(Normalization ~ Channel, scales = "free")
+  facet_grid(cols = vars(Channel), rows = vars(Normalization), scales = "free")
 ggsave('fsec_traces.pdf', width = 7, height = 5)
