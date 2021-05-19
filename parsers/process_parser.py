@@ -5,6 +5,7 @@ import logging
 import subprocess
 import shutil
 from processors import hplc, fplc, experiment, core
+from processors.database import Database, Config
 
 def main(args):
     file_list = core.get_files(args.files)
@@ -84,14 +85,15 @@ def main(args):
     hplc_csv, fplc_csv = exp.save_csvs(out_dir)
 
     # Make Plots -----------------------------------------------------------------
+    
+    script_location = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
+    
     if not args.no_plots:
-        script_location = os.path.dirname(os.path.realpath(__file__))
-
         if hplc_csv:
             logging.info('Making HPLC plots')
             subprocess.run([
-                'Rscript', os.path.join(os.path.normpath(script_location),
-                '..', 'plotters', 'auto_graph_HPLC.R'),
+                'Rscript', os.path.join(script_location,
+                'plotters', 'auto_graph_HPLC.R'),
                 os.path.normpath(hplc_csv),
                 args.ml[0], args.ml[1]
             ])
@@ -99,8 +101,8 @@ def main(args):
         if fplc_csv:
             logging.info('Making FPLC plot')
             subprocess.run([
-                'Rscript', os.path.join(os.path.normpath(script_location),
-                '..', 'plotters', 'auto_graph_FPLC.R'),
+                'Rscript', os.path.join(script_location,
+                'plotters', 'auto_graph_FPLC.R'),
                 os.path.normpath(fplc_csv),
                 args.fractions[0], args.fractions[1],
                 args.ml[0], args.ml[1],
@@ -108,8 +110,23 @@ def main(args):
                 os.path.split(os.path.normpath(fplc_csv))[1][:-4]
             ])
 
-    if not args.no_db:
+    if args.copy_manual:
+        if exp.hplc is not None:
+            shutil.copyfile(
+                os.path.join(script_location, 'plotters', 'manual_plot_HPLC.R'),
+                out_dir
+            )
+        if exp.fplc is not None:
+            shutil.copyfile(
+                os.path.join(script_location, 'plotters', 'manual_plot_FPLC.R'),
+                out_dir
+            )
+
+    if args.config:
+        db = Database(Config(args.config))
+
         exp.reduce_hplc(args.reduce)
+        db.upload_experiment(exp, args.overwrite)
 
     
 
@@ -142,8 +159,16 @@ parser.add_argument(
     default = 1000
 )
 parser.add_argument(
-    '-d', '--no-db',
-    help = 'Do not upload experiment to couchdb'
+    '-d', '--database',
+    help = 'Upload experiment to couchdb. Optionally, provide config file location. Default config location is "config.json" in appia directory.',
+    dest = 'config',
+    nargs = '?',
+    const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json')
+)
+parser.add_argument(
+    '--overwrite',
+    help = 'Overwrite database copy of experiment with same name without asking',
+    action = 'store_true'
 )
 parser.add_argument(
     '-n', '--normalize',
@@ -169,11 +194,6 @@ parser.add_argument(
 	help = 'Process data files in place (do not move to new directory)',
 	action = 'store_true',
 	default = False
-)
-parser.add_argument(
-	'--overwrite',
-	help = "Overwrite database copy of experiment",
-	action = 'store_true'
 )
 parser.add_argument(
     '--channel-mapping',

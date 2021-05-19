@@ -31,7 +31,11 @@ def main():
 
     levels = [logging.WARNING, logging.INFO, logging.DEBUG]
     level = levels[min(len(levels) - 1, args.verbose)]
-    logging.basicConfig(level = level, format = '%(levelname)s: %(message)s')
+    logging.basicConfig(
+        level = level,
+        format = '{levelname}: {message} ({filename})',
+        style = '{'
+    )
 
     if 'func' in args:
         args.func(args)

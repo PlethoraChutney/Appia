@@ -77,7 +77,7 @@ class Database:
             logging.error(f'Could not find experiment {exp_id}')
 
     def upload_experiment(self, exp, overwrite = False):
-        logging.info(f'Uploading {exp.id} to couchdb')
+        logging.info(f'Uploading {exp} to {self}')
         doc = exp.jsonify()
 
         try:

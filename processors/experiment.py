@@ -48,7 +48,7 @@ class Experiment:
             to_return += 'FPLC '
         if self.hplc is None and self.fplc is None:
             to_return += 'no '
-        to_return += 'data.'
+        to_return += 'data'
 
         return to_return
 
