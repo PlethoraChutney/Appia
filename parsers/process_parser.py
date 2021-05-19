@@ -26,7 +26,6 @@ def main(args):
 
         if not args.no_move:
             hplc_out = os.path.join(args.output_dir, f'{exp.id}_raw-hplc')
-            os.makedirs(hplc_out)
             for file in file_list['arw']:
                 shutil.move(file, os.path.join(hplc_out, os.path.basename(file)))
 
@@ -81,6 +80,8 @@ def main(args):
         sys.exit(1)
 
     out_dir = os.path.abspath(os.path.expanduser(args.output_dir))
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
     exp.renormalize_hplc(args.normalize, args.strict_normalize)
     hplc_csv, fplc_csv = exp.save_csvs(out_dir)
 
@@ -96,7 +97,8 @@ def main(args):
                 'plotters', 'auto_graph_HPLC.R'),
                 os.path.normpath(hplc_csv),
                 args.ml[0], args.ml[1]
-            ])
+            ],
+            cwd = out_dir)
         
         if fplc_csv:
             logging.info('Making FPLC plot')
@@ -108,7 +110,8 @@ def main(args):
                 args.ml[0], args.ml[1],
                 os.path.split(os.path.normpath(fplc_csv))[0],
                 os.path.split(os.path.normpath(fplc_csv))[1][:-4]
-            ])
+            ],
+            cwd = out_dir)
 
     if args.copy_manual:
         if exp.hplc is not None:
