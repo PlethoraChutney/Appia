@@ -58,10 +58,28 @@ def main(args):
 
     # Make Plots -----------------------------------------------------------------
     if not args.no_plots:
+        script_location = os.path.dirname(os.path.realpath(__file__))
+
         if hplc_csv:
-            script_location = os.path.dirname(os.path.realpath(__file__))
             logging.info('Making HPLC plots')
-            subprocess.run(['Rscript', os.path.join(os.path.normpath(script_location), '..', 'plotters', 'auto_graph_HPLC.R'), os.path.normpath(hplc_csv), args.ml[0], args.ml[1]])
+            subprocess.run([
+                'Rscript', os.path.join(os.path.normpath(script_location),
+                '..', 'plotters', 'auto_graph_HPLC.R'),
+                os.path.normpath(hplc_csv),
+                args.ml[0], args.ml[1]
+            ])
+        
+        if fplc_csv:
+            logging.info('Making FPLC plot')
+            subprocess.run([
+                'Rscript', os.path.join(os.path.normpath(script_location),
+                '..', 'plotters', 'auto_graph_FPLC.R'),
+                os.path.normpath(fplc_csv),
+                args.fractions[0], args.fractions[1],
+                args.ml[0], args.ml[1],
+                os.path.split(os.path.normpath(fplc_csv))[0],
+                os.path.split(os.path.normpath(fplc_csv))[1][:-4]
+            ])
 
     if not args.no_db:
         exp.reduce_hplc(args.reduce)
@@ -133,8 +151,8 @@ parser.add_argument(
 parser.add_argument(
     '-f', '--fractions',
     nargs = 2,
-    default = [0, 0],
-    type = int,
+    default = ['0', '0'],
+    type = str,
     help = 'Inclusive range of auto-plot SEC fractions to fill in. Default is none.'
 )
 parser.add_argument(

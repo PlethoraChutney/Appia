@@ -5,13 +5,13 @@ suppressMessages(library(tidyverse))
 # These values are all determined by options given to the python script.
 # Use the simpler manual_plot_traces.R script if you're changing these.
 args = commandArgs(trailingOnly = TRUE)
-no.ext <- str_sub(basename(args[1]), end = -5)
-out.dir <- dirname(args[1])
 fractions <- as.integer(args[2]):as.integer(args[3])
 low_ml <- as.integer(args[4])
 high_ml <- as.integer(args[5])
+out_dir <- args[6]
+no_ext <- args[7]
 
-data <- read_csv(args[1], col_types = 'dfddfd') %>%
+data <- read_csv(args[1], col_types = 'ddffffd') %>%
   mutate(Fraction = as.factor(Fraction))
 
 if (length(fractions) > 12) {
@@ -38,46 +38,51 @@ if (length(fractions) > 12) {
 
 # * 2.1 Multi-experiment plots --------------------------------------------
 
+if (high_ml == 0) {
+  low_ml = min(data$mL)
+  high_ml = max(data$mL)
+}
+
 if (length(levels(factor(data$Sample))) > 1) {
 data %>%
-  filter(Channel == 'mAU' & mL > low_ml & mL < high_ml) %>%
+  filter(Channel == 'mAU' & mL > low_ml & mL < high_ml & Normalization == 'Signal') %>%
   group_by(Sample) %>%
-  mutate(Normalized = ((Signal - min(Signal)) / (max(Signal) - min(Signal)))) %>%
-  gather(key = Normalized, value = Signal, Signal, Normalized) %>%
+  mutate(Normalized = ((Value - min(Value)) / (max(Value) - min(Value)))) %>%
+  gather(key = Normalized, value = Value, Value, Normalized) %>%
   ungroup() %>%
-  ggplot(aes(x = mL, y = Signal, color = Sample)) +
+  ggplot(aes(x = mL, y = Value, color = Sample)) +
   facet_grid(Normalized ~ ., scales = 'free') +
   theme_minimal() +
   color_scheme +
   geom_line()
-ggsave(filename = file.path(out.dir, paste('all_samples_', no.ext, '.pdf', sep = '')), width = 8, height = 5)
+ggsave(filename = file.path(out_dir, paste('all_samples_', no_ext, '.pdf', sep = '')), width = 8, height = 5)
 } else {
   data %>%
-    filter(mL > (low_ml - 10) & mL < (high_ml + 10)) %>%
-    ggplot(aes(x = mL, y = Signal, color = Channel)) +
+    filter(mL > (low_ml - 10) & mL < (high_ml + 10) & Normalization == 'Signal') %>%
+    ggplot(aes(x = mL, y = Value, color = Channel)) +
     theme_minimal() +
     coord_cartesian(xlim = c(low_ml, high_ml)) +
     color_scheme +
     geom_line()
-  ggsave(filename = file.path(out.dir, paste('all_channels_', no.ext, '.pdf', sep = '')), width = 6, height = 4)
+  ggsave(filename = file.path(out_dir, paste('all_channels_', no_ext, '.pdf', sep = '')), width = 6, height = 4)
 }
 
 # * 2.2 mAU fraction plots ------------------------------------------------
 
 if (length(fractions) == 1 & fractions[1] == 0) {
   data %>%
-    filter(Channel == 'mAU') %>%
+    filter(Channel == 'mAU' & Normalization == 'Signal') %>%
     filter(mL > (low_ml - 10) & mL < (high_ml + 10)) %>%
     group_by(Sample) %>%
     ggplot() +
     coord_cartesian(xlim = c(low_ml, high_ml)) +
     theme_minimal() +
-    geom_line(aes(x = mL, y = Signal)) +
+    geom_line(aes(x = mL, y = Value)) +
     facet_grid(Sample ~ ., scales = 'free')
-  ggsave(filename = file.path(out.dir, paste('mAU_', no.ext, '.pdf', sep = '')), width = 6, height = 4)
+  ggsave(filename = file.path(out_dir, paste('mAU_', no_ext, '.pdf', sep = '')), width = 6, height = 4)
 } else {
   data %>%
-    filter(Channel == 'mAU') %>%
+    filter(Channel == 'mAU' & Normalization == 'Signal') %>%
     filter(mL > (low_ml - 10) & mL < (high_ml + 10)) %>%
     group_by(Sample) %>%
     ggplot() +
@@ -85,7 +90,7 @@ if (length(fractions) == 1 & fractions[1] == 0) {
     theme_minimal() +
     color_scheme +
     labs(fill = 'Fraction') +
-    geom_ribbon(aes(x = mL, ymin = 0, ymax = Signal, fill = Fraction)) +
-    geom_line(aes(x = mL, y = Signal))
-  ggsave(filename = file.path(out.dir, paste('mAU_fractions_', no.ext, '.pdf', sep = '')), width = 6, height = 4)
+    geom_ribbon(aes(x = mL, ymin = 0, ymax = Value, fill = Fraction)) +
+    geom_line(aes(x = mL, y = Value))
+  ggsave(filename = file.path(out_dir, paste('mAU_fractions_', no_ext, '.pdf', sep = '')), width = 6, height = 4)
 }

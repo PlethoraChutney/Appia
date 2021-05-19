@@ -162,7 +162,7 @@ class Experiment:
             outfile = outfile + '.csv'
         
         if self.fplc is not None:
-            self.fplc.to_csv(outfile)
+            self.fplc.to_csv(outfile, index = False)
             return outfile
 
     def save_csvs(self, path):
