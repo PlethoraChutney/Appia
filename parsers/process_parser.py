@@ -54,6 +54,9 @@ def main(args):
         sys.exit(1)
 
     out_dir = os.path.abspath(os.path.expanduser(args.output_dir))
+    exp.show_tables()
+    exp.renormalize_hplc(args.normalize, args.strict_normalize)
+    exp.show_tables()
     hplc_csv, fplc_csv = exp.save_csvs(out_dir)
 
     # Make Plots -----------------------------------------------------------------
@@ -120,10 +123,16 @@ parser.add_argument(
 )
 parser.add_argument(
     '-n', '--normalize',
-    help = 'Range over which to normalize in mL.',
+    help = 'Set maximum of this range (in mL) to 1',
     nargs = 2,
     type = float,
     default = [0.5, 1000]
+)
+parser.add_argument(
+    '--strict-normalize',
+    help = 'Also set minimum of normalization range to 0',
+    action = 'store_true',
+    default = False
 )
 parser.add_argument(
 	'-c', '--copy-manual',
