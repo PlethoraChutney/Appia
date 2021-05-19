@@ -3,6 +3,7 @@ import os
 import sys
 import logging
 import subprocess
+import shutil
 from processors import hplc, fplc, experiment, core
 
 def main(args):
@@ -12,6 +13,7 @@ def main(args):
     if args.id:
         exp = experiment.Experiment(args.id)
     
+    
     if file_list['arw']:
         waters, wat_sample_set = hplc.append_waters(file_list['arw'])
 
@@ -20,6 +22,12 @@ def main(args):
         except NameError:
             exp = experiment.Experiment(wat_sample_set)
             exp.hplc = waters
+
+        if not args.no_move:
+            hplc_out = os.path.join(args.output_dir, f'{exp.id}_raw-hplc')
+            os.makedirs(hplc_out)
+            for file in file_list['arw']:
+                shutil.move(file, os.path.join(hplc_out, os.path.basename(file)))
 
     if file_list['asc']:
         channel_mapping = {}
@@ -32,9 +40,19 @@ def main(args):
 
         try:
             exp.extend_hplc(shim)
+            
+            if not args.no_move:
+                for file in file_list['arw']:
+                    shutil.move(file, os.path.join(hplc_out, os.path.basename(file)))
         except NameError:
             exp = experiment.Experiment(shim_sample_set)
             exp.hplc = shim
+
+            hplc_out = os.path.join(args.output_dir, f'{exp.id}_raw-hplc')
+            if not args.no_move:
+                os.makedirs(hplc_out)
+                for file in file_list['arw']:
+                    shutil.move(file, os.path.join(hplc_out, os.path.basename(file)))
 
     if file_list['csv']:
         fplc_trace = fplc.append_fplc(file_list['csv'])
@@ -47,6 +65,14 @@ def main(args):
             exp = experiment.Experiment(fplc_id)
             exp.fplc = fplc_trace
 
+        if not args.no_move:
+
+            fplc_out = os.path.join(args.output_dir, f'{exp.id}_raw-fplc')
+
+            os.makedirs(fplc_out)
+            for file in file_list['csv']:
+                shutil.move(file, os.path.join(fplc_out, os.path.basename(file)))
+
     try:
         logging.info(f'Made {exp}')
     except NameError:
@@ -54,9 +80,7 @@ def main(args):
         sys.exit(1)
 
     out_dir = os.path.abspath(os.path.expanduser(args.output_dir))
-    exp.show_tables()
     exp.renormalize_hplc(args.normalize, args.strict_normalize)
-    exp.show_tables()
     hplc_csv, fplc_csv = exp.save_csvs(out_dir)
 
     # Make Plots -----------------------------------------------------------------
