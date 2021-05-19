@@ -2,5 +2,10 @@
 
 from waitress import serve
 from web import server
+from time import sleep
 
-serve(server, listen='*:8080')
+while True:
+    try:
+        serve(server, listen='0.0.0.0:8080')
+    except ConnectionRefusedError:
+        sleep(5)
