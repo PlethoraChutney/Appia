@@ -15,7 +15,11 @@ services:
   appia:
     depends_on:
       - couchdb
-    image: plethorachutney/appia
+    image: plethorachutney/appia:v2.1
     container_name: appia-web
     ports:
       - 8080:8080
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=password
+      - COUCHDB_HOST=couchdb
