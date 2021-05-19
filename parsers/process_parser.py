@@ -9,6 +9,7 @@ from processors.database import Database, Config
 
 def main(args):
     file_list = core.get_files(args.files)
+    logging.debug(file_list)
 
     # Make Experiment ------------------------------------------------------------
     if args.id:
@@ -82,7 +83,11 @@ def main(args):
     out_dir = os.path.abspath(os.path.expanduser(args.output_dir))
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
-    exp.renormalize_hplc(args.normalize, args.strict_normalize)
+    try:
+        exp.renormalize_hplc(args.normalize, args.strict_normalize)
+    except ValueError:
+        if args.strict_normalize:
+            logging.warning('No HPLC data to normalize')
     hplc_csv, fplc_csv = exp.save_csvs(out_dir)
 
     # Make Plots -----------------------------------------------------------------

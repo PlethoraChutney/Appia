@@ -56,8 +56,6 @@ def get_fplc_graphs(exp):
     if fplc is None:
         return None
 
-    
-    fplc = fplc.loc[(fplc.Normalization == 'Signal') & (fplc.Channel == 'mAU')]
 
     samples = set(fplc['Sample'])
 
@@ -66,6 +64,7 @@ def get_fplc_graphs(exp):
     # when non-continuous fractions are selected.
     
     if len(samples) == 1:
+        fplc = fplc.loc[(fplc.Normalization == 'Signal') & (fplc.Channel == 'mAU')]
         fplc_graph = go.Figure()
         for frac in set(fplc['Fraction']):
             fplc_graph.add_trace(
@@ -91,6 +90,7 @@ def get_fplc_graphs(exp):
             )
         )
     else:
+        fplc = fplc.loc[(fplc.Channel == 'mAU')]
         fplc_graph = px.line(
             data_frame = fplc,
             x = 'mL',
