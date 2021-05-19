@@ -50,9 +50,9 @@ def normalizer(df, norm_range = None, strict = False):
 
     ranged_df = df.loc[(df.mL > min(norm_range)) & (df.mL < max(norm_range))]
     if strict:
-        min_sig = df.Signal.min()
-    else:
         min_sig = ranged_df.Signal.min()
+    else:
+        min_sig = df.Signal.min()
 
     max_sig = ranged_df.Signal.max()
 
