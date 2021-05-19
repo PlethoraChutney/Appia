@@ -18,4 +18,4 @@ services:
     image: plethorachutney/appia
     container_name: appia-web
     ports:
-      - 13128:8080
+      - 8080:8080
