@@ -216,7 +216,7 @@ parser.add_argument(
     '--channel-mapping',
     nargs = '+',
     default = ['A', 'Trp', 'B', 'GFP'],
-    help = 'Channel mappings for Shimadzu instruments. E.g., A Trp B GFP ...'
+    help = 'Channel mappings for Shimadzu instruments. Default: A Trp B GFP'
 )
 parser.add_argument(
     '-f', '--fractions',
