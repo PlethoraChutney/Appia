@@ -25,11 +25,6 @@ def main(args):
             exp = experiment.Experiment(wat_sample_set)
             exp.hplc = waters
 
-        if not args.no_move:
-            hplc_out = os.path.join(args.output_dir, f'{exp.id}_raw-hplc')
-            for file in file_list['arw']:
-                shutil.move(file, os.path.join(hplc_out, os.path.basename(file)))
-
     if file_list['asc']:
         channel_mapping = {}
         i = 0
@@ -41,19 +36,9 @@ def main(args):
 
         try:
             exp.extend_hplc(shim)
-            
-            if not args.no_move:
-                for file in file_list['arw']:
-                    shutil.move(file, os.path.join(hplc_out, os.path.basename(file)))
         except NameError:
             exp = experiment.Experiment(shim_sample_set)
             exp.hplc = shim
-
-            hplc_out = os.path.join(args.output_dir, f'{exp.id}_raw-hplc')
-            if not args.no_move:
-                os.makedirs(hplc_out)
-                for file in file_list['arw']:
-                    shutil.move(file, os.path.join(hplc_out, os.path.basename(file)))
 
     if file_list['csv']:
         fplc_trace = fplc.append_fplc(file_list['csv'])
@@ -66,23 +51,28 @@ def main(args):
             exp = experiment.Experiment(fplc_id)
             exp.fplc = fplc_trace
 
-        if not args.no_move:
-
-            fplc_out = os.path.join(args.output_dir, f'{exp.id}_raw-fplc')
-
-            os.makedirs(fplc_out)
-            for file in file_list['csv']:
-                shutil.move(file, os.path.join(fplc_out, os.path.basename(file)))
-
     try:
         logging.info(f'Made {exp}')
     except NameError:
         logging.error('Cannot make empty experiment.')
         sys.exit(1)
 
-    out_dir = os.path.abspath(os.path.expanduser(args.output_dir))
+    if args.output_dir:
+        out_dir = os.path.abspath(os.path.expanduser(args.output_dir))
+    else:
+        out_dir = os.path.abspath(os.path.join(os.curdir, exp.id))
+        
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
+
+    for file_type in file_list.keys():
+        if not args.no_move:
+            out = os.path.join(out_dir, f'{exp.id}_raw-{file_type}')
+            if not os.path.isdir(out):
+                os.makedirs(out)
+
+            for file in file_list[file_type]:
+                shutil.move(file, os.path.join(out, os.path.basename(file)))
     try:
         exp.renormalize_hplc(args.normalize, args.strict_normalize)
     except ValueError:
@@ -171,8 +161,7 @@ parser.add_argument(
 )
 parser.add_argument(
     '-o', '--output-dir',
-    help = 'Directory in which to save CSVs and plots. Default current dir.',
-    default = os.curdir
+    help = 'Directory in which to save CSVs and plots. Default makes a new dir with experiment name.'
 )
 parser.add_argument(
     '-r', '--reduce',

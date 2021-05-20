@@ -2,7 +2,7 @@
 
 set /P new_name="Rename experiment to: "
 
-python3 appia.py -v process ./* --rename --database
+python appia.py -v process ./* --rename "%new_name%" --database
 
 if %ERRORLEVEL%==1 (
     PAUSE
