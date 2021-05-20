@@ -15,3 +15,4 @@ couchdb/data
 docker-compose.yml
 testing-commands.py
 *config*.json
+update_scripts.ps1
