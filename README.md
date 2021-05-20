@@ -39,20 +39,19 @@ traces into an Experiment for upload to the visualization database.
 When exporting your data, please export the headers as two rows with multiple columns,
 rather than two columns with multiple rows.
 
-The 2D script requires `SampleName`, `Channel`, `Instrument Method Name` and
-`Sample Set Name`. The 3D script requires `SampleName`, `Instrument Method
-Name`, and `Sample Set Name`. The order is not important, so long as the
+The Waters script requires `SampleName`, `Channel`, `Instrument Method Name` and
+`Sample Set Name`. The order is not important, so long as the
 required headers are present in the .arw file. Other information can be there as
 well, it won't hurt anything. You will also want to update the flow rates to
 match your per-column flow rate. Your `Instrument Method` must contain either
-`5_150` or `10_300` (for 5/150 and 10/300) columns. This can all be customized by
+`5_150` or `10_300` (for 5/150 and 10/300 columns). This can all be customized by
 changing the `flow_rates` and `column_volumes` dictionaries at the top of
 `processors/hplc.py`
 
 If you are using a Shimadzu instrument, you've got a little less support than Waters.
 Your method will need the standard headers, including `Sample ID:`,
 `Total Data Points`, and `Sampling Rate:`. When you process, you will need
-to pass a set of arguments to tell appia which channel corresponds to what,
+to pass a set of arguments to tell Appia which channel corresponds to what,
 since Shimadzu instruments only output a letter.
 
 ## AKTA FPLC Processing
@@ -90,7 +89,7 @@ specific peaks.
 ## Batch scripts
 From the command line, the best way to use Appia is to run appia.py. However,
 several batch scripts are included in this repo to give users who prefer not
-to use command line interfaces a set of commonly-used optoins. You could write
+to use command line interfaces a set of commonly-used options. You could write
 equivalent shell scripts for Linux or Mac machines, but since most chromatography
 systems run on Windows I've included these for those machines.
 
