@@ -157,7 +157,7 @@ app.index_string = '''
 <html>
     <head>
         {%metas%}
-        <title>Troll - Traces</title>
+        <title>Appia Traces</title>
         {%favicon%}
         {%css%}
     </head>
@@ -181,7 +181,7 @@ def serve_layout():
                 className = 'graph-title',
                 children = [
                 html.H1(
-                    children='Baconguis Chromatography Reader',
+                    children='Appia Chromatography Viewer',
                     style = {'textAlign': 'center'}
                 ),
                 html.Div(
