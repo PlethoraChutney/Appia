@@ -10,8 +10,8 @@ services:
     ports:
       - 5984:5984
     environment:
-      - COUCHDB_USER=${COUCH_USER}
-      - COUCHDB_PASSWORD=${COUCH_PASSWORD}
+      - COUCHDB_USER
+      - COUCHDB_PASSWORD
   appia:
     depends_on:
       - couchdb
@@ -20,6 +20,6 @@ services:
     ports:
       - 8080:8080
     environment:
-      - COUCHDB_USER=${COUCH_USER}
-      - COUCHDB_PASSWORD=${COUCH_PASSWORD}
+      - COUCHDB_USER
+      - COUCHDB_PASSWORD
       - COUCHDB_HOST=couchdb
