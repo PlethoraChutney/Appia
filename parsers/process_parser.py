@@ -59,8 +59,10 @@ def main(args):
 
     if args.output_dir:
         out_dir = os.path.abspath(os.path.expanduser(args.output_dir))
-    else:
+    elif not args.no_move:
         out_dir = os.path.abspath(os.path.join(os.curdir, exp.id))
+    else:
+        out_dir = os.path.curdir
         
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
