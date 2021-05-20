@@ -1,6 +1,4 @@
-suppressWarnings(suppressMessages(library(dplyr)))
-suppressWarnings(suppressMessages(library(stringr)))
-suppressWarnings(suppressMessages(library(ggplot2)))
+suppressWarnings(suppressMessages(library(tidyverse)))
 
 
 # 1 Import ----------------------------------------------------------------
