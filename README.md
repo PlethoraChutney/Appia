@@ -100,3 +100,61 @@ into a new experiment which is uploaded to the database using environment variab
 ### process-and-rename.bat
 Same as above, but specify an Experiment ID yourself instead of reading one from
 the data.
+
+# Example Data
+Examples of correctly-formatted Waters, Shimadzu, and AKTA files can be found in `/test-files/`. The directory `/processed-tests/` is the result of the command:
+
+```python appia.py process test-files/* -ko processed-tests -f 18 24```
+
+I included the -k parameter because I want to keep the raw files there, but if I
+had not, they'd be moved to their own respective directories in
+`/processed-tests/`. You'll see that in `/processed-tests/` there are three
+files representing the compiled data.
+
+## HPLC Data
+For ease of use, HPLC data is stored in both a long and wide format.
+
+### Long format
+mL is calculated from Time during processing. Sample and Channel are self-explanatory.
+Normalization tells if Value is the raw signal or a normalized Signal from 0 to 1,
+0 being the minimum and 1 being the maximum over that sample/channel combination,
+unless a specific range over which to normalize was passed into Appia during processing.
+
+| mL | Sample   | Channel | Time | Normlization | Value |
+|----|----------|---------|------|--------------|-------|
+| 0  | 05_25_BB | GFP     | 0    | Signal       | -1    |
+| 0  | 05_25_BB | Trp     | 0    | Signal       | -35   |
+| 0  | 05_25_D  | GFP     | 0    | Signal       | 3     |
+| 0  | 05_25_D  | Trp     | 0    | Signal       | 0     |
+
+### Wide format
+Wide format is the same data, but presented in a more traditional, "excel-style" format.
+Each column represents a trace, with a single column for Time to go along with it. You
+may note that the example wide table has a strange format, with many empty rows. This is
+because Shimadzu and Waters sample at different rates, meaning they do not have overlapping
+sampling points for the most part. Appia handles this, by using a single Time column
+and introduceing empty rows in the Signal columns. Your plotting software should be able
+to deal with that, or you can just filter for non-empty rows.
+
+| Time     | 05_25_BB GFP | 05_25_BB Trp | 05_25_D GFP | 05_25_D Trp | Value |
+|----------|--------------|--------------|-------------|-------------|-------|
+| 0        | -1           | -35          | 3           | 0           | -1    |
+| 0.033333 | -1           | -20          | 0           | -1          | -35   |
+
+### FPLC data
+FPLC data is only stored in long format, since by-and-large it is the same as
+what wide format would be. You just need to filter out channels you don't care about
+to reproduce what a wide-format table would be. Interestingly, AKTAs sample each channel
+at different rates, meaning that each channel has different x-axis values. This is all
+handled correctly by Appia, but that would introduce blank rows in the wide table, as
+with the HPLC example data. The fraction column indicates the vial into which that
+data point was dumped. This is used to fill fractions of interest, as seen in the
+example FPLC plot and the web interface.
+
+| mL       | CV       | Channel | Fraction | Sample                     | Normalization | Value    |
+|----------|----------|---------|----------|----------------------------|---------------|----------|
+| -0.00701 | -0.00029 | mAU     | 1        | 2018_0821SEC_detergentENaC | Signal        | 0.031309 |
+| -0.00618 | -0.00026 | mAU     | 1        | 2018_0821SEC_detergentENaC | Signal        | 0.022083 |
+| -0.00535 | -0.00022 | mAU     | 1        | 2018_0821SEC_detergentENaC | Signal        | 0.022115 |
+
+
