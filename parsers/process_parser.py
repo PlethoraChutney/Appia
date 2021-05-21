@@ -68,7 +68,7 @@ def main(args):
         os.makedirs(out_dir)
 
     for file_type in file_list.keys():
-        if not args.no_move:
+        if not args.no_move and file_list[file_type]:
             out = os.path.join(out_dir, f'{exp.id}_raw-{file_type}')
             if not os.path.isdir(out):
                 os.makedirs(out)
