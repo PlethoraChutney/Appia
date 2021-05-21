@@ -141,7 +141,7 @@ to deal with that, or you can just filter for non-empty rows.
 | 0        | -1           | -35          | 3           | 0           | -1    |
 | 0.033333 | -1           | -20          | 0           | -1          | -35   |
 
-### FPLC data
+## FPLC data
 FPLC data is only stored in long format, since by-and-large it is the same as
 what wide format would be. You just need to filter out channels you don't care about
 to reproduce what a wide-format table would be. Interestingly, AKTAs sample each channel
@@ -157,4 +157,5 @@ example FPLC plot and the web interface.
 | -0.00618 | -0.00026 | mAU     | 1        | 2018_0821SEC_detergentENaC | Signal        | 0.022083 |
 | -0.00535 | -0.00022 | mAU     | 1        | 2018_0821SEC_detergentENaC | Signal        | 0.022115 |
 
-
+## Web Demo
+Please check out the [web demo](https://appia-demo.herokuapp.com/) hosted on heroku!
