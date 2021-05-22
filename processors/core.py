@@ -9,9 +9,7 @@ def loading_bar(current, total, extension = '', force = False):
     except NameError:
         log_level = 0
 
-    if log_level > 20 and not force:
-        pass
-    else:
+    if log_level <= 20 or force:
         try:
             percent = floor(current/total * 10)
         except ZeroDivisionError:
