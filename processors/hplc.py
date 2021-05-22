@@ -44,7 +44,11 @@ def append_waters(file_list):
 
         sample_name = str(sample_info.loc[0]['SampleName'])
         channel_ID = str(sample_info.loc[0]['Channel'])
-        set_name = str(sample_info.loc[0]['Sample Set Name'])
+        try:
+            set_name = str(sample_info.loc[0]['Sample Set Name'])
+        except KeyError:
+            logging.error('\nNo Sample Set Name found in arw file')
+            set_name = None
         to_append['Channel'] = channel_ID
         to_append['Sample'] = sample_name
 
@@ -60,6 +64,13 @@ def append_waters(file_list):
 
             to_append['mL'] = to_append['Time']*flow_rates[column]
             to_append['Column Volume'] = to_append['mL']/column_volumes[column]
+        else:
+            if 'flow_rate' not in locals():
+                flow_rate = float(input(f'Flow rate (mL/min):'))
+                col_vol = float(input(f'Column voulme (ml)'))
+
+            to_append['mL'] = to_append['Time']*flow_rate
+            to_append['Column Volume'] = to_append['mL']/col_vol
 
         chroms = chroms.append(to_append, ignore_index = False)
 

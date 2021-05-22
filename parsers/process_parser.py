@@ -18,6 +18,8 @@ def main(args):
     
     if file_list['arw']:
         waters, wat_sample_set = hplc.append_waters(file_list['arw'])
+        if wat_sample_set is None:
+            wat_sample_set = input('Sample set name: ')
 
         try:
             exp.hplc = waters
