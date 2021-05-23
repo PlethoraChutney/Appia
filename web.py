@@ -5,6 +5,7 @@ import dash_html_components as html
 import plotly.express as px
 import plotly.graph_objects as go
 from urllib.parse import parse_qs
+from numpy import dstack
 from processors.database import Database, Config
 from processors.experiment import concat_experiments
 
@@ -86,6 +87,8 @@ def get_fplc_graphs(exp):
                 y = fplc['Value'],
                 mode = 'lines',
                 showlegend = False,
+                hovertemplate = 'mAU: %{y}<br>Volume: %{x}<br>Fraction: %{text}',
+                text = fplc['Fraction'],
                 line = {'color': 'black'}
             )
         )
@@ -97,6 +100,7 @@ def get_fplc_graphs(exp):
             y = 'Value',
             color = 'Sample',
             facet_row = 'Normalization',
+            hover_data = ['Value', 'mL', 'Fraction'],
             template = 'plotly_white'
         )
         try:
@@ -105,6 +109,7 @@ def get_fplc_graphs(exp):
             pass
         # remove 'Channel=' from the facet labels
         fplc_graph.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+
 
     fplc_graph.update_layout(template = 'plotly_white')
     fplc_graph.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
