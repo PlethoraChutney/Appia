@@ -61,6 +61,7 @@ def append_fplc(file_list):
 
         chroms = chroms.append(long_trace, ignore_index = True)
         chroms.Sample = os.path.split(file)[1][:-4]
+        chroms = chroms.loc[(chroms.CV >= 0) & (chroms.CV <=1)]
 
         chroms = chroms.groupby(['Channel']).apply(normalizer)
         chroms = chroms.melt(
