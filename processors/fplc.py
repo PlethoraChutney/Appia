@@ -2,7 +2,7 @@ import pandas as pd
 import os
 from .core import normalizer, loading_bar
 
-def append_fplc(file_list):
+def append_fplc(file_list, cv = 24):
     if isinstance(file_list, str):
         file_list = [file_list]
 
@@ -56,8 +56,7 @@ def append_fplc(file_list):
             # ends up, it's pretty important that everything matches.
             long_trace.loc[long_trace['mL'] > frac_mL[i], 'Fraction'] = i + 2
 
-        # Hard code a GE 10/300 CV (24 mL)
-        long_trace['CV'] = long_trace['mL']/24
+        long_trace['CV'] = long_trace['mL']/cv
 
         chroms = chroms.append(long_trace, ignore_index = True)
         chroms.Sample = os.path.split(file)[1][:-4]

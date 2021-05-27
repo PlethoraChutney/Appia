@@ -43,7 +43,7 @@ def main(args):
             exp.hplc = shim
 
     if file_list['csv']:
-        fplc_trace = fplc.append_fplc(file_list['csv'])
+        fplc_trace = fplc.append_fplc(file_list['csv'], args.fplc_cv)
         # everything but the '.csv' at the end from the first file name without directory info
         fplc_id = os.path.split(file_list['csv'][0])[1][:-4]
 
@@ -83,34 +83,44 @@ def main(args):
         if args.strict_normalize:
             logging.warning('No HPLC data to normalize')
     hplc_csv, fplc_csv = exp.save_csvs(out_dir)
+    if hplc_csv:
+        logging.debug(f'HPLC: ' + hplc_csv)
+    else:
+        logging.debug('No HPLC csv')
+    if fplc_csv:
+        logging.debug(f'FPLC: ' + fplc_csv)
+    else:
+        logging.debug(f'No FPLC csv')
 
     # Make Plots -----------------------------------------------------------------
     
     script_location = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
     
-    if not args.no_plots:
+    if args.plots:
         if hplc_csv:
             logging.info('Making HPLC plots')
-            subprocess.run([
+            hplc_command = [
                 'Rscript', os.path.join(script_location,
                 'plotters', 'auto_graph_HPLC.R'),
                 os.path.normpath(hplc_csv),
                 args.ml[0], args.ml[1]
-            ],
-            cwd = out_dir)
+            ]
+            logging.debug('HPLC plot command: ' + ' '.join(hplc_command))
+            subprocess.run(hplc_command, cwd = out_dir)
         
         if fplc_csv:
             logging.info('Making FPLC plot')
-            subprocess.run([
+            fplc_command = [
                 'Rscript', os.path.join(script_location,
                 'plotters', 'auto_graph_FPLC.R'),
                 os.path.normpath(fplc_csv),
                 args.fractions[0], args.fractions[1],
                 args.ml[0], args.ml[1],
-                os.path.split(os.path.normpath(fplc_csv))[0],
-                os.path.split(os.path.normpath(fplc_csv))[1][:-4]
-            ],
-            cwd = out_dir)
+                os.path.normpath(os.path.split(fplc_csv)[0]),
+                os.path.normpath(os.path.split(fplc_csv)[1])[:-4]
+            ]
+            logging.debug('FPLC plot command: ' + ' '.join(fplc_command))
+            subprocess.run(fplc_command, cwd = out_dir)
 
     if args.copy_manual:
         if exp.hplc is not None:
@@ -181,6 +191,12 @@ parser.add_argument(
     const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json')
 )
 parser.add_argument(
+    '--fplc-cv',
+    help = 'Column volume for FPLC data. Default is 24 mL (GE/Cytiva 10/300 column).',
+    type = int,
+    default = 24
+)
+parser.add_argument(
     '--overwrite',
     help = 'Overwrite database copy of experiment with same name without asking',
     action = 'store_true'
@@ -199,12 +215,6 @@ parser.add_argument(
     default = False
 )
 parser.add_argument(
-	'-c', '--copy-manual',
-	help = 'Copy R plot file for manual plot editing',
-	action = 'store_true',
-	default = False
-)
-parser.add_argument(
 	'-k', '--no-move',
 	help = 'Process data files in place (do not move to new directory)',
 	action = 'store_true',
@@ -215,6 +225,18 @@ parser.add_argument(
     nargs = '+',
     default = ['A', 'Trp', 'B', 'GFP'],
     help = 'Channel mappings for Shimadzu instruments. Default: A Trp B GFP'
+)
+parser.add_argument(
+	'-c', '--copy-manual',
+	help = 'Copy R plot file for manual plot editing',
+	action = 'store_true',
+	default = False
+)
+parser.add_argument(
+    '-p', '--plots',
+    help = 'Make default R plots',
+    action = 'store_true',
+    default = False
 )
 parser.add_argument(
     '-f', '--fractions',
@@ -230,17 +252,9 @@ parser.add_argument(
     type = str,
     help = 'Inclusive range for auto-plot x-axis, in mL. Default is 5 to 25. 0 0 selects full range.'
 )
-
-plot_group = parser.add_mutually_exclusive_group()
-plot_group.add_argument(
-    '-p', '--no-plots',
-    help = 'Do not make default R plots',
-    action = 'store_true',
-    default = False
-)
-plot_group.add_argument(
+parser.add_argument(
 	'-s', '--post-to-slack',
-	help = "Send completed plots to Slack. Need a config JSON with slack token and channel, same default as db.",
+	help = "Send completed plots to Slack. Need a config JSON with slack token and channel.",
 	nargs = '?',
     const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json')
 )
