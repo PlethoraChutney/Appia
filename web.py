@@ -1,5 +1,6 @@
 import logging
 import dash
+from dash import dependencies
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
@@ -19,7 +20,7 @@ channel_dict = {
     '2475ChB ex488/em509': 'GFP'
 }
 
-def get_hplc_graphs(exp, view_range = None):
+def get_hplc_graphs(exp, view_range = None, x_ax = 'mL'):
     exp.rename_channels(channel_dict)
     raw_graphs = []
 
@@ -27,7 +28,7 @@ def get_hplc_graphs(exp, view_range = None):
 
         fig = px.line(
             data_frame = exp.hplc.loc[exp.hplc['Normalization'] == norm],
-            x = 'mL',
+            x = x_ax,
             y = 'Value',
             color = 'Sample',
             facet_row = 'Channel',
@@ -43,6 +44,9 @@ def get_hplc_graphs(exp, view_range = None):
 
         # remove 'Channel=' from the facet labels
         fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+
+        if x_ax == 'Time':
+            fig.update_layout(xaxis_title = 'Time (min)')
 
         raw_graphs.append(fig)
 
@@ -115,12 +119,12 @@ def get_fplc_graphs(exp):
     fplc_graph.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
     return fplc_graph
 
-def get_plotly(exp, view_range = None):
+def get_plotly(exp, view_range = None, x_ax = 'mL'):
     combined_graphs = {}
     html_graphs = []
     
     if exp.hplc is not None:
-        combined_graphs['Signal'], combined_graphs['Normalized'] = get_hplc_graphs(exp, view_range)
+        combined_graphs['Signal'], combined_graphs['Normalized'] = get_hplc_graphs(exp, view_range, x_ax)
 
     if exp.fplc is not None:
         combined_graphs['FPLC'] = get_fplc_graphs(exp)
@@ -201,6 +205,7 @@ def serve_layout():
             ),
             html.Div(
                 className = 'sidebar',
+                style = {'text-align': 'center'},
                 children = [
                     html.H5(
                         style = {'paddingTop': '10px', 'textAlign': 'center'},
@@ -216,6 +221,17 @@ def serve_layout():
                         )]
                     ),
                     html.Hr(),
+                    dcc.RadioItems(
+                        'x-ax-radios',
+                        options=[
+                            {'label': 'Volume', 'value': 'mL'},
+                            {'label': 'Time', 'value': 'Time'}
+                        ],
+                        value='mL',
+                        labelStyle = {'display': 'inline-block', 'text-align': 'center'},
+                        style = {'width': '100%'}
+                    ),
+                    html.Br(),
                     html.Button(
                         'Renormalize HPLC',
                         id = 'renorm-hplc',
@@ -263,11 +279,12 @@ def update_output(value):
     [
         dash.dependencies.Input('root-location', 'pathname'),
         dash.dependencies.Input('root-location', 'search'),
+        dash.dependencies.Input('x-ax-radios', 'value'),
         dash.dependencies.Input('renorm-hplc', 'n_clicks'),
         dash.dependencies.Input('reset-hplc', 'n_clicks')
     ]
 )
-def update_output(pathname, search_string, n_clicks, reset):
+def update_output(pathname, search_string, radio_value, n_clicks, reset):
     changed = [p['prop_id'] for p in dash.callback_context.triggered][0]
 
     if changed == 'root-location.search' or changed is None:
@@ -292,7 +309,7 @@ def update_output(pathname, search_string, n_clicks, reset):
         if norm_range is not None:
             exp.renormalize_hplc(norm_range, False)
         
-        return get_plotly(exp, view_range)
+        return get_plotly(exp, view_range, radio_value)
 
 @app.callback(
     dash.dependencies.Output('root-location', 'search'),
