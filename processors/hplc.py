@@ -1,20 +1,45 @@
 import pandas as pd
 import numpy as np
+import sys
+import json
+import os
 import logging
 from .core import loading_bar, normalizer
 
-flow_rates = {
-    '10_300': 0.5,
-    '5_150': 0.3
-}
+def get_flow_rate(flow_rate, method):
+    # If user provides in argument we don't need to do this
+    if flow_rate:
+        return flow_rate
+    
+    # Open flow-rates JSON
+    if method:
+        # Open flow-rates JSON
+        script_location = os.path.dirname(os.path.realpath(__file__))
+        try:
+            with open(os.path.join(script_location, 'flow_rates.json')) as fr:
+                flow_rates = json.load(fr)
 
-column_volumes = {
-    '10_300': 24,
-    '5_150': 3
-}
+            match = False
+            for key in flow_rates:
+                if key in method:
+                    if match:
+                        logging.error('Multiple matches in flow_rates JSON!')
+                        match = False
+                        break
+                    else:
+                        match = True
+                        flow_rate = flow_rates[key]
+
+            if match:
+                return flow_rate
+        except FileNotFoundError:
+            logging.warning('No flow_rates JSON found.')
+    
+    flow_rate = float(input(f'Flow rate (mL/min):'))
+    return flow_rate
 
 
-def append_waters(file_list):
+def append_waters(file_list, flow_rate = None):
 
     chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 
@@ -52,25 +77,14 @@ def append_waters(file_list):
         to_append['Channel'] = channel_ID
         to_append['Sample'] = sample_name
 
+
         if 'Instrument Method Name' in sample_info:
             method = str(sample_info.loc[0]['Instrument Method Name'])
-
-            # Here's where we look up methods. If you're not using per-column
-            # methods, you'll have to change this and the above dict
-            if '10_300' in method:
-                column = '10_300'
-            elif '5_150' in method:
-                column = '5_150'
-
-            to_append['mL'] = to_append['Time']*flow_rates[column]
-            to_append['Column Volume'] = to_append['mL']/column_volumes[column]
         else:
-            if 'flow_rate' not in locals():
-                flow_rate = float(input(f'Flow rate (mL/min):'))
-                col_vol = float(input(f'Column voulme (ml)'))
+            method = False
+        flow_rate = get_flow_rate(flow_rate, method)
 
-            to_append['mL'] = to_append['Time']*flow_rate
-            to_append['Column Volume'] = to_append['mL']/col_vol
+        to_append['mL'] = to_append['Time']*flow_rate
 
         chroms = chroms.append(to_append, ignore_index = False)
 
@@ -84,7 +98,7 @@ def append_waters(file_list):
 
     return chroms, set_name
 
-def append_shim(file_list, channel_mapping):
+def append_shim(file_list, channel_mapping, flow_rate = None):
     chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 
     channel_names = list(channel_mapping.keys())
@@ -122,14 +136,8 @@ def append_shim(file_list, channel_mapping):
         to_append['Channel'] = [x for x in channel_names for i in range(number_samples)]
         to_append['Time'] = [x/60 for x in seconds_list]
 
-        # this is obviously not strictly true
-        if to_append.Time.max() < 20:
-            column = '5_150'
-        else:
-            column = '10_300'
-
-        to_append['mL'] = to_append['Time']*flow_rates[column]
-        to_append['Column Volume'] = to_append['mL']/column_volumes[column]
+        flow_rate = get_flow_rate(flow_rate, None)
+        to_append['mL'] = to_append['Time'] * flow_rate
 
         chroms = chroms.append(to_append, ignore_index = True, sort = True)
 

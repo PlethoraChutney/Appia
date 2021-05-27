@@ -17,7 +17,7 @@ def main(args):
     
     
     if file_list['arw']:
-        waters, wat_sample_set = hplc.append_waters(file_list['arw'])
+        waters, wat_sample_set = hplc.append_waters(file_list['arw'], args.hplc_flow_rate)
         if wat_sample_set is None:
             wat_sample_set = input('Sample set name: ')
 
@@ -34,7 +34,7 @@ def main(args):
             channel_mapping[args.channel_mapping[i]] = args.channel_mapping[i+1]
             i += 2
 
-        shim, shim_sample_set = hplc.append_shim(file_list['asc'], channel_mapping)
+        shim, shim_sample_set = hplc.append_shim(file_list['asc'], channel_mapping, args.hplc_flow_rate)
 
         try:
             exp.extend_hplc(shim)
@@ -189,6 +189,11 @@ parser.add_argument(
     dest = 'config',
     nargs = '?',
     const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json')
+)
+parser.add_argument(
+    '--hplc-flow-rate',
+    help = 'Manually override flow rate. Provide a single number in mL/min',
+    type = float
 )
 parser.add_argument(
     '--fplc-cv',
