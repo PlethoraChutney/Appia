@@ -177,12 +177,12 @@ def concat_experiments(exp_list):
         fplcs = []
 
         for exp in [x for x in exp_list if x.hplc is not None]:
-            hplc = exp.hplc
+            hplc = exp.hplc.copy()
             hplc['Sample'] = f'{exp.id}: ' + hplc['Sample'].astype(str)
             hplcs.append(hplc)
 
         for exp in [x for x in exp_list if x.fplc is not None]:
-            fplc = exp.fplc
+            fplc = exp.fplc.copy()
             fplc['Sample'] = exp.id
             fplcs.append(fplc)
 
