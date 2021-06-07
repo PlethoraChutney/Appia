@@ -327,7 +327,7 @@ def refresh_xrange(relayout_data, search_string, n_clicks, reset):
         raise dash.exceptions.PreventUpdate
         
     if changed == 'reset-hplc.n_clicks':
-        return ''
+        return '?'
     
 
     try:
