@@ -9,3 +9,4 @@ appia-env/
 couchdb/data
 update_scripts.ps1
 .vscode/
+config.json
