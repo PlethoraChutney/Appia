@@ -42,15 +42,6 @@ def main(args):
             exp = experiment.Experiment(shim_sample_set)
             exp.hplc = shim
 
-    if file_list['agilent']:
-        agil, agil_sample_set = hplc.append_agilent(file_list['agilent'], args.hplc_flow_rate)
-
-        try:
-            exp.extend_hplc(agil)
-        except NameError:
-            exp = experiment.Experiment(agil_sample_set)
-            exp.hplc = agil
-
     if file_list['akta']:
         fplc_trace = fplc.append_fplc(file_list['akta'], args.fplc_cv)
         # everything but the '.csv' at the end from the first file name without directory info
@@ -61,6 +52,16 @@ def main(args):
         except NameError:
             exp = experiment.Experiment(fplc_id)
             exp.fplc = fplc_trace
+            
+    if file_list['agilent']:
+        agil = hplc.append_agilent(file_list['agilent'], args.hplc_flow_rate)
+
+        try:
+            exp.extend_hplc(agil)
+        except NameError:
+            sample_set_name = input('Please provide an experiment name')
+            exp = experiment.Experiment(sample_set_name)
+            exp.hplc = agil
 
     try:
         logging.info(f'Made {exp}')

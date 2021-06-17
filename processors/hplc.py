@@ -145,6 +145,7 @@ def append_shim(file_list, channel_mapping, flow_rate = None):
     chroms = chroms[['Time', 'Signal', 'Channel', 'Sample', 'mL']]
     chroms = chroms.replace(channel_mapping)
 
+    chroms = chroms.groupby(['Sample', 'Channel']).apply(normalizer)
     chroms = chroms.melt(
         id_vars = ['mL', 'Sample', 'Channel', 'Time'],
         value_vars = 'Signal',
@@ -154,8 +155,18 @@ def append_shim(file_list, channel_mapping, flow_rate = None):
 
     return chroms, set_name
 
-def append_agilent(file_list, flow_rate = None, channel_mapping = None):
-    chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
+def append_agilent(file_list, flow_override = None, channel_override = None):
+    chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample', 'mL'])
+
+    if channel_override:
+        channel = channel_override
+    else:
+        channel = False
+
+    if flow_override:
+        flow_rate = flow_override
+    else:
+        flow_rate = False
 
     for i in range(len(file_list)):
 
@@ -170,38 +181,81 @@ def append_agilent(file_list, flow_rate = None, channel_mapping = None):
             encoding = 'utf_16'
         )
 
-        sample_name = file.replace('.CSV', '').replace('_RT', '')
+        filename = os.path.split(file)[1]
+        sample_name = filename.replace('.CSV', '').replace('_RT', '')
 
-        channel = False
-        if channel_mapping:
-            channel = channel_mapping
+
+        # Channel
+        if not channel_override:
+            channel = False
         else:
+            channel = channel_override
+        
+        if not channel:
             channel_reg = r'Channel[0-9]{3}'
-            channel_regex = re.match(channel_reg, sample_name)
-            if channel_regex:
+            channel_search = re.match(channel_reg, sample_name)
+            if channel_search:
                 sample_name = re.sub(channel_reg, '', sample_name)
                 try:
                     # pull the last three characters of the matching regex and check if they're an int
-                    channel = channel_regex.group(0)[-3:]
+                    channel = channel_search.group(0)[-3:]
                     int(channel)
                 except ValueError:
-                    logging.debug(f'Bad channel pattern in file {file}: channel')
+                    logging.debug(f'Bad channel pattern in file {file}: {channel}')
                     channel = False
             
             if not channel:
                 channel = input(f'Please provide a channel name for {file}:\n')
-                if input('Set channel to "{channel}" for remaining Agilent files? Y/N\n').lower() == 'y':
-                    channel_mapping = channel
+                if input(f'Set channel to "{channel}" for remaining Agilent files? Y/N\n').lower() == 'y':
+                    channel_override = channel
+        to_append['Channel'] = channel
 
-        to_append.Sample = sample_name
-        to_append.Channel = channel
+
+        # Flow rate
+        if not flow_override:
+            flow_rate = False
+        else:
+            flow_rate = flow_override
 
         if not flow_rate:
-            flow_reg = r'Flow[0-9]*\.[0-9]*'
-            
+            i = 0
+            while not flow_rate:
+                if i == 0:
+                    flow_reg = r'Flow[0-9]*\.[0-9]*'
+                    flow_search = re.match(flow_reg, sample_name)
+
+                    if flow_search:
+                        sample_name = re.sub(flow_reg, '', sample_name)
+
+                        try:
+                            flow_rate = flow_search.group(0)[4:]
+                            flow_rate = float(flow_rate)
+                        except ValueError:
+                            logging.debug(f'Bad flow rate pattern in file {file}: {flow_rate}')
+                            flow_rate = False
+                try:
+                    input_fr = input(f'Please provide a flow rate for {file} (mL/min)\n')
+                    flow_rate = float(input_fr)
+                    if input(f'Set flow rate to {flow_rate} for remaining Agilent files? Y/N\n').lower() == 'y':
+                        flow_override = flow_rate
+                except ValueError:
+                    logging.error('Flow rate must be a number')
+
+                i += 1
             
         to_append['mL'] = to_append['Time'] * flow_rate
+
+        # Set sample name down here so that flow and channel information have been removed
+        to_append['Sample'] = sample_name
+
+        chroms = chroms.append(to_append, ignore_index = True, sort = True)
         
+    chroms = chroms.groupby(['Sample', 'Channel']).apply(normalizer)
+    chroms = chroms.melt(
+        id_vars = ['mL', 'Sample', 'Channel', 'Time'],
+        value_vars = 'Signal',
+        var_name = 'Normalization',
+        value_name = 'Value'
+    )
 
-
-    sys.exit()
+    return chroms
