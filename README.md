@@ -61,6 +61,24 @@ to pass a set of arguments to tell Appia which channel corresponds to what,
 since Shimadzu instruments only output a letter. Additionally, you will be prompted
 for a flow rate (or you can provide one with `--hplc-flow-rate`).
 
+### Agilent Data Export
+
+Unfortunately, Agilent has rather limited support for data export. Versions of OpenLab
+prior to 2.4 lack the ability to export data in a format that Appia can read. However,
+OpenLab 2.4 [introduced the ability to export data as a csv](https://community.agilent.com/technical/software/f/forum/1297/saving-dx-in-csv-excel-format).
+
+Following those instructions
+should yield a CSV with two unnamed columns, one representing retention time and the other
+signal. Given this lack of information, other data has to be provided by the user. If your
+file includes the pattern `Channel<###>` (where <###> is replaced by exactly
+three digits), Appia will set the channel for that file to the provided number. If your
+file includes the pattern `Flow<##.##>` (where <##.##> is replaced by any number of digits
+and a period followed by any number of digits, e.g., 1.25) Appia will set the flow
+rate for that file to that number, in mL/min. Otherwise, the user will be prompted for this
+information at the command line.
+
+We do not have access to an Agilent instrument, and we welcome collaboration on this front!
+
 ## AKTA FPLC Processing
 The AKTA processing is straightforward. First, export your data from the AKTA in
 .csv format. You'll have to open the trace in Unicorn and use the export button there,
