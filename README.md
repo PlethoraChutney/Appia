@@ -1,7 +1,8 @@
 # Appia - simple chromatography processing
 Appia is a set of scripts to process and view chromatography data from AKTA, Shimadzu, and
 Waters systems. Chromatography data can then be viewed on the easy-to-use and intuitive
-web interface, built with [plotly dash](https://plotly.com/dash/).
+web interface, built with [plotly dash](https://plotly.com/dash/). Please check out the
+[web demo](https://appia-demo.herokuapp.com/) hosted on heroku!
 
 Additionally, automatic plots will be prepared for all 
 data using [ggplot](https://ggplot2.tidyverse.org/) in R. Options to copy a manual file for plot tweaking are
@@ -181,6 +182,3 @@ example FPLC plot and the web interface.
 | -0.00701 | -0.00029 | mAU     | 1        | 2018_0821SEC_detergentENaC | Signal        | 0.031309 |
 | -0.00618 | -0.00026 | mAU     | 1        | 2018_0821SEC_detergentENaC | Signal        | 0.022083 |
 | -0.00535 | -0.00022 | mAU     | 1        | 2018_0821SEC_detergentENaC | Signal        | 0.022115 |
-
-## Web Demo
-Please check out the [web demo](https://appia-demo.herokuapp.com/) hosted on heroku!
