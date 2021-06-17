@@ -152,3 +152,13 @@ def append_shim(file_list, channel_mapping, flow_rate = None):
     )
 
     return chroms, set_name
+
+def append_agilent(file_list, flow_rate = None):
+    chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
+
+    for i in range(len(file_list)):
+
+        loading_bar(i+1, (len(file_list)), extension = ' Agilent files')
+        file = file_list[i]
+
+        # process file here

@@ -16,8 +16,8 @@ def main(args):
         exp = experiment.Experiment(args.id)
     
     
-    if file_list['arw']:
-        waters, wat_sample_set = hplc.append_waters(file_list['arw'], args.hplc_flow_rate)
+    if file_list['waters']:
+        waters, wat_sample_set = hplc.append_waters(file_list['waters'], args.hplc_flow_rate)
         if wat_sample_set is None:
             wat_sample_set = input('Sample set name: ')
 
@@ -27,14 +27,14 @@ def main(args):
             exp = experiment.Experiment(wat_sample_set)
             exp.hplc = waters
 
-    if file_list['asc']:
+    if file_list['shimadzu']:
         channel_mapping = {}
         i = 0
         while i < len(args.channel_mapping):
             channel_mapping[args.channel_mapping[i]] = args.channel_mapping[i+1]
             i += 2
 
-        shim, shim_sample_set = hplc.append_shim(file_list['asc'], channel_mapping, args.hplc_flow_rate)
+        shim, shim_sample_set = hplc.append_shim(file_list['shimadzu'], channel_mapping, args.hplc_flow_rate)
 
         try:
             exp.extend_hplc(shim)
@@ -42,10 +42,19 @@ def main(args):
             exp = experiment.Experiment(shim_sample_set)
             exp.hplc = shim
 
-    if file_list['csv']:
-        fplc_trace = fplc.append_fplc(file_list['csv'], args.fplc_cv)
+    if file_list['agilent']:
+        agil, agil_sample_set = hplc.append_agilent(file_list['agilent'], args.hplc_flow_rate)
+
+        try:
+            exp.extend_hplc(agil)
+        except NameError:
+            exp = experiment.Experiment(agil_sample_set)
+            exp.hplc = agil
+
+    if file_list['akta']:
+        fplc_trace = fplc.append_fplc(file_list['akta'], args.fplc_cv)
         # everything but the '.csv' at the end from the first file name without directory info
-        fplc_id = os.path.split(file_list['csv'][0])[1][:-4]
+        fplc_id = os.path.split(file_list['akta'][0])[1][:-4]
 
         try:
             exp.fplc = fplc_trace

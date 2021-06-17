@@ -34,12 +34,42 @@ def get_files(globs):
     files = [os.path.abspath(x) for x in globbed_files]
     arw = [x for x in files if x.endswith('.arw')]
     asc = [x for x in files if x.endswith('.asc')]
-    csv = [x for x in files if x.endswith('.csv')]
+    csv = [x for x in files if x.endswith('.csv') or x.endswith('.CSV')]
+
+    agilent = []
+    akta = []
+
+    for file in csv:
+        # process out csvs for agil and for akta
+        with open(file, 'r') as f:
+            first_line = f.readline().strip()
+
+            first_cell = first_line.split()[0].replace('ÿþ', '').replace('\x00', '')
+            logging.debug(f'{file} first cell is {first_cell}')
+
+            # AKTA files all have headers that say 'Chrom.1'
+            if first_cell == 'Chrom.1':
+                akta.append(file)
+                logging.debug(f'{file} is an AKTA file')
+            else:
+                try:
+                    # if we can make a float from the first cell, it's an Agilent file
+                    float(first_cell)
+                    agilent.append(file)
+                    logging.debug(f'{file} is an Agilent file')
+                except ValueError:
+                    response = input(f'Could not determine filetype for {file}. (A)kta, A(g)ilent, or (S)kip?').lower()
+                    
+                    if response == 'a':
+                        akta.append(file)
+                    elif response == 'g':
+                        agilent.append(file)      
 
     return {
-        'arw': arw,
-        'asc': asc,
-        'csv': csv
+        'waters': arw,
+        'shimadzu': asc,
+        'agilent': agilent,
+        'akta': akta
     }
 
 def normalizer(df, norm_range = None, strict = False):
