@@ -193,7 +193,8 @@ def append_agilent(file_list, flow_override = None, channel_override = None):
         
         if not channel:
             channel_reg = r'Channel[0-9]{3}'
-            channel_search = re.match(channel_reg, sample_name)
+            print(sample_name)
+            channel_search = re.search(channel_reg, sample_name)
             if channel_search:
                 sample_name = re.sub(channel_reg, '', sample_name)
                 try:
@@ -222,7 +223,7 @@ def append_agilent(file_list, flow_override = None, channel_override = None):
             while not flow_rate:
                 if i == 0:
                     flow_reg = r'Flow[0-9]*\.[0-9]*'
-                    flow_search = re.match(flow_reg, sample_name)
+                    flow_search = re.search(flow_reg, sample_name)
 
                     if flow_search:
                         sample_name = re.sub(flow_reg, '', sample_name)
@@ -233,13 +234,14 @@ def append_agilent(file_list, flow_override = None, channel_override = None):
                         except ValueError:
                             logging.debug(f'Bad flow rate pattern in file {file}: {flow_rate}')
                             flow_rate = False
-                try:
-                    input_fr = input(f'Please provide a flow rate for {file} (mL/min)\n')
-                    flow_rate = float(input_fr)
-                    if input(f'Set flow rate to {flow_rate} for remaining Agilent files? Y/N\n').lower() == 'y':
-                        flow_override = flow_rate
-                except ValueError:
-                    logging.error('Flow rate must be a number')
+                else:
+                    try:
+                        input_fr = input(f'Please provide a flow rate for {file} (mL/min)\n')
+                        flow_rate = float(input_fr)
+                        if input(f'Set flow rate to {flow_rate} for remaining Agilent files? Y/N\n').lower() == 'y':
+                            flow_override = flow_rate
+                    except ValueError:
+                        logging.error('Flow rate must be a number')
 
                 i += 1
             
