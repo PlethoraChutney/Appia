@@ -4,6 +4,7 @@ import sys
 import json
 import os
 import logging
+import re
 from .core import loading_bar, normalizer
 
 def get_flow_rate(flow_rate, method):
@@ -153,7 +154,7 @@ def append_shim(file_list, channel_mapping, flow_rate = None):
 
     return chroms, set_name
 
-def append_agilent(file_list, flow_rate = None):
+def append_agilent(file_list, flow_rate = None, channel_mapping = None):
     chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 
     for i in range(len(file_list)):
@@ -161,4 +162,46 @@ def append_agilent(file_list, flow_rate = None):
         loading_bar(i+1, (len(file_list)), extension = ' Agilent files')
         file = file_list[i]
 
-        # process file here
+        to_append = pd.read_csv(
+            file,
+            sep = '\t',
+            names = ['Time', 'Signal'],
+            engine = 'python',
+            encoding = 'utf_16'
+        )
+
+        sample_name = file.replace('.CSV', '').replace('_RT', '')
+
+        channel = False
+        if channel_mapping:
+            channel = channel_mapping
+        else:
+            channel_reg = r'Channel[0-9]{3}'
+            channel_regex = re.match(channel_reg, sample_name)
+            if channel_regex:
+                sample_name = re.sub(channel_reg, '', sample_name)
+                try:
+                    # pull the last three characters of the matching regex and check if they're an int
+                    channel = channel_regex.group(0)[-3:]
+                    int(channel)
+                except ValueError:
+                    logging.debug(f'Bad channel pattern in file {file}: channel')
+                    channel = False
+            
+            if not channel:
+                channel = input(f'Please provide a channel name for {file}:\n')
+                if input('Set channel to "{channel}" for remaining Agilent files? Y/N\n').lower() == 'y':
+                    channel_mapping = channel
+
+        to_append.Sample = sample_name
+        to_append.Channel = channel
+
+        if not flow_rate:
+            flow_reg = r'Flow[0-9]*\.[0-9]*'
+            
+            
+        to_append['mL'] = to_append['Time'] * flow_rate
+        
+
+
+    sys.exit()

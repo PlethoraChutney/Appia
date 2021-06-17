@@ -58,7 +58,7 @@ def get_files(globs):
                     agilent.append(file)
                     logging.debug(f'{file} is an Agilent file')
                 except ValueError:
-                    response = input(f'Could not determine filetype for {file}. (A)kta, A(g)ilent, or (S)kip?').lower()
+                    response = input(f'Could not determine filetype for {file}. (A)kta, A(g)ilent, or (S)kip?\n').lower()
                     
                     if response == 'a':
                         akta.append(file)
