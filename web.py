@@ -35,12 +35,16 @@ def get_hplc_graphs(exp, view_range = None, x_ax = 'mL'):
             template = 'plotly_white'
         )
 
-        try:
-            # without this, your channels are stuck using the same yaxis range
-            fig.layout.yaxis2.update(matches = None)
-        except AttributeError:
-            # if the trace only has one channel, it doesn't have yaxis2
-            pass
+        if norm == 'Normalized':
+            print('fixing axes')
+            fig.update_layout(yaxis_range=[0, 1])
+        else:
+            try:
+                # without this, your channels are stuck using the same yaxis range
+                fig.layout.yaxis2.update(matches = None)
+            except AttributeError:
+                # if the trace only has one channel, it doesn't have yaxis2
+                pass
 
         # remove 'Channel=' from the facet labels
         fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
@@ -52,6 +56,8 @@ def get_hplc_graphs(exp, view_range = None, x_ax = 'mL'):
 
         if view_range is not None:
             fig.update_xaxes(autorange = False, range = view_range)
+
+        
 
     return raw_graphs
 
@@ -238,6 +244,11 @@ def serve_layout():
                         style = {'width': '100%'}
                     ),
                     html.Button(
+                        'Reset normalization',
+                        id = 'reset-norm',
+                        style = {'width': '100%'}
+                    ),
+                    html.Button(
                         'Reset HPLC',
                         id = 'reset-hplc',
                         style = {'width': '100%'}
@@ -281,10 +292,11 @@ def update_output(value):
         dash.dependencies.Input('root-location', 'search'),
         dash.dependencies.Input('x-ax-radios', 'value'),
         dash.dependencies.Input('renorm-hplc', 'n_clicks'),
+        dash.dependencies.Input('reset-norm', 'n_clicks'),
         dash.dependencies.Input('reset-hplc', 'n_clicks')
     ]
 )
-def update_output(pathname, search_string, radio_value, n_clicks, reset):
+def update_output(pathname, search_string, radio_value, renorm, reset_norm, reset):
     changed = [p['prop_id'] for p in dash.callback_context.triggered][0]
 
     if changed == 'root-location.search' or changed is None:
@@ -317,18 +329,22 @@ def update_output(pathname, search_string, radio_value, n_clicks, reset):
         dash.dependencies.Input('data-Signal', 'relayoutData'),
         dash.dependencies.Input('root-location', 'search'),
         dash.dependencies.Input('renorm-hplc', 'n_clicks'),
+        dash.dependencies.Input('reset-norm', 'n_clicks'),
         dash.dependencies.Input('reset-hplc', 'n_clicks')
     ]
 )
-def refresh_xrange(relayout_data, search_string, n_clicks, reset):
+def refresh_xrange(relayout_data, search_string, renorm, reset_norm, reset):
     changed = [p['prop_id'] for p in dash.callback_context.triggered][0]
     print(changed)
 
     norm_range, view_range = parse_query(search_string)
 
-    if changed == 'reset-hplc.n_clicks':
+    if changed == 'reset-hplc.n_clicks' or changed == 'reset-norm.n_clicks':
         print('Reset')
-        return f'?view-range={view_range[0]}-{view_range[1]}'
+        if changed == 'reset-norm.n_clicks' and view_range:
+            return f'?view-range={view_range[0]}-{view_range[1]}'
+        else:
+            return ''
 
     if relayout_data == None or changed == 'root-location.search':
         print('Block')
