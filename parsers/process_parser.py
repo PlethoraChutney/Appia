@@ -145,7 +145,10 @@ def main(args):
             )
 
     if args.config:
-        db = Database(Config(args.config))
+        if args.config == 'env':
+            db = Database(Config())
+        else:
+            db = Database(Config(args.config))
 
         exp.reduce_hplc(args.reduce)
         db.upload_experiment(exp, args.overwrite)
@@ -195,7 +198,9 @@ parser.add_argument(
 )
 parser.add_argument(
     '-d', '--database',
-    help = 'Upload experiment to couchdb. Optionally, provide config file location. Default config location is "config.json" in appia directory.',
+    help = '''Upload experiment to couchdb. Optionally, provide config file location.
+Default config location is "config.json" in appia directory.
+Pass "env" to pull from environment variables.''',
     dest = 'config',
     nargs = '?',
     const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json')

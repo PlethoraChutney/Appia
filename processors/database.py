@@ -2,6 +2,7 @@ import couchdb
 import logging
 import pandas as pd
 import os
+import sys
 from .experiment import Experiment
 from .core import three_column_print
 import json
@@ -10,9 +11,13 @@ class Config:
     def __init__(self, config_file = None) -> None:
 
         if config_file is None:
-            self.cuser = os.environ['COUCHDB_USER']
-            self.cpass = os.environ['COUCHDB_PASSWORD']
-            self.chost = os.environ['COUCHDB_HOST']
+            try:
+                self.cuser = os.environ['COUCHDB_USER']
+                self.cpass = os.environ['COUCHDB_PASSWORD']
+                self.chost = os.environ['COUCHDB_HOST']
+            except KeyError:
+                logging.error('Provide a config file or set $COUCHDB_USER, $COUCHDB_PASSWORD, $COUCHDB_HOST')
+                sys.exit(1)
         else:
             with open(config_file) as conf:
                 config = json.load(conf)
