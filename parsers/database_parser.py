@@ -3,7 +3,10 @@ from processors.database import Database, Config
 from processors.core import three_column_print
 
 def main(args):
-    db = Database(Config(args.config))
+    if args.config == 'env':
+        db = Database(Config())
+    else:
+        db = Database(Config(args.config))
 
     if args.list:
         three_column_print(db.update_experiment_list())
