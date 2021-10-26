@@ -241,7 +241,7 @@ def append_shim(file_list, channel_mapping, flow_rate = None):
     chroms = chroms.groupby(['Sample', 'Channel']).apply(normalizer)
     chroms = chroms.melt(
         id_vars = ['mL', 'Sample', 'Channel', 'Time'],
-        value_vars = 'Signal',
+        value_vars = ['Signal', 'Normalized'],
         var_name = 'Normalization',
         value_name = 'Value'
     )
