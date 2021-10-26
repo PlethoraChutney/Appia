@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import sys
+from io import StringIO
 import json
 import os
 import logging
@@ -99,6 +99,124 @@ def append_waters(file_list, flow_rate = None):
 
     return chroms, set_name
 
+def get_shim_data(file, channel_names = None, flow_rate = None):
+    with open(file, 'r') as f:
+        first_line = f.readline().strip()
+
+    if first_line == '[Header]':
+        return new_shim_reader(file, channel_names, flow_rate)
+    else:
+        return old_shim_reader(file, channel_names, flow_rate)
+
+# Very old shimadzu exports are much simpler than modern ones
+def old_shim_reader(file, channel_names, flow_rate = None):
+    to_append = pd.read_csv(
+        file,
+        sep = '\t',
+        skiprows = 16,
+        names = ['Signal'],
+        header = None,
+        dtype = np.float32
+    )
+
+    sample_info = pd.read_csv(
+        file,
+        sep = '\t',
+        nrows = 16,
+        names = ['Stat'] + channel_names + ['Units'],
+        engine = 'python'
+    )
+
+    sample_info.set_index('Stat', inplace = True)
+
+    number_samples = int(sample_info.loc['Total Data Points:'][0])
+    sampling_interval = float(sample_info.loc['Sampling Rate:'][0])
+    seconds_list = [x * sampling_interval for x in range(number_samples)] * len(channel_names)
+    set_name = str(sample_info.loc['Acquisition Date and Time:'][0]).replace('/', '-').replace(' ', '_').replace(':', '-')
+
+    to_append['Sample'] = str(sample_info.loc['Sample ID:'][0])
+    to_append['Channel'] = [x for x in channel_names for i in range(number_samples)]
+    to_append['Time'] = [x/60 for x in seconds_list]
+
+    flow_rate = get_flow_rate(flow_rate, None)
+    to_append['mL'] = to_append['Time'] * flow_rate
+
+    return (to_append, set_name)
+
+def new_shim_reader(file, channel_names = None, flow_rate = None):
+    # new shimadzu tables are actually several tables separated by
+    # headers, which are in the format `[header]`
+    to_append = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample', 'mL'])
+
+    with open(file, 'r') as f:
+        tables = {}
+        curr_table = False
+        for line in f:
+            if re.match('\[.*\]', line):
+                curr_table = line.replace('[', '').replace(']', '').strip()
+            else:
+                if curr_table not in tables:
+                    tables[curr_table] = [line]
+                else:
+                    tables[curr_table].append(line)
+
+        # Get sample name
+        sample = tables['Sample Information'][4].strip().split('\t')[1]
+        logging.debug(sample)
+
+        # Get sample set name
+        batch_path = tables['Original Files'][2].strip().split('\t')[1]
+        logging.debug(batch_path)
+        sample_set = os.path.split(batch_path)[1][:-4]
+
+
+        # Get detectors and channels
+        detectors = tables['Configuration'][4].strip().split('\t')[1:]
+        channels = tables['Configuration'][5].strip().split('\t')[1:]
+        det_to_channel = {}
+        for i in range(len(detectors)):
+            det_to_channel[detectors[i]] = channels[i]
+
+        # Get all chromatograms
+        chroms = []
+        for key in tables:
+            if re.match('LC Chromatogram', key):
+                chroms.append(tables[key])
+
+        channel_index = -1
+        for chrom in chroms:
+            channel_index += 1
+            info_lines = chrom[:15]
+            info = {}
+            info_patterns = {
+                'interval': 'Interval(msec)',
+                'num_samples': '# of Points',
+                'ex': 'Ex\. Wavelength',
+                'em': 'Em\. Wavelength'
+            }
+            for key in info_patterns:
+                for line in info_lines:
+                    if re.match(info_patterns[key], line):
+                        info[key] = line.strip().split('\t')[1]
+                    elif re.match('R\.Time', line):
+                        skip = info_lines.index(line) + 1
+            
+            df = pd.read_csv(
+                StringIO(''.join(chrom)),
+                sep = '\t',
+                skiprows = skip,
+                names = ['Time', 'Signal']
+            )
+            if 'ex' in info:
+                df['Channel'] = f'Ex:{info["ex"]}/Em:{info["em"]}'
+            else:
+                df['Channel'] = channels[channel_index]
+            df['Sample'] = sample
+            
+            to_append = to_append.append(chrom, ignore_index=True, sort = True)
+
+        return(to_append, sample_set)
+
 def append_shim(file_list, channel_mapping, flow_rate = None):
     chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 
@@ -109,36 +227,7 @@ def append_shim(file_list, channel_mapping, flow_rate = None):
         loading_bar(i+1, (len(file_list)), extension = ' Shimadzu files')
         file = file_list[i]
 
-        to_append = pd.read_csv(
-            file,
-            sep = '\t',
-            skiprows = 16,
-            names = ['Signal'],
-            header = None,
-            dtype = np.float32
-        )
-
-        sample_info = pd.read_csv(
-            file,
-            sep = '\t',
-            nrows = 16,
-            names = ['Stat'] + channel_names + ['Units'],
-            engine = 'python'
-        )
-
-        sample_info.set_index('Stat', inplace = True)
-
-        number_samples = int(sample_info.loc['Total Data Points:'][0])
-        sampling_interval = float(sample_info.loc['Sampling Rate:'][0])
-        seconds_list = [x * sampling_interval for x in range(number_samples)] * len(channel_names)
-        set_name = str(sample_info.loc['Acquisition Date and Time:'][0]).replace('/', '-').replace(' ', '_').replace(':', '-')
-
-        to_append['Sample'] = str(sample_info.loc['Sample ID:'][0])
-        to_append['Channel'] = [x for x in channel_names for i in range(number_samples)]
-        to_append['Time'] = [x/60 for x in seconds_list]
-
-        flow_rate = get_flow_rate(flow_rate, None)
-        to_append['mL'] = to_append['Time'] * flow_rate
+        to_append, set_name = get_shim_data(file, channel_names, flow_rate)
 
         chroms = chroms.append(to_append, ignore_index = True, sort = True)
 
