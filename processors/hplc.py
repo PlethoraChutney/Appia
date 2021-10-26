@@ -141,6 +141,8 @@ def old_shim_reader(file, channel_names, flow_rate = None):
     flow_rate = get_flow_rate(flow_rate, None)
     to_append['mL'] = to_append['Time'] * flow_rate
 
+    print(to_append)
+
     return (to_append, set_name)
 
 def new_shim_reader(file, channel_names = None, flow_rate = None):
@@ -213,7 +215,8 @@ def new_shim_reader(file, channel_names = None, flow_rate = None):
                 df['Channel'] = channels[channel_index]
             df['Sample'] = sample
             
-            to_append = to_append.append(chrom, ignore_index=True, sort = True)
+            to_append = to_append.append(df, ignore_index=True, sort = True)
+            to_append['mL'] = to_append['Time'] * flow_rate
 
         return(to_append, sample_set)
 
@@ -221,6 +224,7 @@ def append_shim(file_list, channel_mapping, flow_rate = None):
     chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 
     channel_names = list(channel_mapping.keys())
+    flow_rate = get_flow_rate(flow_rate, None)
 
     for i in range(len(file_list)):
 
