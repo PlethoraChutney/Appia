@@ -163,7 +163,13 @@ def new_shim_reader(file, channel_names = None, flow_rate = None):
                     tables[curr_table].append(line)
 
         # Get sample name
-        sample = tables['Sample Information'][4].strip().split('\t')[1]
+        sample_name = tables['Sample Information'][4].strip().split('\t')[1]
+        sample_id = tables['Sample Information'][5].strip().split('\t')[1]
+
+        if sample_name != sample_id:
+            sample = sample_name + "_" + sample_id
+        else:
+            sample = sample_name
         logging.debug(sample)
 
         # Get sample set name
