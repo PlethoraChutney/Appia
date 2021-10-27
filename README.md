@@ -67,7 +67,7 @@ Manual input of flow rate is still necessary, and if you have more than one samp
 with the same Sample Name *and* Sample ID being processed at the same time, they will
 conflict. This should not happen unless you're combining samples from different runs
 into a single processing event, which I consdier a rare event. If this is essential
-for your workflow please submit an [issue](/issues).
+for your workflow please submit an [issue](https://github.com/PlethoraChutney/Appia/issues).
 
 ### Agilent Data Export
 
