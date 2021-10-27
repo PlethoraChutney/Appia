@@ -21,8 +21,8 @@ I highly recommend you use a virtual environment for the python packages. Conda
 is also fine, but I'm trying to keep this as simple as possible.
 
 1. Clone this repo (or if you don't have git installed, just download it)
-2. Install [python](https://www.python.org/)
-    1. Run `python -m virtualenv venv` (use python 3)
+2. Install [python3](https://www.python.org/) **Note: pandas is currently incompatible with python 3.10. Instally 3.9**
+    1. Run `python -m virtualenv venv` 
     2. Run `venv/Scripts/activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
     3. Run `python -m pip install -r requirements.txt`
 3. Install [R](https://www.r-project.org/)
@@ -56,11 +56,18 @@ argument.
 
 ### Shimadzu Data Export
 
-If you are using a Shimadzu instrument, your method will need the
+If you are using an old Shimadzu instrument, your method will need the
 standard headers, including `Sample ID`, `Total Data Points`, and `Sampling Rate`. When you process, you will need
 to pass a set of arguments to tell Appia which channel corresponds to what,
 since Shimadzu instruments only output a letter. Additionally, you will be prompted
 for a flow rate (or you can provide one with `--hplc-flow-rate`).
+
+Newer Shimadzu instruments output much more information about samples, which is great.
+Manual input of flow rate is still necessary, and if you have more than one sample
+with the same Sample Name *and* Sample ID being processed at the same time, they will
+conflict. This should not happen unless you're combining samples from different runs
+into a single processing event, which I consdier a rare event. If this is essential
+for your workflow please submit an [issue](/issues).
 
 ### Agilent Data Export
 
