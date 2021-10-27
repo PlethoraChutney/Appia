@@ -141,8 +141,6 @@ def old_shim_reader(file, channel_names, flow_rate = None):
     flow_rate = get_flow_rate(flow_rate, None)
     to_append['mL'] = to_append['Time'] * flow_rate
 
-    print(to_append)
-
     return (to_append, set_name)
 
 def new_shim_reader(file, channel_names = None, flow_rate = None):
@@ -292,7 +290,6 @@ def append_agilent(file_list, flow_override = None, channel_override = None):
         
         if not channel:
             channel_reg = r'Channel[0-9]{3}'
-            print(sample_name)
             channel_search = re.search(channel_reg, sample_name)
             if channel_search:
                 sample_name = re.sub(channel_reg, '', sample_name)

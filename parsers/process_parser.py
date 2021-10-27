@@ -132,15 +132,15 @@ def main(args):
             logging.debug('FPLC plot command: ' + ' '.join(fplc_command))
             subprocess.run(fplc_command, cwd = out_dir)
 
-    if args.copy_manual:
+    if args.copy_manual is not None:
         if exp.hplc is not None:
             shutil.copyfile(
-                os.path.join(script_location, 'plotters', 'manual_plot_HPLC.R'),
+                os.path.join(script_location, args.copy_manual, 'manual_plot_HPLC.R'),
                 os.path.join(out_dir, f'{exp.id}_manual-plot-HPLC.R')
             )
         if exp.fplc is not None:
             shutil.copyfile(
-                os.path.join(script_location, 'plotters', 'manual_plot_FPLC.R'),
+                os.path.join(script_location, args.copy_manual, 'manual_plot_FPLC.R'),
                 os.path.join(out_dir, f'{exp.id}_manual-plot-FPLC.R')
             )
 
@@ -248,9 +248,9 @@ parser.add_argument(
 )
 parser.add_argument(
 	'-c', '--copy-manual',
-	help = 'Copy R plot file for manual plot editing',
-	action = 'store_true',
-	default = False
+	help = 'Copy R plot file for manual plot editing. Argument is directory relative to Appia root in which templates reside. No argument uses default `plotters/`.',
+	nargs = '?',
+    const = 'plotters'
 )
 parser.add_argument(
     '-p', '--plots',

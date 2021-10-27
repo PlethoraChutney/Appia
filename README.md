@@ -134,6 +134,15 @@ into a new experiment which is uploaded to the database using environment variab
 Same as above, but specify an Experiment ID yourself instead of reading one from
 the data.
 
+## Manual plot fine-tuning
+For final publication plots, we recommend fine-tuning the appearance of the plot
+using [ggplot2](https://ggplot2.tidyverse.org/). To this end, we include some
+R scripts as suggested starting points for building publication plots. These manual
+plotting scripts can be copied into the processed data directory using the
+`--copy-manual` argument during processing. As you develop your own style, you
+can save your own templates (still named `manual_plot_HPLC.R` and `manual_plot_FPLC.R`)
+and pass the directory containing these templates to the `--copy-manual` argument.
+
 # Example Data
 Examples of correctly-formatted Waters, Shimadzu, and AKTA files can be found in `/test-files/`. The directory `/processed-tests/` is the result of the command:
 
