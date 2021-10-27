@@ -23,16 +23,16 @@ if (length(fractions) > 12) {
 } else {
   color_scheme <- scale_fill_manual(
     values = c(
-      '#17becf', # cyan
-      '#ff7f0e', # orange
-      '#e377c2', # pink
       '#1f77b4', # blue
+      '#ff7f0e', # orange
+      '#17becf', # cyan
+      '#e377c2', # pink
       '#2ca02c', # green
       '#d62728', # red
       '#9467bd', # purple
       '#7f7f7f', # grey
       '#bcbd22', # yellow-green
-      '#8c564b', # brown
+      '#8c564b',  # brown
       'dark blue',
       'black'),
     limits = as.character(fractions))
