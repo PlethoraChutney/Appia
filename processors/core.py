@@ -32,8 +32,8 @@ def get_files(globs):
 
     logging.debug(f'Globbed files: {globbed_files}')
     files = [os.path.abspath(x) for x in globbed_files]
-    arw = [x for x in files if x.endswith('.arw')]
-    asc = [x for x in files if x.endswith('.asc')]
+    waters = [x for x in files if x.endswith('.arw')]
+    shimadzu = [x for x in files if x.endswith('.asc') or x.endswith('.txt')]
     csv = [x for x in files if x.endswith('.csv') or x.endswith('.CSV')]
 
     agilent = []
@@ -66,8 +66,8 @@ def get_files(globs):
                         agilent.append(file)      
 
     return {
-        'waters': arw,
-        'shimadzu': asc,
+        'waters': waters,
+        'shimadzu': shimadzu,
         'agilent': agilent,
         'akta': akta
     }
