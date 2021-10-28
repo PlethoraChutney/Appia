@@ -22,6 +22,7 @@ def limit_fixer(df_limits, input_limits):
     return limits
 
 def auto_plot_hplc(df, limits, xax_var):
+    df = df[::10]
     df_lims = [min(df[xax_var]), max(df[xax_var])]
     limits = limit_fixer(df_lims, limits)
     
