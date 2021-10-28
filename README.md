@@ -16,18 +16,20 @@ available.
 4. Run `docker-compose up` in the same directory as docker-compose.yml
 
 ### Local/processing-only installation:
-This process will install Python, R, and all the packages/libraries you need.
+This process will install Python and all the packages/libraries you need.
 I highly recommend you use a virtual environment for the python packages. Conda
-is also fine, but I'm trying to keep this as simple as possible.
+is also fine, but I'm trying to keep this as simple as possible. If you want
+to use ggplot to make manually-tweaked plots, you should also follow the steps
+to install R and RStudio.
 
 1. Clone this repo (or if you don't have git installed, just download it)
 2. Install [python3](https://www.python.org/) **Note: pandas is currently incompatible with python 3.10. Install 3.9**
     1. Run `python -m virtualenv venv` 
     2. Run `venv/Scripts/activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
     3. Run `python -m pip install -r requirements.txt`
-3. Install [R](https://www.r-project.org/)
-    1. In an R session (R.exe/R for Windows/Mac) run:
-    2. `install.packages('tidyverse')`
+3. *(Optional) Install [R](https://www.r-project.org/) for manual plotting*
+    1. *In an R session (`R.exe` or `R` for Windows or Mac)
+    run `install.packages('tidyverse')`*
 4. *(Optional) Install [R Studio](https://www.rstudio.com/) for easier use of the
     manual plot scripts*
 
