@@ -6,6 +6,7 @@ import subprocess
 import shutil
 from processors import hplc, fplc, experiment, core
 from processors.database import Database, Config
+from plotters import auto_plot
 
 def main(args):
     file_list = core.get_files(args.files)
@@ -107,30 +108,25 @@ def main(args):
     script_location = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
     
     if args.plots:
-        if hplc_csv:
+        if exp.hplc is not None:
             logging.info('Making HPLC plots')
-            hplc_command = [
-                'Rscript', os.path.join(script_location,
-                'plotters', 'auto_graph_HPLC.R'),
-                os.path.normpath(hplc_csv),
-                args.ml[0], args.ml[1]
-            ]
-            logging.debug('HPLC plot command: ' + ' '.join(hplc_command))
-            subprocess.run(hplc_command, cwd = out_dir)
+            auto_plot.auto_plot_hplc(
+                exp.hplc, args.ml, 'mL'
+                ).write_image(
+                    os.path.join(out_dir, f'{exp.id}_auto-plot-hplc.png'),
+                    width = 1920,
+                    height = 1080
+                    )
         
-        if fplc_csv:
+        if exp.fplc is not None:
             logging.info('Making FPLC plot')
-            fplc_command = [
-                'Rscript', os.path.join(script_location,
-                'plotters', 'auto_graph_FPLC.R'),
-                os.path.normpath(fplc_csv),
-                args.fractions[0], args.fractions[1],
-                args.ml[0], args.ml[1],
-                os.path.normpath(os.path.split(fplc_csv)[0]),
-                os.path.normpath(os.path.split(fplc_csv)[1])[:-4]
-            ]
-            logging.debug('FPLC plot command: ' + ' '.join(fplc_command))
-            subprocess.run(fplc_command, cwd = out_dir)
+            auto_plot.auto_plot_fplc(
+                exp.fplc, args.ml, args.fractions, 'mL'
+                ).write_image(
+                    os.path.join(out_dir, f'{exp.id}_auto-plot-fplc.png'),
+                    width = 1920,
+                    height = 1080
+                    )
 
     if args.copy_manual is not None:
         if exp.hplc is not None:
@@ -248,29 +244,28 @@ parser.add_argument(
 )
 parser.add_argument(
 	'-c', '--copy-manual',
-	help = 'Copy R plot file for manual plot editing. Argument is directory relative to Appia root in which templates reside. No argument uses default `plotters/`.',
+	help = 'Copy R template file for manual plot editing. Argument is directory relative to Appia root in which templates reside. No argument uses default `plotters/`.',
 	nargs = '?',
     const = 'plotters'
 )
 parser.add_argument(
     '-p', '--plots',
-    help = 'Make default R plots',
+    help = 'Make default plots',
     action = 'store_true',
     default = False
 )
 parser.add_argument(
     '-f', '--fractions',
-    nargs = 2,
-    default = ['0', '0'],
-    type = str,
-    help = 'Inclusive range of auto-plot SEC fractions to fill in. Default is none.'
+    nargs = '+',
+    default = None,
+    help = 'SEC fractions to fill in. Default is none. Giving two numbers will fill all fractions between those, inclusive. `auto` sets no limit for that side, e.g., -f auto auto fills all fractions. A third N will fill every Nth fraction, e.g., 2 for every other.'
 )
 parser.add_argument(
     '-m', '--ml',
     nargs = 2,
     default = ['5', '25'],
     type = str,
-    help = 'Inclusive range for auto-plot x-axis, in mL. Default is 5 to 25. 0 0 selects full range.'
+    help = 'Inclusive range for auto-plot x-axis, in mL. Default is 5 to 25. To auto-set one limit, type `auto` instead of a number.'
 )
 parser.add_argument(
 	'-s', '--post-to-slack',

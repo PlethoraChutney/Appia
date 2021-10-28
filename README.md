@@ -16,18 +16,20 @@ available.
 4. Run `docker-compose up` in the same directory as docker-compose.yml
 
 ### Local/processing-only installation:
-This process will install Python, R, and all the packages/libraries you need.
+This process will install Python and all the packages/libraries you need.
 I highly recommend you use a virtual environment for the python packages. Conda
-is also fine, but I'm trying to keep this as simple as possible.
+is also fine, but I'm trying to keep this as simple as possible. If you want
+to use ggplot to make manually-tweaked plots, you should also follow the steps
+to install R and RStudio.
 
 1. Clone this repo (or if you don't have git installed, just download it)
-2. Install [python3](https://www.python.org/) **Note: pandas is currently incompatible with python 3.10. Instally 3.9**
+2. Install [python3](https://www.python.org/) **Note: pandas is currently incompatible with python 3.10. Install 3.9**
     1. Run `python -m virtualenv venv` 
     2. Run `venv/Scripts/activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
     3. Run `python -m pip install -r requirements.txt`
-3. Install [R](https://www.r-project.org/)
-    1. In an R session (R.exe/R for Windows/Mac) run:
-    2. `install.packages('tidyverse')`
+3. *(Optional) Install [R](https://www.r-project.org/) for manual plotting*
+    1. *In an R session (`R.exe` or `R` for Windows or Mac)
+    run `install.packages('tidyverse')`*
 4. *(Optional) Install [R Studio](https://www.rstudio.com/) for easier use of the
     manual plot scripts*
 
@@ -66,7 +68,7 @@ Newer Shimadzu instruments output much more information about samples, which is 
 Manual input of flow rate is still necessary, and if you have more than one sample
 with the same Sample Name *and* Sample ID being processed at the same time, they will
 conflict. This should not happen unless you're combining samples from different runs
-into a single processing event, which I consdier a rare event. If this is essential
+into a single processing event, which I consider a rare event. If this is essential
 for your workflow please submit an [issue](https://github.com/PlethoraChutney/Appia/issues).
 
 ### Agilent Data Export
@@ -146,14 +148,17 @@ and pass the directory containing these templates to the `--copy-manual` argumen
 # Example Data
 Examples of correctly-formatted Waters, Shimadzu, and AKTA files can be found in `/test-files/`. The directory `/processed-tests/` is the result of the command:
 
-```python appia.py process test-files/* -kpo processed-tests -f 18 24```
+```python appia.py -v process test-files/*.arw .\test-files\2018_0821SEC_detergentENaC.csv -kpo processed-tests -m 5 20 -f 16 28 2```
 
 I included the -k parameter because I want to keep the raw files there, but if I
 had not, they'd be moved to their own respective directories in
 `/processed-tests/`. You'll see that in `/processed-tests/` there are three
-files representing the compiled data.
+files representing the compiled data, as well as auto-generated plots.
 
 ## HPLC Data
+
+![Auto HPLC plot](processed-tests/Exp106_SEC_auto-plot-hplc.png)
+
 For ease of use, HPLC data is stored in both a long and wide format.
 
 ### Long format
@@ -184,7 +189,10 @@ to deal with that, or you can just filter for non-empty rows.
 | 0.033333 | -1           | -20          | 0           | -1          |
 
 ## FPLC data
-FPLC data is only stored in long format, since by-and-large it is the same as
+
+![Auto FPLC plot](processed-tests/Exp106_SEC_auto-plot-fplc.png)
+
+FPLC data is only stored in long format since, by and large, it is the same as
 what wide format would be. You just need to filter out channels you don't care about
 to reproduce what a wide-format table would be. Interestingly, AKTAs sample each channel
 at different rates, meaning that each channel has different x-axis values. This is all
