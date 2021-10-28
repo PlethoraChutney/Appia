@@ -270,7 +270,7 @@ parser.add_argument(
     nargs = 2,
     default = ['5', '25'],
     type = str,
-    help = 'Inclusive range for auto-plot x-axis, in mL. Default is 5 to 25. 0 0 selects full range.'
+    help = 'Inclusive range for auto-plot x-axis, in mL. Default is 5 to 25. To auto-set one limit, type `auto` instead of a number.'
 )
 parser.add_argument(
 	'-s', '--post-to-slack',

@@ -21,7 +21,7 @@ I highly recommend you use a virtual environment for the python packages. Conda
 is also fine, but I'm trying to keep this as simple as possible.
 
 1. Clone this repo (or if you don't have git installed, just download it)
-2. Install [python3](https://www.python.org/) **Note: pandas is currently incompatible with python 3.10. Instally 3.9**
+2. Install [python3](https://www.python.org/) **Note: pandas is currently incompatible with python 3.10. Install 3.9**
     1. Run `python -m virtualenv venv` 
     2. Run `venv/Scripts/activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
     3. Run `python -m pip install -r requirements.txt`
@@ -66,7 +66,7 @@ Newer Shimadzu instruments output much more information about samples, which is 
 Manual input of flow rate is still necessary, and if you have more than one sample
 with the same Sample Name *and* Sample ID being processed at the same time, they will
 conflict. This should not happen unless you're combining samples from different runs
-into a single processing event, which I consdier a rare event. If this is essential
+into a single processing event, which I consider a rare event. If this is essential
 for your workflow please submit an [issue](https://github.com/PlethoraChutney/Appia/issues).
 
 ### Agilent Data Export
@@ -146,7 +146,7 @@ and pass the directory containing these templates to the `--copy-manual` argumen
 # Example Data
 Examples of correctly-formatted Waters, Shimadzu, and AKTA files can be found in `/test-files/`. The directory `/processed-tests/` is the result of the command:
 
-```python appia.py process test-files/* -kpo processed-tests -f 18 24```
+```python appia.py process test-files/*.arw -kpo processed-tests -f 18 24```
 
 I included the -k parameter because I want to keep the raw files there, but if I
 had not, they'd be moved to their own respective directories in
