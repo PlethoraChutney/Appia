@@ -129,9 +129,13 @@ class Experiment:
             total_points = df.shape[0]
             reduction_factor = floor(total_points/num_points)
             return df[::reduction_factor]
-
         try:
-            self.hplc = self.hplc.groupby(['Channel', 'Sample', 'Normalization']).apply(lambda x: reduction_factor(x, num_points))
+            self.hplc = self.hplc.groupby(
+                ['Channel', 'Sample', 'Normalization'],
+                as_index = False
+                ).apply(
+                    lambda x: reduction_factor(x, num_points)
+                )
             self.hplc = self.hplc.reset_index(drop = True)
         except AttributeError:
             return

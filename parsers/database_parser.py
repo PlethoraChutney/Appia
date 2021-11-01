@@ -1,4 +1,5 @@
 import argparse
+from gooey import GooeyParser
 from processors.database import Database, Config
 from processors.core import three_column_print
 
@@ -26,7 +27,7 @@ def main(args):
             exp = db.pull_experiment(id)
             exp.save_csvs('.')
 
-parser = argparse.ArgumentParser(
+parser = GooeyParser(
     description = 'Database management',
     add_help=False
 )
@@ -34,7 +35,8 @@ parser.set_defaults(func = main)
 parser.add_argument(
     'config',
     help = 'Config JSON file',
-    type = str
+    type = str,
+    widget = 'FileChooser'
 )
 parser.add_argument(
     '-l', '--list',
