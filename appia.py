@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import logging
+import sys
 from gooey import Gooey, GooeyParser
 
 from parsers.process_parser import parser as process_parser
@@ -62,7 +63,6 @@ def main():
         level = levels[args.verbosity]
     except KeyError:
         level = logging.INFO
-    print(level)
 
     logging.basicConfig(
         level = level,

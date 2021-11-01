@@ -5,7 +5,7 @@ import json
 import os
 import logging
 import re
-from .core import loading_bar, normalizer
+from .core import loading_bar, normalizer, user_input
 
 def get_flow_rate(flow_rate, method):
     # If user provides in argument we don't need to do this
@@ -36,7 +36,7 @@ def get_flow_rate(flow_rate, method):
         except FileNotFoundError:
             logging.warning('No flow_rates JSON found.')
     
-    flow_rate = float(input(f'Flow rate (mL/min):'))
+    flow_rate = float(user_input('Flow rate (mL/min):'))
     return flow_rate
 
 
@@ -302,8 +302,8 @@ def append_agilent(file_list, flow_override = None, channel_override = None):
                     channel = False
             
             if not channel:
-                channel = input(f'Please provide a channel name for {file}:\n')
-                if input(f'Set channel to "{channel}" for remaining Agilent files? Y/N\n').lower() == 'y':
+                channel = user_input(f'Please provide a channel name for {file}:\n')
+                if user_input(f'Set channel to "{channel}" for remaining Agilent files? Y/N\n').lower() == 'y':
                     channel_override = channel
         to_append['Channel'] = channel
 
@@ -332,9 +332,9 @@ def append_agilent(file_list, flow_override = None, channel_override = None):
                             flow_rate = False
                 else:
                     try:
-                        input_fr = input(f'Please provide a flow rate for {file} (mL/min)\n')
+                        input_fr = user_input(f'Please provide a flow rate for {file} (mL/min)\n')
                         flow_rate = float(input_fr)
-                        if input(f'Set flow rate to {flow_rate} for remaining Agilent files? Y/N\n').lower() == 'y':
+                        if user_input(f'Set flow rate to {flow_rate} for remaining Agilent files? Y/N\n').lower() == 'y':
                             flow_override = flow_rate
                     except ValueError:
                         logging.error('Flow rate must be a number')

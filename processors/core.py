@@ -1,5 +1,6 @@
 from math import floor
 from glob import glob
+from easygui import enterbox
 import logging
 import os
 
@@ -93,3 +94,9 @@ def three_column_print(in_list):
     in_list = iter(in_list)
     for i in in_list:
         print('{:<45}{:<45}{}'.format(i, next(in_list, ""), next(in_list, '')))
+
+# For now we'll do it this way. Once Gooey implements a way to detect if we're
+# actually using the GUI, I'll use that to determine whether to use input() or
+# enterbox().
+def user_input(message):
+    return(enterbox(message))

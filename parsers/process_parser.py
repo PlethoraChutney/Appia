@@ -21,7 +21,7 @@ def main(args):
     if file_list['waters']:
         waters, wat_sample_set = hplc.append_waters(file_list['waters'], args.hplc_flow_rate)
         if wat_sample_set is None:
-            wat_sample_set = input('Sample set name: ')
+            wat_sample_set = core.user_input('Sample set name: ')
 
         try:
             exp.hplc = waters
@@ -61,7 +61,7 @@ def main(args):
         try:
             exp.extend_hplc(agil)
         except NameError:
-            sample_set_name = input('Please provide an experiment name')
+            sample_set_name = core.user_input('Please provide an experiment name')
             exp = experiment.Experiment(sample_set_name)
             exp.hplc = agil
 

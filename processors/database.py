@@ -4,7 +4,7 @@ import pandas as pd
 import os
 import sys
 from .experiment import Experiment
-from .core import three_column_print
+from .core import three_column_print, user_input
 import json
 
 class Config:
@@ -109,7 +109,7 @@ class Database:
             merged_exp = Experiment(exp.id)
             if exp.hplc is not None:
                 if old_exp.hplc is not None:
-                    if input('Overwrite old HPLC data? Y/N\n').lower() == 'y':
+                    if user_input('Overwrite old HPLC data? Y/N\n').lower() == 'y':
                         merged_exp.hplc = exp.hplc
                     else:
                         merged_exp.hplc = old_exp.hplc
@@ -120,7 +120,7 @@ class Database:
 
             if exp.fplc is not None:
                 if old_exp.fplc is not None:
-                    if input('Overwrite old FPLC data? Y/N\n').lower() == 'y':
+                    if user_input('Overwrite old FPLC data? Y/N\n').lower() == 'y':
                         merged_exp.fplc = exp.fplc
                     else:
                         merged_exp.fplc = old_exp.fplc
