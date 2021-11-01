@@ -199,7 +199,8 @@ file_io.add_argument(
 file_io.add_argument(
 	'-c', '--copy-manual',
 	help = 'Copy R template file for manual plot editing. Argument is directory relative to Appia root in which templates reside.',
-	nargs = '?'
+	nargs = '?',
+    const = 'plotters'
 )
 file_io.add_argument(
 	'-s', '--post-to-slack',
@@ -254,7 +255,8 @@ web_up.add_argument(
     help = '''Upload experiment to couchdb. Optionally, provide config file location. Default config location is "config.json" in appia directory. Enter "env" to use environment variables instead.''',
     dest = 'config',
     nargs = '?',
-    const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json')
+    const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json'),
+    widget = 'FileChooser'
 )
 web_up.add_argument(
     '--overwrite',
