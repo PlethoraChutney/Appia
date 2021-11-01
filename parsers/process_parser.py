@@ -4,6 +4,7 @@ import sys
 import logging
 import subprocess
 import shutil
+from gooey import GooeyParser
 from processors import hplc, fplc, experiment, core
 from processors.database import Database, Config
 from plotters import auto_plot
@@ -165,111 +166,122 @@ def main(args):
                 )
 
 
-parser = argparse.ArgumentParser(
+parser = GooeyParser(
     description = 'Process chromatography data',
     add_help = False    
 )
 parser.set_defaults(func = main)
 
+file_io = parser.add_argument_group('File IO')
+
 parser.add_argument(
     'files',
-    default = os.path.join(os.getcwd(), '*'),
     help = 'Glob or globs to find data files. For instance, "traces/*.arw"',
-    nargs = '+'
+    nargs = '+',
+    widget = 'MultiFileChooser'
 )
-parser.add_argument(
+file_io.add_argument(
     '-i', '--id',
     help = 'Experiment ID. Default to name of HPLC Sample Set (Waters over Shimadzu, if present) or FPLC file name.',
     type = str
 )
-parser.add_argument(
+file_io.add_argument(
     '-o', '--output-dir',
-    help = 'Directory in which to save CSVs and plots. Default makes a new dir with experiment name.'
+    help = 'Directory in which to save CSVs and plots. Default makes a new dir with experiment name.',
+    widget = 'DirChooser'
 )
-parser.add_argument(
-    '-r', '--reduce',
-    help = 'Reduce web HPLC data points to this many total. Default 1000. CSV files are saved at full temporal resolution regardless.',
-    type = int,
-    default = 1000
+file_io.add_argument(
+	'-k', '--no-move',
+	help = 'Process data files in place (do not move to new directory)',
+	action = 'store_true',
+	default = False
 )
-parser.add_argument(
-    '-d', '--database',
-    help = '''Upload experiment to couchdb. Optionally, provide config file location.
-Default config location is "config.json" in appia directory.
-Pass "env" to pull from environment variables.''',
-    dest = 'config',
-    nargs = '?',
-    const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json')
+file_io.add_argument(
+	'-c', '--copy-manual',
+	help = 'Copy R template file for manual plot editing. Argument is directory relative to Appia root in which templates reside.',
+	nargs = '?',
+    const = 'plotters'
 )
-parser.add_argument(
+file_io.add_argument(
+	'-s', '--post-to-slack',
+	help = "Send completed plots to Slack. Need a config JSON with slack token and channel.",
+	nargs = '?',
+    const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json'),
+    widget = 'FileChooser'
+)
+
+process_args = parser.add_argument_group('Processing Options')
+process_args.add_argument(
     '--hplc-flow-rate',
     help = 'Manually override flow rate. Provide a single number in mL/min',
     type = float
 )
-parser.add_argument(
+process_args.add_argument(
     '--fplc-cv',
     help = 'Column volume for FPLC data. Default is 24 mL (GE/Cytiva 10/300 column).',
     type = int,
     default = 24
 )
-parser.add_argument(
-    '--overwrite',
-    help = 'Overwrite database copy of experiment with same name without asking',
-    action = 'store_true'
-)
-parser.add_argument(
+process_args.add_argument(
     '-n', '--normalize',
     help = 'Set maximum of this range (in mL) to 1',
     nargs = 2,
     type = float,
     default = [0.5, 1000]
 )
-parser.add_argument(
+process_args.add_argument(
     '--strict-normalize',
     help = 'Also set minimum of normalization range to 0',
     action = 'store_true',
     default = False
 )
-parser.add_argument(
-	'-k', '--no-move',
-	help = 'Process data files in place (do not move to new directory)',
-	action = 'store_true',
-	default = False
-)
-parser.add_argument(
+process_args.add_argument(
     '--channel-mapping',
     nargs = '+',
     default = ['A', 'Trp', 'B', 'GFP'],
-    help = 'Channel mappings for Shimadzu instruments. Default: A Trp B GFP'
+    help = 'Channel mappings for old Shimadzu instruments. Default: A Trp B GFP'
 )
-parser.add_argument(
-	'-c', '--copy-manual',
-	help = 'Copy R template file for manual plot editing. Argument is directory relative to Appia root in which templates reside. No argument uses default `plotters/`.',
-	nargs = '?',
-    const = 'plotters'
+
+web_up = parser.add_argument_group('Web Upload')
+
+web_up.add_argument(
+    '-r', '--reduce',
+    help = 'Reduce web HPLC data points to this many total. Default 1000. CSV files are saved at full temporal resolution regardless.',
+    type = int,
+    default = 1000
 )
-parser.add_argument(
+web_up.add_argument(
+    '-d', '--database',
+    help = '''Upload experiment to couchdb. Optionally, provide config file location. Default config location is "config.json" in appia directory. Enter "env" to use environment variables instead.''',
+    dest = 'config',
+    nargs = '?',
+    const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json'),
+    widget = 'FileChooser'
+)
+web_up.add_argument(
+    '--overwrite',
+    help = 'Overwrite database copy of experiment with same name without asking',
+    action = 'store_true'
+)
+
+auto_plots = parser.add_argument_group('Auto Plots')
+auto_plots.add_argument(
     '-p', '--plots',
     help = 'Make default plots',
     action = 'store_true',
     default = False
 )
-parser.add_argument(
+auto_plots.add_argument(
     '-f', '--fractions',
     nargs = '+',
     default = None,
-    help = 'SEC fractions to fill in. Default is none. Giving two numbers will fill all fractions between those, inclusive. `auto` sets no limit for that side, e.g., -f auto auto fills all fractions. A third N will fill every Nth fraction, e.g., 2 for every other.'
+    help = 'SEC fractions to fill in. Default is none. Giving two numbers fills inclusive range; a third sets interval. E.g., 2 10 2 fills even fractions between 2 and 10.'
 )
-parser.add_argument(
+auto_plots.add_argument(
     '-m', '--ml',
     nargs = 2,
     default = ['5', '25'],
     type = str,
     help = 'Inclusive range for auto-plot x-axis, in mL. Default is 5 to 25. To auto-set one limit, type `auto` instead of a number.'
 )
-parser.add_argument(
-	'-s', '--post-to-slack',
-	help = "Send completed plots to Slack. Need a config JSON with slack token and channel.",
-	nargs = '?',
-    const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json')
-)
+
