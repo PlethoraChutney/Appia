@@ -33,6 +33,11 @@ to install R and RStudio.
 4. *(Optional) Install [R Studio](https://www.rstudio.com/) for easier use of the
     manual plot scripts*
 
+## GUI
+Appia has a GUI built using [Gooey](https://github.com/chriskiehl/Gooey) which can
+be launched by running `appia` with no arguments. If you wish to use the command
+line interface instead include `--ignore-gooey`.
+
 ## HPLC Processing
 Appia reads `.arw` or `.asc` files (from Waters and Shimadzu HPLCs, respectively)
 for information about the sample and how it was run, then optionally collects all the indicated
