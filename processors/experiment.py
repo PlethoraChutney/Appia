@@ -14,9 +14,9 @@ class Experiment:
     def hplc(self):
         try:
             return self._hplc.melt(
-                id_vars = ['Normalization', 'Channel', 'mL'],
+                id_vars = ['mL', 'Channel', 'Time', 'Normalization'],
                 var_name = 'Sample',
-                value_name = 'Signal'
+                value_name = 'Value'
             )
         except AttributeError:
             return None
