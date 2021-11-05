@@ -5,7 +5,8 @@ import json
 import os
 import logging
 import re
-from .core import loading_bar, normalizer, user_input
+from .core import loading_bar, normalizer
+from .gui import user_input
 
 def get_flow_rate(flow_rate, method):
     # If user provides in argument we don't need to do this

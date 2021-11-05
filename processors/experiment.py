@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from .core import *
+from .core import normalizer
 from math import floor
 
 class Experiment:

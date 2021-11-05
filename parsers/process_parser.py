@@ -2,7 +2,6 @@ import argparse
 import os
 import sys
 import logging
-import subprocess
 import shutil
 from gooey import GooeyParser
 from processors import hplc, fplc, experiment, core
