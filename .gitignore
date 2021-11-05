@@ -6,6 +6,7 @@
 *.lnk
 __pycache__
 appia-env/
+webvenv
 couchdb/data
 update_scripts.ps1
 .vscode/
