@@ -162,24 +162,38 @@ def new_shim_reader(file, channel_names = None, flow_rate = None):
                     tables[curr_table].append(line)
 
         # Get sample name
-        sample_name = tables['Sample Information'][4].strip().split('\t')[1]
-        sample_id = tables['Sample Information'][5].strip().split('\t')[1]
+        for line in tables['Sample Information']:
+            if 'Sample Name' in line:
+                sample_name = line.strip().split('\t')[1]
+            elif 'Sample ID' in line:
+                try:
+                    sample_id = line.strip().split('\t')[1]
+                except IndexError:
+                    sample_id = ''
+        
 
-        if sample_name != sample_id:
+
+        if sample_name != sample_id and sample_id != '':
             sample = sample_name + "_" + sample_id
         else:
             sample = sample_name
         logging.debug(sample)
 
         # Get sample set name
-        batch_path = tables['Original Files'][2].strip().split('\t')[1]
+        for line in tables['Original Files']:
+            if 'Batch File' in line:
+                batch_path = line.strip().split('\t')[1]
         logging.debug(batch_path)
         sample_set = os.path.split(batch_path)[1][:-4]
 
 
         # Get detectors and channels
-        detectors = tables['Configuration'][4].strip().split('\t')[1:]
-        channels = tables['Configuration'][5].strip().split('\t')[1:]
+        for line in tables['Configuration']:
+            if 'Detector ID' in line:
+                detectors = line.strip().split('\t')[1:]
+            elif 'Detector Name' in line:
+                channels = line.strip().split('\t')[1:]
+
         det_to_channel = {}
         for i in range(len(detectors)):
             det_to_channel[detectors[i]] = channels[i]
