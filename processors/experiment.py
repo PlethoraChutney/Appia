@@ -6,14 +6,18 @@ from math import floor
 class Experiment:
     def __init__(self, id) -> None:
         self.id = id
-        self.version = 3
+        self.version = 4
         self._hplc = None
         self._fplc = None
 
     @property
     def hplc(self):
         try:
-            return self._hplc
+            return self._hplc.melt(
+                id_vars = ['Normalization', 'Channel', 'mL'],
+                var_name = 'Sample',
+                value_name = 'Signal'
+            )
         except AttributeError:
             return None
 
