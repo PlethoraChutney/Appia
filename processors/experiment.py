@@ -13,11 +13,7 @@ class Experiment:
     @property
     def hplc(self):
         try:
-            return self._hplc.melt(
-                id_vars = ['mL', 'Channel', 'Time', 'Normalization'],
-                var_name = 'Sample',
-                value_name = 'Value'
-            )
+            return self._hplc
         except AttributeError:
             return None
 
@@ -25,7 +21,7 @@ class Experiment:
     def hplc(self, df):
         if isinstance(df, pd.DataFrame) or df is None:
             self._hplc = df.sort_values(
-                by = ['Normalization', 'Channel', 'Sample', 'mL']
+                by = ['Normalization', 'Channel', 'mL']
             )
         else:
             raise TypeError('HPLC input is not a pandas dataframe')
@@ -72,7 +68,11 @@ class Experiment:
 
     def jsonify(self):
         if self.hplc is not None:
-            hplc_json = self.hplc.to_json()
+            hplc_json = self.hplc.pivot_table(
+                    index = ['mL', 'Channel', 'Time', 'Normalization'],
+                    columns = 'Sample',
+                    values = 'Value'
+                ).reset_index().to_json()
         else:
             hplc_json = ''
 

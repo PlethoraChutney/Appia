@@ -45,7 +45,7 @@ class Config:
 class Database:
     def __init__(self, config) -> None:
         self.config = config
-        self.version = 3
+        self.version = 4
         couchserver = couchdb.Server(f'http://{config.cuser}:{config.cpass}@{config.chost}:5984')
 
         dbname = 'traces'
@@ -66,22 +66,35 @@ class Database:
         new_exp = Experiment(id)
 
         try:
-            new_exp.hplc = pd.read_json(doc['hplc'])
+            logging.debug(f'DB version: {self.version}\nExp version: {doc["version"]}')
+
+            if doc['version'] == self.version:
+                new_exp.hplc = pd.read_json(doc['hplc']).melt(
+                id_vars = ['mL', 'Channel', 'Time', 'Normalization'],
+                var_name = 'Sample',
+                value_name = 'Value'
+            )
+            
+            elif doc['version'] == 3:
+                logging.info(f'{id} is a v3 Experiment. You should re-upload this Experiment.')
+                new_exp.hplc = pd.read_json(doc['hplc'])
+
+            elif doc['version'] != self.version:
+                logging.error('Out of date experiment. Perform db migration.')
+
         except ValueError:
             pass
+        except KeyError:
+            logging.error('No version number. Check experiment ID and perform db migration.')
+
 
         try:
             new_exp.fplc = pd.read_json(doc['fplc'])
         except ValueError:
             pass
-
-        try:
-            if doc['version'] == 2:
-                logging.info('Upgrading from Experiment v2')
-            elif doc['version'] != self.version:
-                logging.error('Out of date experiment. Perform db migration.')
         except KeyError:
-            logging.error('No version number. Check experiment ID and perform db migration.')
+            new_exp.fplc = None
+
 
         return new_exp
 
@@ -133,3 +146,13 @@ class Database:
             doc = merged_exp.jsonify()
             self.db.save(doc)
 
+    def migrate(self):
+        if input(f'To migrate database hosted at {self.config.chost}, type: I have backed up my db\n').lower() == 'i have backed up my db':
+            for exp_name in self.update_experiment_list():
+                exp = self.pull_experiment(exp_name)
+                if exp.version != self.version:
+                    self.upload_experiment(exp, overwrite=True)
+                else:
+                    logging.info('Updated version already present')
+        else:
+            logging.warning('Back up your database before migrating it.')

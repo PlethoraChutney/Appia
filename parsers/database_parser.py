@@ -27,6 +27,10 @@ def main(args):
             exp = db.pull_experiment(id)
             exp.save_csvs('.')
 
+    if args.migrate:
+        db.migrate()
+
+
 parser = GooeyParser(
     description = 'Database management',
     add_help=False
@@ -60,4 +64,9 @@ parser.add_argument(
     help = 'Save experiments from the database as a .csv. Note that these may have been downsampled.',
     type = str,
     nargs = '+'
+)
+parser.add_argument(
+    '--migrate',
+    help = 'Download and upload all experiments to migrate them to a new version. Back up first!!!',
+    action = 'store_true'
 )
