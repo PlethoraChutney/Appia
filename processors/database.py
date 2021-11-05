@@ -149,9 +149,6 @@ class Database:
         if input(f'To migrate database hosted at {self.config.chost}, type: I have backed up my db\n').lower() == 'i have backed up my db':
             for exp_name in self.update_experiment_list():
                 exp = self.pull_experiment(exp_name)
-                if exp.version != self.version:
-                    self.upload_experiment(exp, overwrite=True)
-                else:
-                    logging.info('Updated version already present')
+                self.upload_experiment(exp, overwrite=True)
         else:
             logging.warning('Back up your database before migrating it.')
