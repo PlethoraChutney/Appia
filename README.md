@@ -14,7 +14,7 @@ available.
 2. Copy `docker-compose.yml` wherever you want the database to save data
 3. Set the $COUCHDB_USER and $COUCHDB_PASSWORD environment variables (**in your environment!**)
 4. Run `docker-compose up` in the same directory as docker-compose.yml
-5. Open the port from docker-compose.yml to allow other instruments to access the web ui
+5. Open the port from `docker-compose.yml` to allow other instruments to access the web ui
 6. *(Optional) Instead of opening the port, put Appia behind a reverse proxy server with authentication*
 
 ### Local/processing-only installation:
