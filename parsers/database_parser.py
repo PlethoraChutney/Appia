@@ -9,8 +9,22 @@ def main(args):
     else:
         db = Database(Config(args.config))
 
-    if args.list:
-        three_column_print(db.update_experiment_list())
+    if args.list or args.check_versions:
+        list = db.update_experiment_list()
+        if args.check_versions:
+            out_of_date = False
+            for exp_id in list:
+                try:
+                    version = db.db.get(exp_id)['version']
+                except KeyError:
+                    version = 0
+                if version != db.version:
+                    out_of_date = True
+                    print(f'Experiment {exp_id} is version {version}')
+            if not out_of_date:
+                print('All versions match.')
+        if args.list:
+            three_column_print(list)
 
     if args.delete:
         for id in args.delete:
@@ -64,6 +78,11 @@ parser.add_argument(
     help = 'Save experiments from the database as a .csv. Note that these may have been downsampled.',
     type = str,
     nargs = '+'
+)
+parser.add_argument(
+    '--check-versions',
+    help = 'List experiments, categorized by version.',
+    action = 'store_true'
 )
 parser.add_argument(
     '--migrate',
