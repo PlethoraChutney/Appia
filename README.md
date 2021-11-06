@@ -23,7 +23,7 @@ to use ggplot to make manually-tweaked plots, you should also follow the steps
 to install R and RStudio.
 
 1. Clone this repo (or if you don't have git installed, just download it)
-2. Install [python3](https://www.python.org/) **Note: pandas is currently incompatible with python 3.10. Install 3.9**
+2. Install [python3](https://www.python.org/) 
     1. Run `python -m virtualenv venv` 
     2. Run `venv/Scripts/activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
     3. Run `python -m pip install -r requirements.txt`
