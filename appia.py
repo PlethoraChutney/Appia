@@ -7,6 +7,10 @@ from gooey import Gooey, GooeyParser
 from parsers.process_parser import parser as process_parser
 from parsers.database_parser import parser as db_parser
 
+
+if len(sys.argv) >= 2 and not '--ignore-gooey' in sys.argv:
+    sys.argv.append('--ignore-gooey')
+
 main_parser = GooeyParser(
     description = 'Process chromatography data and visualize it on the web.'
 )
