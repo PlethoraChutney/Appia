@@ -1,4 +1,5 @@
 import argparse
+import os
 from gooey import GooeyParser
 from processors.database import Database, Config
 from processors.core import three_column_print
@@ -39,7 +40,7 @@ def main(args):
     if args.download:
         for id in args.download:
             exp = db.pull_experiment(id)
-            exp.save_csvs('.')
+            exp.save_csvs(os.getcwd())
 
     if args.migrate:
         db.migrate()
