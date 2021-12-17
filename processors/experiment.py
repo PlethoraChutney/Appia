@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 from .core import normalizer
-from math import floor
+from math import ceil
 
 class Experiment:
     def __init__(self, id) -> None:
@@ -129,9 +129,8 @@ class Experiment:
     def reduce_hplc(self, num_points):
         # reduce the number of points in the hplc trace to num_points per sample/channel/norm
 
-        def reduction_factor(df, num_ponts):
-            total_points = df.shape[0]
-            reduction_factor = floor(total_points/num_points)
+        def reduction_factor(df, final_points):
+            reduction_factor = ceil(df.shape[0]/final_points)
             return df[::reduction_factor]
         try:
             self.hplc = self.hplc.groupby(
