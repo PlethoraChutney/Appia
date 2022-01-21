@@ -54,7 +54,7 @@ snowballstemmer==2.1.0
 tenacity==8.0.1
 toml==0.10.2
 typing-extensions==3.10.0.2
-ujson==4.2.0
+ujson==5.1.0
 waitress==2.0.0
 Werkzeug==2.0.2
 wrapt==1.13.3
