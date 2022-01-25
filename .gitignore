@@ -12,3 +12,4 @@ update_scripts.ps1
 .vscode/
 config.json
 templates/
+couchdb/
