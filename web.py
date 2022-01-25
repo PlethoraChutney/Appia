@@ -17,7 +17,9 @@ db = Database(Config())
 
 channel_dict = {
     'ex280/em350': 'Trp',
-    'ex488/em509': 'GFP'
+    'ex488/em509': 'GFP',
+    '2475ChA ex280/em350': 'Trp',
+    '2475ChB ex488/em509': 'GFP',
 }
 
 def get_hplc_graphs(exp, view_range = None, x_ax = 'mL'):
