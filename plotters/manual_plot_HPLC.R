@@ -6,8 +6,8 @@ library(tidyverse)
 long_trace_filename <- Sys.glob('*_hplc-long.csv')[1]
 
 channel_list <- list(
-  'Trp' = '2475ChA ex280/em350',
-  'GFP' = '2475ChB ex488/em509'
+  'Trp' = 'ex280/em350',
+  'GFP' = 'ex488/em509'
 )
 
 data <- read_csv(file = long_trace_filename, col_types = 'dffdfd') %>% 

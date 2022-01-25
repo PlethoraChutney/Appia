@@ -70,7 +70,7 @@ def append_waters(file_list, flow_rate = None):
         # is inconsistent). Then add the data
 
         sample_name = str(sample_info.loc[0]['SampleName'])
-        channel_ID = str(sample_info.loc[0]['Channel'])
+        channel_ID = re.sub('2475Ch[A-D] ', '', str(sample_info.loc[0]['Channel']))
         try:
             set_name = str(sample_info.loc[0]['Sample Set Name'])
         except KeyError:
