@@ -7,4 +7,4 @@ RUN python -m pip install -r web-requirements.txt
 
 COPY . .
 EXPOSE 8080
-CMD ["./docker_launch.sh"]
+CMD ["bash", "./docker_launch.sh"]
