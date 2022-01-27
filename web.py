@@ -156,14 +156,20 @@ def parse_query(q_string):
     q_string = parse_qs(q_string.replace('?', ''))
 
     if 'norm-range' in q_string.keys():
-        norm_range = q_string['norm-range'][0].split('-')
-        norm_range = [float(x) for x in norm_range]
+        try:
+            norm_range = q_string['norm-range'][0].split('-')
+            norm_range = [float(x) for x in norm_range]
+        except ValueError:
+            norm_range = None
     else:
         norm_range = None
 
     if 'view-range' in q_string.keys():
-        view_range = q_string['view-range'][0].split('-')
-        view_range = [float(x) for x in view_range]
+        try:
+            view_range = q_string['view-range'][0].split('-')
+            view_range = [float(x) for x in view_range]
+        except ValueError:
+            view_range = None
     else:
         view_range = None
 
