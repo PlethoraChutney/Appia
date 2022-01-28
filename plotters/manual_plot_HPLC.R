@@ -5,13 +5,16 @@ library(tidyverse)
 
 long_trace_filename <- Sys.glob('*_hplc-long.csv')[1]
 
-channel_list <- list(
-  'Trp' = 'ex280/em350',
-  'GFP' = 'ex488/em509'
-)
+data <- read_csv(file = long_trace_filename, col_types = 'dccdcd') %>% 
+  mutate(Channel = case_when(
+    grepl('ex280/em350', Channel) ~ 'Trp',
+    grepl('ex488/em509', Channel) ~ 'GRP',
+    TRUE ~ as.character(Channel)
+  ))
 
-data <- read_csv(file = long_trace_filename, col_types = 'dffdfd') %>% 
-  mutate(Channel = fct_recode(Channel, !!!channel_list))
+samples <- c(unique(data$Sample))
+channels <- c(unique(data$Channel))
+normalization <- c('Normalized', 'Signal')
 
 # 2 Plot ------------------------------------------------------------------
 
@@ -37,7 +40,7 @@ if (length(levels(as.factor(data$Sample))) > 12) {
 
 
 data %>%
-  filter(Time > 0.5) %>%
+  filter(Time > 0.5 & Sample %in% samples & Channel %in% channels & Normalization %in% normalization) %>%
   ggplot(aes(x = mL, y = Value)) +
   theme_minimal() +
   color_scheme +
