@@ -8,13 +8,15 @@ long_trace_filename <- Sys.glob('*_hplc-long.csv')[1]
 data <- read_csv(file = long_trace_filename, col_types = 'dccdcd') %>% 
   mutate(Channel = case_when(
     grepl('ex280/em350', Channel) ~ 'Trp',
-    grepl('ex488/em509', Channel) ~ 'GRP',
+    grepl('ex488/em509', Channel) ~ 'GFP',
     TRUE ~ as.character(Channel)
   ))
 
 samples <- c(unique(data$Sample))
 channels <- c(unique(data$Channel))
 normalization <- c('Normalized', 'Signal')
+x_limits <- c(NA, NA)
+y_limits <- c(NA, NA)
 
 # 2 Plot ------------------------------------------------------------------
 
@@ -45,5 +47,9 @@ data %>%
   theme_minimal() +
   color_scheme +
   geom_line(aes(color = Sample)) +
+  coord_cartesian(
+    xlim = x_limits,
+    ylim = y_limits
+  )
   facet_grid(cols = vars(Channel), rows = vars(Normalization), scales = "free")
 ggsave('fsec_traces.pdf', width = 7, height = 5)

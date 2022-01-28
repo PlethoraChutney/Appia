@@ -4,7 +4,7 @@ library(tidyverse)
 
 # fractions to highlight/fill
 # to make a list in R, use c(item, item, item)
-fractions <- (10:15)
+fractions <- c(10:15)
 
 # these values set the x-axis limits
 low_ml <- 5 
