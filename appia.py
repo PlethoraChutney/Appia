@@ -6,6 +6,7 @@ from gooey import Gooey, GooeyParser
 
 from parsers.process_parser import parser as process_parser
 from parsers.database_parser import parser as db_parser
+from parsers.utilities_parser import parser as util_parser
 
 
 if len(sys.argv) >= 2 and not '--ignore-gooey' in sys.argv:
@@ -49,6 +50,11 @@ subparsers.add_parser(
     name = 'database',
     help = 'Manage CouchDB',
     parents = [db_parser]
+)
+subparsers.add_parser(
+    name = 'utils',
+    help = 'Utilities',
+    parents = [util_parser]
 )
 
 @Gooey(
