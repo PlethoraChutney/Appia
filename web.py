@@ -39,17 +39,25 @@ def get_hplc_graphs(exp, view_range = None, x_ax = 'mL'):
         )
 
         if norm == 'Normalized':
-            fig.update_layout(yaxis_range=[0, 1])
-
-        try:
-            # without this, your channels are stuck using the same yaxis range
-            fig.layout.yaxis1.update(matches = None)
-            fig.layout.yaxis2.update(matches = None)
-            fig.layout.yaxis3.update(matches = None)
-            fig.layout.yaxis4.update(matches = None)
-        except AttributeError:
-            # if the trace only has one channel, it doesn't have yaxis2
-            pass
+            try:
+                # without this, your channels are stuck using the same yaxis range
+                fig.layout.yaxis1.update(matches = None, range = [0,1])
+                fig.layout.yaxis2.update(matches = None, range = [0,1])
+                fig.layout.yaxis3.update(matches = None, range = [0,1])
+                fig.layout.yaxis4.update(matches = None, range = [0,1])
+            except AttributeError:
+                # if the trace only has one channel, it doesn't have yaxis2
+                pass
+        else:
+            try:
+                # without this, your channels are stuck using the same yaxis range
+                fig.layout.yaxis1.update(matches = None)
+                fig.layout.yaxis2.update(matches = None)
+                fig.layout.yaxis3.update(matches = None)
+                fig.layout.yaxis4.update(matches = None)
+            except AttributeError:
+                # if the trace only has one channel, it doesn't have yaxis2
+                pass
 
         # remove 'Channel=' from the facet labels
         fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
