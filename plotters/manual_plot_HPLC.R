@@ -20,7 +20,7 @@ y_limits <- c(NA, NA)
 
 # 2 Plot ------------------------------------------------------------------
 
-if (length(levels(as.factor(data$Sample))) > 12) {
+if (length(unique(samples)) > 12) {
   color_scheme = scale_color_viridis_d()
 } else {
   color_scheme = scale_color_manual(values = c(
