@@ -1,12 +1,10 @@
-import logging
 import dash
-from dash import dependencies
+import os
 from dash import dcc
 from dash import html
 import plotly.express as px
 import plotly.graph_objects as go
 from urllib.parse import parse_qs
-from numpy import dstack
 from processors.database import Database, Config
 from processors.experiment import concat_experiments
 
@@ -38,15 +36,17 @@ def get_hplc_graphs(exp, view_range = None, x_ax = 'mL'):
         )
 
         if norm == 'Normalized':
-            print('fixing axes')
             fig.update_layout(yaxis_range=[0, 1])
-        else:
-            try:
-                # without this, your channels are stuck using the same yaxis range
-                fig.layout.yaxis2.update(matches = None)
-            except AttributeError:
-                # if the trace only has one channel, it doesn't have yaxis2
-                pass
+
+        try:
+            # without this, your channels are stuck using the same yaxis range
+            fig.layout.yaxis1.update(matches = None)
+            fig.layout.yaxis2.update(matches = None)
+            fig.layout.yaxis3.update(matches = None)
+            fig.layout.yaxis4.update(matches = None)
+        except AttributeError:
+            # if the trace only has one channel, it doesn't have yaxis2
+            pass
 
         # remove 'Channel=' from the facet labels
         fig.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
@@ -383,4 +383,8 @@ def refresh_xrange(relayout_data, search_string, renorm, reset_norm, reset):
     
 
 if __name__ == '__main__':
-    app.run_server(debug = False, port = '8080')
+    if os.environ.get('APPIA_DEBUG') == 'Debug':
+        appia_debug = True
+    else:
+        appia_debug = False
+    app.run_server(debug = appia_debug, port = '8080')
