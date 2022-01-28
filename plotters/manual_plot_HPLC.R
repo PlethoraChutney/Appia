@@ -50,6 +50,6 @@ data %>%
   coord_cartesian(
     xlim = x_limits,
     ylim = y_limits
-  )
+  ) +
   facet_grid(cols = vars(Channel), rows = vars(Normalization), scales = "free")
 ggsave('fsec_traces.pdf', width = 7, height = 5)
