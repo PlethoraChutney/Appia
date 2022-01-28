@@ -1,5 +1,6 @@
 import dash
 import os
+import json
 from dash import dcc
 from dash import html
 import plotly.express as px
@@ -13,12 +14,8 @@ app = dash.Dash(__name__, url_base_pathname = url_basename)
 server = app.server
 db = Database(Config())
 
-channel_dict = {
-    'ex280/em350': 'Trp',
-    'ex488/em509': 'GFP',
-    '2475ChA ex280/em350': 'Trp',
-    '2475ChB ex488/em509': 'GFP',
-}
+with open('channel_dict.json') as f:
+    channel_dict = json.load(f)
 
 def get_hplc_graphs(exp, view_range = None, x_ax = 'mL'):
     exp.rename_channels(channel_dict)
