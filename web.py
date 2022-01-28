@@ -24,6 +24,11 @@ def get_hplc_graphs(exp, view_range = None, x_ax = 'mL'):
     exp.rename_channels(channel_dict)
     raw_graphs = []
 
+    if len(exp.hplc['Sample'].unique()) > 10:
+        disc_color_scheme = px.colors.qualitative.Alphabet
+    else:
+        disc_color_scheme = px.colors.qualitative.Plotly
+
     for norm in ['Signal', 'Normalized']:
 
         fig = px.line(
@@ -32,7 +37,8 @@ def get_hplc_graphs(exp, view_range = None, x_ax = 'mL'):
             y = 'Value',
             color = 'Sample',
             facet_row = 'Channel',
-            template = 'plotly_white'
+            template = 'plotly_white',
+            color_discrete_sequence=disc_color_scheme
         )
 
         if norm == 'Normalized':
