@@ -12,13 +12,22 @@ def append_fplc(file_list, cv = 24):
         loading_bar(i+1, (len(file_list)), extension = ' AKTA files')
         file = file_list[i]
 
-        fplc_trace = pd.read_csv(
-            file, skiprows = 1,
-            header = [1],
-            encoding = 'utf-16-le',
-            delimiter = '\t',
-            engine = 'python'
-        )
+        try:
+            fplc_trace = pd.read_csv(
+                file, skiprows = 1,
+                header = [1],
+                encoding = 'utf-16-le',
+                delimiter = '\t',
+                engine = 'python'
+            )
+        except UnicodeDecodeError:
+            fplc_trace = pd.read_csv(
+                file, skiprows = 1,
+                header = [1],
+                encoding = 'utf-8',
+                delimiter = ',',
+                engine = 'python'
+            )
 
         # The AKTA exports data with several different ml columns, each with their
         # own name (like ml.2, ml.3, etc.). These are mL axes for each channel.
