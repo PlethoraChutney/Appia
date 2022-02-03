@@ -5,7 +5,7 @@ library(tidyverse)
 
 long_trace_filename <- Sys.glob('*_hplc-long.csv')[1]
 
-data <- read_csv(file = long_trace_filename, col_types = 'dccdcd') %>% 
+data <- read_csv(file = long_trace_filename) %>% 
   mutate(Channel = case_when(
     grepl('ex280/em350', Channel) ~ 'Trp',
     grepl('ex488/em509', Channel) ~ 'GFP',
