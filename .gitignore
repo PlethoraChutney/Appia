@@ -13,3 +13,4 @@ update_scripts.ps1
 config.json
 templates/
 couchdb/
+dist/

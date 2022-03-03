@@ -5,8 +5,8 @@ import json
 import os
 import logging
 import re
-from .core import loading_bar, normalizer
-from .gui import user_input
+from appia.processors.core import loading_bar, normalizer
+from appia.processors.gui import user_input
 
 def get_flow_rate(flow_rate, method):
     # If user provides in argument we don't need to do this
@@ -88,7 +88,7 @@ def append_waters(file_list, flow_rate = None):
 
         to_append['mL'] = to_append['Time']*flow_rate
 
-        chroms = chroms.append(to_append, ignore_index = False)
+        chroms = pd.concat([chroms, to_append], ignore_index = True)
 
     chroms = chroms.groupby(['Sample', 'Channel']).apply(normalizer)
     chroms = chroms.melt(
@@ -234,7 +234,7 @@ def new_shim_reader(file, channel_names = None, flow_rate = None):
                 df['Channel'] = channels[channel_index]
             df['Sample'] = sample
             
-            to_append = to_append.append(df, ignore_index=True, sort = True)
+            to_append = pd.concat([to_append, df], ignore_index=True, sort = True)
             to_append['mL'] = to_append['Time'] * flow_rate
 
         return(to_append, sample_set)
@@ -252,7 +252,7 @@ def append_shim(file_list, channel_mapping, flow_rate = None):
 
         to_append, set_name = get_shim_data(file, channel_names, flow_rate)
 
-        chroms = chroms.append(to_append, ignore_index = True, sort = True)
+        chroms = pd.concat([chroms, to_append], ignore_index = True, sort = True)
 
     chroms = chroms[['Time', 'Signal', 'Channel', 'Sample', 'mL']]
     chroms = chroms.replace(channel_mapping)
@@ -361,7 +361,7 @@ def append_agilent(file_list, flow_override = None, channel_override = None):
         # Set sample name down here so that flow and channel information have been removed
         to_append['Sample'] = sample_name
 
-        chroms = chroms.append(to_append, ignore_index = True, sort = True)
+        chroms = pd.concat([chroms, to_append], ignore_index = True, sort = True)
         
     chroms = chroms.groupby(['Sample', 'Channel']).apply(normalizer)
     chroms = chroms.melt(

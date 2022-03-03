@@ -4,9 +4,9 @@ import logging
 import sys
 from gooey import Gooey, GooeyParser
 
-from parsers.process_parser import parser as process_parser
-from parsers.database_parser import parser as db_parser
-from parsers.utilities_parser import parser as util_parser
+from appia.parsers.process_parser import parser as process_parser
+from appia.parsers.database_parser import parser as db_parser
+from appia.parsers.utilities_parser import parser as util_parser
 
 
 if len(sys.argv) >= 2 and not '--ignore-gooey' in sys.argv:

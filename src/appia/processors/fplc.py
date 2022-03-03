@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from .core import normalizer, loading_bar
+from appia.processors.core import normalizer, loading_bar
 
 def append_fplc(file_list, cv = 24):
     if isinstance(file_list, str):
@@ -45,7 +45,7 @@ def append_fplc(file_list, cv = 24):
 
         fplc_trace = fplc_trace.rename(columns = renaming)
 
-        long_trace = pd.DataFrame(columns = ['mL', 'Channel', 'Signal'])
+        channels = []
         for column in ['mAU', 'mS/cm', '%']:
             channel = pd.melt(
                 fplc_trace,
@@ -54,7 +54,8 @@ def append_fplc(file_list, cv = 24):
                 var_name = 'Channel',
                 value_name = 'Signal')
             channel = channel.rename(columns = {f'mL_{column}':'mL'}).dropna()
-            long_trace = long_trace.append(channel)
+            channels.append(channel)
+        long_trace = pd.concat(channels, ignore_index=True)
 
         long_trace['Fraction'] = 1
         frac_mL = fplc_trace['mL_Fraction'].dropna()
@@ -67,7 +68,7 @@ def append_fplc(file_list, cv = 24):
 
         long_trace['CV'] = long_trace['mL']/cv
 
-        chroms = chroms.append(long_trace, ignore_index = True)
+        chroms = pd.concat([chroms, long_trace], ignore_index = True)
         chroms.Sample = os.path.split(file)[1][:-4]
         chroms = chroms.loc[(chroms.CV >= 0) & (chroms.CV <=1)]
 

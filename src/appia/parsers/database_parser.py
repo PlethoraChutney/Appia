@@ -1,8 +1,8 @@
 import argparse
 import os
 from gooey import GooeyParser
-from processors.database import Database, Config
-from processors.core import three_column_print
+from appia.processors.database import Database, Config
+from appia.processors.core import three_column_print
 
 def main(args):
     if args.config == 'env':

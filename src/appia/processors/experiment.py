@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from .core import normalizer
+from appia.processors.core import normalizer
 from math import ceil
 
 class Experiment:

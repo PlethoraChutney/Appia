@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 import os
 import sys
-from .experiment import Experiment
+from appia.processors.experiment import Experiment
 import json
 
 class Config:

@@ -4,9 +4,9 @@ import sys
 import logging
 import shutil
 from gooey import GooeyParser
-from processors import hplc, fplc, experiment, core
-from processors.database import Database, Config
-from plotters import auto_plot
+from appia.processors import hplc, fplc, experiment, core
+from appia.processors.database import Database, Config
+from appia.plotters import auto_plot
 
 def main(args):
     file_list = core.get_files(args.files)
