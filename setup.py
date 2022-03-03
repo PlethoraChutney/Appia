@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name = 'appia',
-    version = '7.0.11',
+    version = '7.0.12',
     author = 'Rich Posert',
     author_email = 'posert@ohsu.edu',
     description = 'Chromatography processing made easy',
@@ -25,7 +25,8 @@ setuptools.setup(
         'pandas',
         'easygui',
         'slack',
-        'plotly'
+        'plotly',
+        'kaleido'
     ],
     entry_points = {
         'console_scripts': ['appia=appia.appia:main']

@@ -4,3 +4,4 @@ pandas
 easygui
 slack
 plotly
+kaleido
