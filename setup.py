@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name = 'appia',
-    version = '7.0.12',
+    version = '7.0.0',
     author = 'Rich Posert',
     author_email = 'posert@ohsu.edu',
     description = 'Chromatography processing made easy',
@@ -16,7 +16,8 @@ setuptools.setup(
         'License :: OSI Approved :: MIT License'
     ],
     package_dir = {'': 'src'},
-    package_data={'appia': ['processors/flow_rates.json']},
+    package_data={'appia': ['processors/flow_rates.json', 'plotters/manual_plot_FPLC.R', 'plotters/manual_plot_HPLC.R']},
+    include_package_data=True,
     packages = setuptools.find_packages(where = 'src'),
     python_requires = ">=3.6",
     install_requires = [
