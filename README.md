@@ -24,11 +24,13 @@ is also fine, but I'm trying to keep this as simple as possible. If you want
 to use ggplot to make manually-tweaked plots, you should also follow the steps
 to install R and RStudio.
 
-1. Clone this repo (or if you don't have git installed, just download it)
-2. Install [python3](https://www.python.org/) 
-    1. Run `python -m virtualenv venv` 
-    2. Run `venv/Scripts/activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
-    3. Run `python -m pip install -r requirements.txt`
+**Note: there is currently no compiled wxPython for python 3.10 for Windows.
+I recommend you use python 3.9 until one is available.**
+
+1. Install [python3](https://www.python.org/) 
+    1. *(Recommended)* Run `python -m virtualenv venv` 
+    2. *(Recommended)* Run `venv/Scripts/activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
+    3. Run `python -m pip install appia` (`python3` for linux)
 3. *(Optional) Install [R](https://www.r-project.org/) for manual plotting*
     1. *In an R session (`R.exe` or `R` for Windows or Mac)
     run `install.packages('tidyverse')`*
