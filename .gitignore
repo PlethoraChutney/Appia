@@ -14,3 +14,5 @@ config.json
 templates/
 couchdb/
 dist/
+src/appia.egg-info/
+build/

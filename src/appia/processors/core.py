@@ -49,7 +49,10 @@ def get_files(globs):
             with open(file, 'r', encoding = 'utf-16') as f:
                 first_line = f.readline().strip().replace('\ufeff', '')
 
-        first_cell = first_line.split(',')[0]
+        if ',' in first_line:
+            first_cell = first_line.split(',')[0]
+        else:
+            first_cell = first_line.split()[0]
         logging.debug(f'{file} first cell is {first_cell}')
 
         # AKTA files all have headers that say 'Chrom.1'

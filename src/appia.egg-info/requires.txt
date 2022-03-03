@@ -1,7 +1,0 @@
-Gooey
-couchdb
-pandas
-easygui
-slack
-plotly
-kaleido
