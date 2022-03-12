@@ -2,17 +2,12 @@
 import argparse
 import logging
 import sys
-from gooey import Gooey, GooeyParser
 
 from appia.parsers.process_parser import parser as process_parser
 from appia.parsers.database_parser import parser as db_parser
 from appia.parsers.utilities_parser import parser as util_parser
 
-
-if len(sys.argv) >= 2 and not '--ignore-gooey' in sys.argv:
-    sys.argv.append('--ignore-gooey')
-
-main_parser = GooeyParser(
+main_parser = argparse.ArgumentParser(
     description = 'Process chromatography data and visualize it on the web.'
 )
 subparsers = main_parser.add_subparsers()
@@ -57,10 +52,6 @@ subparsers.add_parser(
     parents = [util_parser]
 )
 
-@Gooey(
-    program_name = 'Appia',
-    default_size = (1080,720)
-)
 def main():
     args = main_parser.parse_args()
 

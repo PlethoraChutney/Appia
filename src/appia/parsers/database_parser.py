@@ -1,6 +1,5 @@
 import argparse
 import os
-from gooey import GooeyParser
 from appia.processors.database import Database, Config
 from appia.processors.core import three_column_print
 
@@ -46,7 +45,7 @@ def main(args):
         db.migrate()
 
 
-parser = GooeyParser(
+parser = argparse.ArgumentParser(
     description = 'Database management',
     add_help=False
 )
@@ -54,8 +53,7 @@ parser.set_defaults(func = main)
 parser.add_argument(
     'config',
     help = 'Config JSON file',
-    type = str,
-    widget = 'FileChooser'
+    type = str
 )
 parser.add_argument(
     '-l', '--list',

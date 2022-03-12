@@ -1,7 +1,4 @@
-from easygui import enterbox
-
-# For now we'll do it this way. Once Gooey implements a way to detect if we're
-# actually using the GUI, I'll use that to determine whether to use input() or
-# enterbox().
+# If I ever get around to building a proper GUI we can replace
+# everything at once. Until then, CLI
 def user_input(message):
-    return(enterbox(message))
+    return(input(message))

@@ -3,7 +3,6 @@ import os
 import sys
 import logging
 import shutil
-from gooey import GooeyParser
 from appia.processors import hplc, fplc, experiment, core
 from appia.processors.database import Database, Config
 from appia.plotters import auto_plot
@@ -165,7 +164,7 @@ def main(args):
                 )
 
 
-parser = GooeyParser(
+parser = argparse.ArgumentParser(
     description = 'Process chromatography data',
     add_help = False    
 )
@@ -176,8 +175,7 @@ file_io = parser.add_argument_group('File IO')
 parser.add_argument(
     'files',
     help = 'Glob or globs to find data files. For instance, "traces/*.arw"',
-    nargs = '+',
-    widget = 'MultiFileChooser'
+    nargs = '+'
 )
 file_io.add_argument(
     '-i', '--id',
@@ -186,8 +184,7 @@ file_io.add_argument(
 )
 file_io.add_argument(
     '-o', '--output-dir',
-    help = 'Directory in which to save CSVs and plots. Default makes a new dir with experiment name.',
-    widget = 'DirChooser'
+    help = 'Directory in which to save CSVs and plots. Default makes a new dir with experiment name.'
 )
 file_io.add_argument(
 	'-k', '--no-move',
@@ -205,8 +202,7 @@ file_io.add_argument(
 	'-s', '--post-to-slack',
 	help = "Send completed plots to Slack. Need a config JSON with slack token and channel.",
 	nargs = '?',
-    const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json'),
-    widget = 'FileChooser'
+    const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json')
 )
 
 process_args = parser.add_argument_group('Processing Options')
@@ -254,8 +250,7 @@ web_up.add_argument(
     help = '''Upload experiment to couchdb. Optionally, provide config file location. Default config location is "config.json" in appia directory. Enter "env" to use environment variables instead.''',
     dest = 'config',
     nargs = '?',
-    const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json'),
-    widget = 'FileChooser'
+    const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json')
 )
 web_up.add_argument(
     '--overwrite',

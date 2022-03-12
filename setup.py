@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name = 'appia',
-    version = '7.0.0',
+    version = '7.0.1',
     author = 'Rich Posert',
     author_email = 'posert@ohsu.edu',
     description = 'Chromatography processing made easy',
@@ -21,10 +21,8 @@ setuptools.setup(
     packages = setuptools.find_packages(where = 'src'),
     python_requires = ">=3.6",
     install_requires = [
-        'Gooey',
         'couchdb',
         'pandas',
-        'easygui',
         'slack',
         'plotly',
         'kaleido'
