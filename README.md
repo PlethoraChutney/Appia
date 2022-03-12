@@ -38,9 +38,10 @@ I recommend you use python 3.9 until one is available.**
     manual plot scripts*
 
 ## GUI
-Appia has a GUI built using [Gooey](https://github.com/chriskiehl/Gooey) which can
-be launched by running `appia` with no arguments. If you wish to use the command
-line interface instead include `--ignore-gooey`.
+There used to be a GUI provided by Gooey, but I didn't like the extra dependencies and
+I am not convinced anyone actually found it useful. If you would like a GUI for data
+processing, please submit an issue **including the situations in which you would regularly
+like to use a GUI**.
 
 ## HPLC Processing
 Appia reads `.arw` or `.asc` files (from Waters and Shimadzu HPLCs, respectively)
