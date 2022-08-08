@@ -1,3 +1,4 @@
+[![DOI](https://zenodo.org/badge/160436725.svg)](https://zenodo.org/badge/latestdoi/160436725)
 # Appia - simple chromatography processing
 Appia is a set of scripts to process and view chromatography data from AKTA, Shimadzu, and
 Waters systems. Chromatography data can then be viewed on the easy-to-use and intuitive
