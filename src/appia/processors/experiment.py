@@ -40,6 +40,19 @@ class Experiment:
         else:
             raise TypeError('FPLC input is not a pandas dataframe')
 
+    @property
+    def wide(self):
+        wide = self.hplc.copy()
+        wide = wide.loc[wide['Normalization'] == 'Signal']
+        wide['Sample'] = wide['Sample'].astype(str) + ' ' + wide['Channel']
+        wide.drop(['Channel', 'Normalization'], axis = 1)
+        wide = wide.pivot_table(
+            index = 'Time',
+            columns = 'Sample',
+            values = 'Value'
+        )
+        return wide
+
     def __repr__(self):
         to_return = f'Experiment "{self.id}" with '
         if self.hplc is not None:
@@ -152,18 +165,7 @@ class Experiment:
             outfile = outfile[:-4]
         if self.hplc is not None:
             self.hplc.to_csv(outfile + '-long.csv', index = False)
-
-            wide = self.hplc.copy()
-            wide = wide.loc[wide['Normalization'] == 'Signal']
-            wide['Sample'] = wide['Sample'].astype(str) + ' ' + wide['Channel']
-            wide.drop(['Channel', 'Normalization'], axis = 1)
-            wide = wide.pivot_table(
-                index = 'Time',
-                columns = 'Sample',
-                values = 'Value'
-            )
-
-            wide.to_csv(outfile + '-wide.csv', index = True)
+            self.wide.to_csv(outfile + '-wide.csv', index = True)
 
             return outfile + '-long.csv'
 

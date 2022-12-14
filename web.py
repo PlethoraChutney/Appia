@@ -14,6 +14,19 @@ app = dash.Dash(__name__, url_base_pathname = url_basename)
 server = app.server
 db = Database(Config())
 
+def exp_list_from_pathname(pathname):
+    path_string = pathname.replace(url_basename, '')
+    return path_string.split('+')
+
+def get_experiments(experiment_name_list):
+    if len(experiment_name_list) == 1:
+        exp = db.pull_experiment(experiment_name_list[0])
+    else:
+        exp_list = [db.pull_experiment(x) for x in experiment_name_list]
+        exp = concat_experiments(exp_list)
+
+    return exp
+
 with open('channel_dict.json') as f:
     channel_dict = json.load(f)
 
@@ -253,6 +266,7 @@ def serve_layout():
                             multi = True
                         )]
                     ),
+                    dcc.Download(id = 'download-hplc-dataframe'),
                     html.Hr(),
                     # HPLC options
                     html.Div(
@@ -260,7 +274,7 @@ def serve_layout():
                         children = [
                             html.H5(
                                 style = {'paddingTop': '10px', 'textAlign': 'center'},
-                                children = 'HPLC Options'
+                                children = 'Analytic Chromatography Options'
                             ),
                             dcc.RadioItems(
                                 id = 'x-ax-radios',
@@ -274,7 +288,7 @@ def serve_layout():
                             ),
                             html.Br(),
                             html.Button(
-                                'Renormalize HPLC',
+                                'Renormalize Analytic',
                                 id = 'renorm-hplc',
                                 style = {'width': '100%'}
                             ),
@@ -284,8 +298,36 @@ def serve_layout():
                                 style = {'width': '100%'}
                             ),
                             html.Button(
-                                'Reset HPLC',
+                                'Reset Analytic',
                                 id = 'reset-hplc',
+                                style = {'width': '100%'}
+                            ),
+                            html.Div(
+                                style={'height': '1em'}
+                            ),
+                            html.Button(
+                                'Download Long CSV',
+                                id='download-hplc-long',
+                                style = {'width': '100%'}
+                            ),
+                            html.Button(
+                                'Download Wide CSV',
+                                id='download-hplc-wide',
+                                style = {'width': '100%'}
+                            )
+                        ]
+                    ),
+                    html.Hr(),
+                    html.Div(
+                        id='fplc-options-sidebar',
+                        children = [
+                            html.H5(
+                                style = {'paddingTop': '10px', 'textAlign': 'center'},
+                                children = 'Preparative Chromatography Options'
+                            ),
+                            html.Button(
+                                'Download Prep. CSV',
+                                id = 'download-fplc',
                                 style = {'width': '100%'}
                             )
                         ]
@@ -325,7 +367,8 @@ def update_output(value):
 @app.callback(
     [
         dash.dependencies.Output('main_graphs', 'children'),
-        dash.dependencies.Output('hplc-options-sidebar', 'hidden')
+        dash.dependencies.Output('hplc-options-sidebar', 'hidden'),
+        dash.dependencies.Output('fplc-options-sidebar', 'hidden')
     ],
     [
         dash.dependencies.Input('root-location', 'pathname'),
@@ -344,24 +387,23 @@ def update_output(pathname, search_string, radio_value, renorm, reset_norm, rese
 
     if pathname != '':
         
-        path_string = pathname.replace('/traces/', '')
-        experiment_name_list = path_string.split('+')
+        experiment_name_list = exp_list_from_pathname(pathname)
         
         norm_range, view_range = parse_query(search_string)
 
         if changed == 'renorm-hplc.n_clicks':
             norm_range = view_range
 
-        if len(experiment_name_list) == 1:
-            exp = db.pull_experiment(experiment_name_list[0])
-        else:
-            exp_list = [db.pull_experiment(x) for x in experiment_name_list]
-            exp = concat_experiments(exp_list)
+        exp = get_experiments(experiment_name_list)
 
         if norm_range is not None:
             exp.renormalize_hplc(norm_range, False)
         
-        return (get_plotly(exp, view_range, radio_value), exp.hplc is None)
+        return (
+            get_plotly(exp, view_range, radio_value),
+            exp.hplc is None,
+            exp.fplc is None
+        )
 
 @app.callback(
     dash.dependencies.Output('root-location', 'search'),
@@ -412,11 +454,36 @@ def refresh_xrange(relayout_data, search_string, renorm, reset_norm, reset):
         new_q_string = new_q_string + f'view-range={data[0]}-{data[1]}'
 
     return new_q_string
-    
+
+@app.callback(
+    dash.dependencies.Output('download-hplc-dataframe', 'data'),
+    [
+        dash.dependencies.Input('download-hplc-long', 'n_clicks'),
+        dash.dependencies.Input('download-hplc-wide', 'n_clicks'),
+        dash.dependencies.Input('download-fplc', 'n_clicks'),
+        dash.dependencies.Input('root-location', 'pathname')
+    ],
+    prevent_initial_call = True
+)
+def download_csv(hplc_l, hplc_w, fplc, pathname):
+    changed = [p['prop_id'] for p in dash.callback_context.triggered][0]
+
+    if changed is None or changed == 'root-location.pathname':
+        raise dash.exceptions.PreventUpdate
+    else:
+        exp_list = exp_list_from_pathname(pathname)
+        exp = get_experiments(exp_list)
+
+    if changed == 'download-hplc-long.n_clicks':
+        if exp.hplc is not None:
+            return dcc.send_data_frame(exp.hplc.to_csv, 'hplc-long.csv', index = False)
+    elif changed == 'download-hplc-wide.n_clicks':
+        if exp.hplc is not None:
+            return dcc.send_data_frame(exp.wide.to_csv, 'hplc-wide.csv', index = False)
+    elif changed == 'download-fplc.n_clicks':
+        if exp.fplc is not None:
+            return dcc.send_data_frame(exp.fplc.to_csv, 'fplc.csv', index = False)
+
 
 if __name__ == '__main__':
-    if os.environ.get('APPIA_DEBUG') == 'Debug':
-        appia_debug = True
-    else:
-        appia_debug = False
-    app.run_server(debug = appia_debug, port = '8080')
+    app.run_server(debug = os.environ.get('APPIA_DEBUG') == 'Debug', port = '8080')
