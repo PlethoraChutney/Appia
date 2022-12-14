@@ -5,6 +5,7 @@ from dash import dcc
 from dash import html
 import plotly.express as px
 import plotly.graph_objects as go
+import pandas as pd
 from urllib.parse import parse_qs
 from appia.processors.database import Database, Config
 from appia.processors.experiment import concat_experiments
@@ -30,11 +31,41 @@ def get_experiments(experiment_name_list):
 with open('channel_dict.json') as f:
     channel_dict = json.load(f)
 
-def get_hplc_graphs(exp, view_range = None, x_ax = 'mL'):
+def make_combined_table(exp):
+    if exp.fplc is not None:
+        hplc_df = exp.hplc.copy()
+        fplc_as_h = exp.fplc.loc[exp.fplc['Channel'] == 'mAU'][['mL', 'Sample', 'Normalization', 'Value']].copy()
+        fplc_as_h['Sample'] = 'Preparative: ' + fplc_as_h['Sample']
+
+        f_per_channel = []
+
+        for channel in set(hplc_df['Channel']):
+            ch_f = fplc_as_h.copy()
+            ch_f['Channel'] = channel
+            f_per_channel.append(ch_f)
+
+        fplc_as_h = pd.concat(f_per_channel)
+        hplc_df = pd.concat([hplc_df, fplc_as_h])
+    else:
+        hplc_df = exp.hplc
+
+    return hplc_df
+
+def get_hplc_graphs(
+    exp, view_range = None,
+    x_ax = 'mL', overlay = True
+):
     exp.rename_channels(channel_dict)
     raw_graphs = []
 
-    if len(exp.hplc['Sample'].unique()) > 10:
+    if overlay:
+        x_ax = 'mL'
+        hplc_df = make_combined_table(exp)
+    else:
+        hplc_df = exp.hplc
+
+
+    if len(hplc_df['Sample'].unique()) > 10:
         disc_color_scheme = px.colors.qualitative.Alphabet
     else:
         disc_color_scheme = px.colors.qualitative.Plotly
@@ -42,7 +73,7 @@ def get_hplc_graphs(exp, view_range = None, x_ax = 'mL'):
     for norm in ['Signal', 'Normalized']:
 
         fig = px.line(
-            data_frame = exp.hplc.loc[exp.hplc['Normalization'] == norm],
+            data_frame = hplc_df.loc[hplc_df['Normalization'] == norm],
             x = x_ax,
             y = 'Value',
             color = 'Sample',
