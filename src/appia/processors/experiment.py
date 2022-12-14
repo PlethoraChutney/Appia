@@ -20,9 +20,12 @@ class Experiment:
     @hplc.setter
     def hplc(self, df):
         if isinstance(df, pd.DataFrame) or df is None:
-            self._hplc = df.sort_values(
-                by = ['Normalization', 'Channel', 'mL']
-            )
+            try:
+                self._hplc = df.sort_values(
+                    by = ['Normalization', 'Channel', 'mL']
+                )
+            except AttributeError:
+                self._hplc = df
         else:
             raise TypeError('HPLC input is not a pandas dataframe')
 
