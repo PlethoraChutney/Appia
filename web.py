@@ -157,7 +157,7 @@ def get_fplc_graphs(exp):
     )
     return fplc_graph
 
-def get_plotly(exp, view_range = None, x_ax = 'mL'):
+def get_plotly(exp, view_range = None, x_ax = 'mL', format_val = 'png'):
     combined_graphs = {}
     html_graphs = []
     
@@ -177,7 +177,14 @@ def get_plotly(exp, view_range = None, x_ax = 'mL'):
                 dcc.Graph(
                     style={'height': 600},
                     id=f'data-{data_type}',
-                    figure=combined_graphs[data_type]
+                    figure=combined_graphs[data_type],
+                    config = {
+                        'toImageButtonOptions': {
+                            'format': format_val,
+                            'width': 1000,
+                            'height': 800
+                        }
+                    }
                 )
             ])
 
@@ -266,12 +273,38 @@ def serve_layout():
                             multi = True
                         )]
                     ),
-                    dcc.Download(id = 'download-hplc-dataframe'),
                     html.Hr(),
+                    html.H5(
+                        'Download images as:'
+                    ),
+                    dcc.RadioItems(
+                        id='download-format-options',
+                        options = [
+                            {'label': 'png', 'value': 'png'},
+                            {'label': 'svg', 'value': 'svg'},
+                            {'label': 'jpeg', 'value': 'jpeg'},
+                            {'label': 'webp', 'value': 'webp'},
+                        ],
+                        value = 'png',
+                        labelStyle = {'display': 'inline-block', 'text-align': 'center'},
+                        style = {'width': '100%'}
+
+                    ),
+                    dcc.Download(id = 'download-hplc-dataframe'),
+                    html.P(
+                        id = 'info-p',
+                        children = 'Note that the button may still read "png" due to a plotly bug.',
+                        style = {
+                            'padding-top': '2px',
+                            'color': '#00000066',
+                            'font-style': 'italic'
+                        }
+                    ),
                     # HPLC options
                     html.Div(
                         id = 'hplc-options-sidebar',
                         children = [
+                            html.Hr(),
                             html.H5(
                                 style = {'paddingTop': '10px', 'textAlign': 'center'},
                                 children = 'Analytic Chromatography Options'
@@ -358,7 +391,7 @@ def update_output(pathname):
     dash.dependencies.Output('root-location', 'pathname'),
     [dash.dependencies.Input('experiment_dropdown', 'value')]
 )
-def update_output(value):
+def update_url(value):
     if value is not None:
         return '+'.join(value)
 
@@ -368,7 +401,7 @@ def update_output(value):
     [
         dash.dependencies.Output('main_graphs', 'children'),
         dash.dependencies.Output('hplc-options-sidebar', 'hidden'),
-        dash.dependencies.Output('fplc-options-sidebar', 'hidden')
+        dash.dependencies.Output('fplc-options-sidebar', 'hidden'),
     ],
     [
         dash.dependencies.Input('root-location', 'pathname'),
@@ -376,10 +409,11 @@ def update_output(value):
         dash.dependencies.Input('x-ax-radios', 'value'),
         dash.dependencies.Input('renorm-hplc', 'n_clicks'),
         dash.dependencies.Input('reset-norm', 'n_clicks'),
-        dash.dependencies.Input('reset-hplc', 'n_clicks')
+        dash.dependencies.Input('reset-hplc', 'n_clicks'),
+        dash.dependencies.Input('download-format-options', 'value')
     ]
 )
-def update_output(pathname, search_string, radio_value, renorm, reset_norm, reset):
+def create_graphs(pathname, search_string, radio_value, renorm, reset_norm, reset, format_val):
     changed = [p['prop_id'] for p in dash.callback_context.triggered][0]
 
     if changed == 'root-location.search' or changed is None:
@@ -400,7 +434,7 @@ def update_output(pathname, search_string, radio_value, renorm, reset_norm, rese
             exp.renormalize_hplc(norm_range, False)
         
         return (
-            get_plotly(exp, view_range, radio_value),
+            get_plotly(exp, view_range, radio_value, format_val),
             exp.hplc is None,
             exp.fplc is None
         )
@@ -417,7 +451,6 @@ def update_output(pathname, search_string, radio_value, renorm, reset_norm, rese
 )
 def refresh_xrange(relayout_data, search_string, renorm, reset_norm, reset):
     changed = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    print(changed)
 
     norm_range, view_range = parse_query(search_string)
 
@@ -483,7 +516,6 @@ def download_csv(hplc_l, hplc_w, fplc, pathname):
     elif changed == 'download-fplc.n_clicks':
         if exp.fplc is not None:
             return dcc.send_data_frame(exp.fplc.to_csv, 'fplc.csv', index = False)
-
 
 if __name__ == '__main__':
     app.run_server(debug = os.environ.get('APPIA_DEBUG') == 'Debug', port = '8080')
