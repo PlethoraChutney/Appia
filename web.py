@@ -471,8 +471,6 @@ def create_graphs(
 
         # don't overlay if there is no HPLC data!
         overlay = overlay_val and exp.hplc is not None
-        print(overlay_val)
-        print(overlay)
 
         if norm_range is not None:
             exp.renormalize_hplc(norm_range, False)
@@ -499,14 +497,12 @@ def refresh_xrange(relayout_data, search_string, renorm, reset_norm, reset):
     norm_range, view_range = parse_query(search_string)
 
     if changed == 'reset-hplc.n_clicks' or changed == 'reset-norm.n_clicks':
-        print('Reset')
         if changed == 'reset-norm.n_clicks' and view_range:
             return f'?view-range={view_range[0]}-{view_range[1]}'
         else:
             return ''
 
     if relayout_data == None or changed == 'root-location.search':
-        print('Block')
         raise dash.exceptions.PreventUpdate    
 
     try:
