@@ -7,6 +7,7 @@ services:
     volumes:
       - ./couchdb/data:/opt/couchdb/data
       - ./couchdb/config:/opt/couchdb/etc/local.d/
+      - ./local.ini:/opt/couchdb/etc/local.ini
     ports:
       - 5984:5984
     environment:

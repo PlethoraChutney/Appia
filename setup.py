@@ -5,7 +5,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setuptools.setup(
     name = 'appia',
-    version = '7.0.1',
+    version = '7.1.0',
     author = 'Rich Posert',
     author_email = 'posert@ohsu.edu',
     description = 'Chromatography processing made easy',
