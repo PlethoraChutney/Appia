@@ -53,7 +53,7 @@ def make_combined_table(exp):
 
 def get_hplc_graphs(
     exp, view_range = None,
-    x_ax = 'mL', overlay = True
+    x_ax = 'mL', overlay = False
 ):
     exp.rename_channels(channel_dict)
     raw_graphs = []
@@ -188,12 +188,12 @@ def get_fplc_graphs(exp):
     )
     return fplc_graph
 
-def get_plotly(exp, view_range = None, x_ax = 'mL', format_val = 'png'):
+def get_plotly(exp, view_range = None, x_ax = 'mL', format_val = 'png', overlay = False):
     combined_graphs = {}
     html_graphs = []
     
     if exp.hplc is not None:
-        combined_graphs['Signal'], combined_graphs['Normalized'] = get_hplc_graphs(exp, view_range, x_ax)
+        combined_graphs['Signal'], combined_graphs['Normalized'] = get_hplc_graphs(exp, view_range, x_ax, overlay)
 
 
     if exp.fplc is not None:
@@ -321,7 +321,6 @@ def serve_layout():
                         style = {'width': '100%'}
 
                     ),
-                    dcc.Download(id = 'download-hplc-dataframe'),
                     html.P(
                         id = 'info-p',
                         children = 'Note that the button may still read "png" due to a plotly bug.',
@@ -331,11 +330,16 @@ def serve_layout():
                             'font-style': 'italic'
                         }
                     ),
+                    dcc.Checklist(
+                        ['Overlay preparative trace on analytic graphs'],
+                        id = 'fplc-overlay'
+                    ),
                     # HPLC options
                     html.Div(
                         id = 'hplc-options-sidebar',
                         children = [
                             html.Hr(),
+                            dcc.Download(id = 'download-hplc-dataframe'),
                             html.H5(
                                 style = {'paddingTop': '10px', 'textAlign': 'center'},
                                 children = 'Analytic Chromatography Options'
@@ -441,10 +445,14 @@ def update_url(value):
         dash.dependencies.Input('renorm-hplc', 'n_clicks'),
         dash.dependencies.Input('reset-norm', 'n_clicks'),
         dash.dependencies.Input('reset-hplc', 'n_clicks'),
-        dash.dependencies.Input('download-format-options', 'value')
+        dash.dependencies.Input('download-format-options', 'value'),
+        dash.dependencies.Input('fplc-overlay', 'value')
     ]
 )
-def create_graphs(pathname, search_string, radio_value, renorm, reset_norm, reset, format_val):
+def create_graphs(
+    pathname, search_string, radio_value,
+    renorm, reset_norm, reset, 
+    format_val, overlay_val):
     changed = [p['prop_id'] for p in dash.callback_context.triggered][0]
 
     if changed == 'root-location.search' or changed is None:
@@ -461,13 +469,18 @@ def create_graphs(pathname, search_string, radio_value, renorm, reset_norm, rese
 
         exp = get_experiments(experiment_name_list)
 
+        # don't overlay if there is no HPLC data!
+        overlay = overlay_val and exp.hplc is not None
+        print(overlay_val)
+        print(overlay)
+
         if norm_range is not None:
             exp.renormalize_hplc(norm_range, False)
         
         return (
-            get_plotly(exp, view_range, radio_value, format_val),
+            get_plotly(exp, view_range, radio_value, format_val, overlay),
             exp.hplc is None,
-            exp.fplc is None
+            exp.fplc is None and not overlay
         )
 
 @app.callback(
