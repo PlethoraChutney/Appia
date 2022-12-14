@@ -145,6 +145,7 @@ def get_plotly(exp, view_range = None, x_ax = 'mL'):
     if exp.hplc is not None:
         combined_graphs['Signal'], combined_graphs['Normalized'] = get_hplc_graphs(exp, view_range, x_ax)
 
+
     if exp.fplc is not None:
         combined_graphs['FPLC'] = get_fplc_graphs(exp)
 
@@ -228,6 +229,7 @@ def serve_layout():
                 )
                 ]
             ),
+            # sidebar div
             html.Div(
                 className = 'sidebar',
                 style = {'text-align': 'center'},
@@ -246,31 +248,41 @@ def serve_layout():
                         )]
                     ),
                     html.Hr(),
-                    dcc.RadioItems(
-                        'x-ax-radios',
-                        options=[
-                            {'label': 'Volume', 'value': 'mL'},
-                            {'label': 'Time', 'value': 'Time'}
-                        ],
-                        value='mL',
-                        labelStyle = {'display': 'inline-block', 'text-align': 'center'},
-                        style = {'width': '100%'}
-                    ),
-                    html.Br(),
-                    html.Button(
-                        'Renormalize HPLC',
-                        id = 'renorm-hplc',
-                        style = {'width': '100%'}
-                    ),
-                    html.Button(
-                        'Reset normalization',
-                        id = 'reset-norm',
-                        style = {'width': '100%'}
-                    ),
-                    html.Button(
-                        'Reset HPLC',
-                        id = 'reset-hplc',
-                        style = {'width': '100%'}
+                    # HPLC options
+                    html.Div(
+                        id = 'hplc-options-sidebar',
+                        children = [
+                            html.H5(
+                                style = {'paddingTop': '10px', 'textAlign': 'center'},
+                                children = 'HPLC Options'
+                            ),
+                            dcc.RadioItems(
+                                id = 'x-ax-radios',
+                                options=[
+                                    {'label': 'Volume', 'value': 'mL'},
+                                    {'label': 'Time', 'value': 'Time'}
+                                ],
+                                value='mL',
+                                labelStyle = {'display': 'inline-block', 'text-align': 'center'},
+                                style = {'width': '100%'}
+                            ),
+                            html.Br(),
+                            html.Button(
+                                'Renormalize HPLC',
+                                id = 'renorm-hplc',
+                                style = {'width': '100%'}
+                            ),
+                            html.Button(
+                                'Reset normalization',
+                                id = 'reset-norm',
+                                style = {'width': '100%'}
+                            ),
+                            html.Button(
+                                'Reset HPLC',
+                                id = 'reset-hplc',
+                                style = {'width': '100%'}
+                            )
+                        ]
                     )
                 ]
             ),
@@ -305,7 +317,10 @@ def update_output(value):
 # load graphs, normalize experiment, update query string
 
 @app.callback(
-    dash.dependencies.Output('main_graphs', 'children'),
+    [
+        dash.dependencies.Output('main_graphs', 'children'),
+        dash.dependencies.Output('hplc-options-sidebar', 'hidden')
+    ],
     [
         dash.dependencies.Input('root-location', 'pathname'),
         dash.dependencies.Input('root-location', 'search'),
@@ -340,7 +355,7 @@ def update_output(pathname, search_string, radio_value, renorm, reset_norm, rese
         if norm_range is not None:
             exp.renormalize_hplc(norm_range, False)
         
-        return get_plotly(exp, view_range, radio_value)
+        return (get_plotly(exp, view_range, radio_value), exp.hplc is None)
 
 @app.callback(
     dash.dependencies.Output('root-location', 'search'),
