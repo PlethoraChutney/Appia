@@ -37,6 +37,8 @@ location /traces/ {
 This way, your users can access the server directly at
 `{server name}/traces`, and you can add a password using
 [the standard methods](https://docs.nginx.com/nginx/admin-guide/security-controls/configuring-http-basic-authentication/).
+If using NGINX, you no longer need to open port 8080. You do
+still need to open port 5984 for the database.
 
 ### Local/processing-only installation:
 This process will install Python and all the packages/libraries you need.
