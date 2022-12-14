@@ -1,9 +1,10 @@
 [![DOI](https://zenodo.org/badge/160436725.svg)](https://zenodo.org/badge/latestdoi/160436725)
+
 # Appia - simple chromatography processing
 Appia is a set of scripts to process and view chromatography data from AKTA, Shimadzu, and
 Waters systems. Chromatography data can then be viewed on the easy-to-use and intuitive
 web interface, built with [plotly dash](https://plotly.com/dash/). Please check out the
-[web demo](https://appia-demo.herokuapp.com/) hosted on heroku!
+[web demo](https://traces.baconguislab.com/) hosted on heroku!
 
 Additionally, automatic plots will be prepared for all 
 data using [ggplot](https://ggplot2.tidyverse.org/) in R. Options to copy a manual file for plot tweaking are
@@ -25,9 +26,6 @@ is also fine, but I'm trying to keep this as simple as possible. If you want
 to use ggplot to make manually-tweaked plots, you should also follow the steps
 to install R and RStudio.
 
-**Note: there is currently no compiled wxPython for python 3.10 for Windows.
-I recommend you use python 3.9 until one is available.**
-
 1. Install [python3](https://www.python.org/) 
     1. *(Recommended)* Run `python -m virtualenv venv` 
     2. *(Recommended)* Run `venv/Scripts/activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
@@ -38,11 +36,9 @@ I recommend you use python 3.9 until one is available.**
 4. *(Optional) Install [R Studio](https://www.rstudio.com/) for easier use of the
     manual plot scripts*
 
-## GUI
-There used to be a GUI provided by Gooey, but I didn't like the extra dependencies and
-I am not convinced anyone actually found it useful. If you would like a GUI for data
-processing, please submit an issue **including the situations in which you would regularly
-like to use a GUI**.
+After performing these steps, Appia is ready to process your data! Detailed information about
+processing supported instruments is given below, but if you want to jump right in, you can
+either use the included batch scripts, or run `appia process {filenames}` to start processing!
 
 ## HPLC Processing
 Appia reads `.arw` or `.asc` files (from Waters and Shimadzu HPLCs, respectively)
