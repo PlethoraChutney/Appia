@@ -16,3 +16,4 @@ couchdb/
 dist/
 src/appia.egg-info/
 build/
+.DS_Store

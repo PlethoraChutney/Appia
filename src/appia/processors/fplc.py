@@ -72,7 +72,7 @@ def append_fplc(file_list, cv = 24):
         chroms.Sample = os.path.split(file)[1][:-4]
         chroms = chroms.loc[(chroms.CV >= 0) & (chroms.CV <=1)]
 
-        chroms = chroms.groupby(['Channel']).apply(normalizer)
+        chroms = chroms.groupby(['Channel'], group_keys=False).apply(normalizer)
         chroms = chroms.melt(
             id_vars = ['mL', 'CV', 'Channel', 'Fraction', 'Sample'],
             value_vars = ['Signal', 'Normalized'],

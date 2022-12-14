@@ -90,7 +90,7 @@ def append_waters(file_list, flow_rate = None):
 
         chroms = pd.concat([chroms, to_append], ignore_index = True)
 
-    chroms = chroms.groupby(['Sample', 'Channel']).apply(normalizer)
+    chroms = chroms.groupby(['Sample', 'Channel'], group_keys=False).apply(normalizer)
     chroms = chroms.melt(
         id_vars = ['mL', 'Sample', 'Channel', 'Time'],
         value_vars = ['Signal', 'Normalized'],
@@ -257,7 +257,7 @@ def append_shim(file_list, channel_mapping, flow_rate = None):
     chroms = chroms[['Time', 'Signal', 'Channel', 'Sample', 'mL']]
     chroms = chroms.replace(channel_mapping)
 
-    chroms = chroms.groupby(['Sample', 'Channel']).apply(normalizer)
+    chroms = chroms.groupby(['Sample', 'Channel'], group_keys=False).apply(normalizer)
     chroms = chroms.melt(
         id_vars = ['mL', 'Sample', 'Channel', 'Time'],
         value_vars = ['Signal', 'Normalized'],
@@ -363,7 +363,7 @@ def append_agilent(file_list, flow_override = None, channel_override = None):
 
         chroms = pd.concat([chroms, to_append], ignore_index = True, sort = True)
         
-    chroms = chroms.groupby(['Sample', 'Channel']).apply(normalizer)
+    chroms = chroms.groupby(['Sample', 'Channel'], group_keys=False).apply(normalizer)
     chroms = chroms.melt(
         id_vars = ['mL', 'Sample', 'Channel', 'Time'],
         value_vars = 'Signal',

@@ -100,7 +100,7 @@ class Experiment:
                 index = ['mL', 'Sample', 'Channel', 'Time'],
                 columns = ['Normalization']
             )['Value'].reset_index()
-        hplc = hplc.groupby(['Sample', 'Channel']).apply(lambda x: normalizer(x, norm_range, strict))
+        hplc = hplc.groupby(['Sample', 'Channel'], group_keys=False).apply(lambda x: normalizer(x, norm_range, strict))
         hplc = hplc.melt(
             id_vars = ['mL', 'Sample', 'Channel', 'Time'],
             value_vars = ['Signal', 'Normalized'],
@@ -117,7 +117,7 @@ class Experiment:
                 index = ['mL', 'CV', 'Fraction', 'Channel', 'Sample'],
                 columns = ['Normalization']
             )['Value'].reset_index()
-        fplc = fplc.groupby(['Sample', 'Channel']).apply(lambda x: normalizer(x, norm_range, strict))
+        fplc = fplc.groupby(['Sample', 'Channel'], group_keys=False).apply(lambda x: normalizer(x, norm_range, strict))
         fplc = fplc.melt(
             id_vars = ['mL', 'CV', 'Channel', 'Fraction', 'Sample'],
             value_vars = ['Signal', 'Normalized'],
@@ -135,6 +135,7 @@ class Experiment:
         try:
             self.hplc = self.hplc.groupby(
                 ['Channel', 'Sample', 'Normalization'],
+                group_keys=False,
                 as_index = False
                 ).apply(
                     lambda x: reduction_factor(x, num_points)

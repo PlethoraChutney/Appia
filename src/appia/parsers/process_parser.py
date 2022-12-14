@@ -21,6 +21,8 @@ def main(args):
         if wat_sample_set is None:
             wat_sample_set = core.user_input('Sample set name: ')
 
+        waters['Value'] = waters['Value'] * args.scale_hplc
+
         try:
             exp.hplc = waters
         except NameError:
@@ -35,6 +37,8 @@ def main(args):
             i += 2
 
         shim, shim_sample_set = hplc.append_shim(file_list['shimadzu'], channel_mapping, args.hplc_flow_rate)
+
+        shim['Value'] = shim['Value'] * args.scale_hplc
 
         try:
             exp.extend_hplc(shim)
@@ -55,6 +59,8 @@ def main(args):
             
     if file_list['agilent']:
         agil = hplc.append_agilent(file_list['agilent'], args.hplc_flow_rate)
+
+        agil['Value'] = agil['Value'] * args.scale_hplc
 
         try:
             exp.extend_hplc(agil)
@@ -235,6 +241,12 @@ process_args.add_argument(
     nargs = '+',
     default = ['A', 'Trp', 'B', 'GFP'],
     help = 'Channel mappings for old Shimadzu instruments. Default: A Trp B GFP'
+)
+process_args.add_argument(
+    '--scale-hplc',
+    help = 'Scale signal values by a factor. For instance, --scale 0.5 will reduce all signal values by 1/2. Could be used to compare instruments with different flow cell path lengths.',
+    default = 1,
+    type = float
 )
 
 web_up = parser.add_argument_group('Web Upload')
