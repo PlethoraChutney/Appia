@@ -19,6 +19,25 @@ available.
 5. Open the port from `docker-compose.yml` to allow other instruments to access the web ui
 6. *(Optional) Instead of opening the port, put Appia behind a reverse proxy server with authentication*
 
+Once you've installed Appia Web, you can access it directly
+by opening ports 8080 (for Appia Web) and 5984 (for the database)
+and accessing it at `{server name}:8080/traces`.
+However, we recommend you host it behind [NGINX](https://www.nginx.com/), both to remove
+the requirement of specifying a port, and to add the ability
+to control access to your Appia database. Here is an example
+config for NGINX:
+
+```
+location /traces/ {
+    proxy_set_header HOST $http_host;
+    proxy_pass http://{server name}:8080/traces/;
+}
+```
+
+This way, your users can access the server directly at
+`{server name}/traces`, and you can add a password using
+[the standard methods](https://docs.nginx.com/nginx/admin-guide/security-controls/configuring-http-basic-authentication/).
+
 ### Local/processing-only installation:
 This process will install Python and all the packages/libraries you need.
 I highly recommend you use a virtual environment for the python packages. Conda
