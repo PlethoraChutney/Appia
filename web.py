@@ -136,6 +136,12 @@ def get_fplc_graphs(exp):
 
     fplc_graph.update_layout(template = 'plotly_white')
     fplc_graph.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
+
+
+    fplc_graph.update_layout(
+        xaxis_title = 'Retention Volume (mL)',
+        yaxis_title = 'Signal'
+    )
     return fplc_graph
 
 def get_plotly(exp, view_range = None, x_ax = 'mL'):
