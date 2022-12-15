@@ -11,11 +11,11 @@ class Config:
 
         if config_file is None:
             try:
-                self.cuser = os.environ['COUCHDB_USER']
+                self.cuser = os.environ['COUCHDB_USERNAME']
                 self.cpass = os.environ['COUCHDB_PASSWORD']
                 self.chost = os.environ['COUCHDB_HOST']
             except KeyError:
-                logging.error('Provide a config file or set $COUCHDB_USER, $COUCHDB_PASSWORD, $COUCHDB_HOST')
+                logging.error('Provide a config file or set $COUCHDB_USERNAME, $COUCHDB_PASSWORD, $COUCHDB_HOST')
                 sys.exit(1)
         else:
             with open(config_file) as conf:

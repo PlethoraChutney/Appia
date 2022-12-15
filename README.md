@@ -51,6 +51,7 @@ to install R and RStudio.
     1. *(Recommended)* Run `python -m virtualenv venv` 
     2. *(Recommended)* Run `venv/Scripts/activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
     3. Run `python -m pip install appia` (`python3` for linux)
+2. *(If using Appia Web)* create a config file or set the $COUCHDB_USERNAME, $COUCHDB_PASSWORD, and $COUCHDB_HOST environment variables to upload to your database.
 3. *(Optional) Install [R](https://www.r-project.org/) for manual plotting*
     1. *In an R session (`R.exe` or `R` for Windows or Mac)
     run `install.packages('tidyverse')`*
