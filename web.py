@@ -64,6 +64,8 @@ def get_hplc_graphs(
     else:
         hplc_df = exp.hplc
 
+    hplc_df.dropna(inplace = True)
+
 
     if len(hplc_df['Sample'].unique()) > 10:
         disc_color_scheme = px.colors.qualitative.Alphabet
@@ -331,7 +333,7 @@ def serve_layout():
                         }
                     ),
                     dcc.Checklist(
-                        ['Overlay preparative trace on analytic graphs'],
+                        options=['Overlay preparative trace on analytic graphs'],
                         id = 'fplc-overlay'
                     ),
                     # HPLC options

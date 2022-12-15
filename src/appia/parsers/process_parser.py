@@ -6,6 +6,7 @@ import shutil
 from appia.processors import hplc, fplc, experiment, core
 from appia.processors.database import Database, Config
 from appia.plotters import auto_plot
+from appia.processors.gui import user_input
 
 def main(args):
     file_list = core.get_files(args.files)
@@ -19,7 +20,7 @@ def main(args):
     if file_list['waters']:
         waters, wat_sample_set = hplc.append_waters(file_list['waters'], args.hplc_flow_rate)
         if wat_sample_set is None:
-            wat_sample_set = core.user_input('Sample set name: ')
+            wat_sample_set = user_input('Sample set name: ')
 
         waters['Value'] = waters['Value'] * args.scale_hplc
 
@@ -65,7 +66,7 @@ def main(args):
         try:
             exp.extend_hplc(agil)
         except NameError:
-            sample_set_name = core.user_input('Please provide an experiment name')
+            sample_set_name = user_input('Please provide an experiment name: ')
             exp = experiment.Experiment(sample_set_name)
             exp.hplc = agil
 
