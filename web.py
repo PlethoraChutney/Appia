@@ -21,9 +21,9 @@ def exp_list_from_pathname(pathname):
 
 def get_experiments(experiment_name_list):
     if len(experiment_name_list) == 1:
-        exp = db.pull_experiment(experiment_name_list[0])
+        exp = db.pull_experiment(experiment_name_list[0].replace('%20', ' '))
     else:
-        exp_list = [db.pull_experiment(x) for x in experiment_name_list]
+        exp_list = [db.pull_experiment(x.replace('%20', ' ')) for x in experiment_name_list]
         exp = concat_experiments(exp_list)
 
     return exp
@@ -333,7 +333,9 @@ def serve_layout():
                         }
                     ),
                     dcc.Checklist(
-                        options=['Overlay preparative trace on analytic graphs'],
+                        options=[
+                            {'label': 'Overlay preparative trace on analytic graphs', 'value': 'overlay'}
+                        ],
                         id = 'fplc-overlay'
                     ),
                     # HPLC options
@@ -419,7 +421,7 @@ app.layout = serve_layout
     dash.dependencies.Output('output-container', 'children'),
     [dash.dependencies.Input('root-location', 'pathname')])
 def update_output(pathname):
-    experiment_name = pathname.replace(url_basename, '').replace('+', ' and ')
+    experiment_name = pathname.replace(url_basename, '').replace('+', ' and ').replace('%20', ' ')
     return f'{experiment_name}'
 
 # Make URL pathname the experiment name(s)
