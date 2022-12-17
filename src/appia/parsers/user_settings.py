@@ -46,5 +46,7 @@ class AppiaSettings(object):
         logging.debug(f'Matches: {matches}')
         if len(matches) == 1:
             return self.flow_rates[matches[0]]
-        else:
-            return None
+        elif len(matches) > 1:
+            logging.warning(f'More than one match for {method_name}')
+
+        return None

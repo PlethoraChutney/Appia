@@ -71,6 +71,21 @@ traces into an Experiment for upload to the visualization database.
 we will need more information from you for non-Waters bug reports and
 feature requests!
 
+## Flow Rates
+To be able to convert between retention volume and time, Appia needs flow rates.
+You can provide these in a few ways.
+
+1. (Recommended) Use `appia utils --flow-rate` to add a method name and a flow
+rate. You can add just a part of the method name. For example, `appia utils
+--flow-rate 10_300 0.5` will create a flow rate entry which would match
+methods like `Sup6_10_300_PumpA` and `10_300_FLR-GFP` but not `5_150_ChA`.
+Multiple matches will force you to manually enter, so don't make them
+too broad.
+2. Provide a flow rate during processing. This will set *all* HPLC flow rates
+for this processing batch.
+3. Provide flow rates for each file manually. If you did not use one of the
+above methods, Appia will prompt you individually for each file.
+
 ### Waters Export Method
 When exporting your data, please export the headers as two rows with multiple columns,
 rather than two columns with multiple rows.
