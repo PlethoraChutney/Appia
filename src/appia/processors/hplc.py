@@ -7,38 +7,33 @@ import logging
 import re
 from appia.processors.core import loading_bar, normalizer
 from appia.processors.gui import user_input
+from appia.parsers.user_settings import AppiaSettings
 
-def get_flow_rate(flow_rate, method):
+user_settings = AppiaSettings()
+
+def get_flow_rate(flow_rate, method, search = True):
     # If user provides in argument we don't need to do this
+    #
+    # return flow rate and whether it was manually entered
     if flow_rate:
-        return flow_rate
-    
-    # Open flow-rates JSON
-    if method:
-        # Open flow-rates JSON
-        script_location = os.path.dirname(os.path.realpath(__file__))
+        logging.debug(f'Flow rate provided manually: {flow_rate}')
+        return flow_rate, False
+
+    if method and search:
+        logging.debug(f'Looking for fr for method {method}')
+        flow_rate = user_settings.check_flow_rate(method)
+        if flow_rate is not None:
+            logging.debug(f'Flow rate found in user_settings: {flow_rate}')
+            return flow_rate, False
+
+    while not flow_rate:
         try:
-            with open(os.path.join(script_location, 'flow_rates.json')) as fr:
-                flow_rates = json.load(fr)
+            input_fr = user_input(f'Please provide a flow rate for {method} (mL/min)\n')
+            flow_rate = float(input_fr)
+        except ValueError:
+            logging.error('Flow rate must be a number')
 
-            match = False
-            for key in flow_rates:
-                if key in method:
-                    if match:
-                        logging.error('Multiple matches in flow_rates JSON!')
-                        match = False
-                        break
-                    else:
-                        match = True
-                        flow_rate = flow_rates[key]
-
-            if match:
-                return flow_rate
-        except FileNotFoundError:
-            logging.warning('No flow_rates JSON found.')
-    
-    flow_rate = float(user_input('Flow rate (mL/min):'))
-    return flow_rate
+    return flow_rate, True
 
 
 def append_waters(file_list, flow_rate = None):
@@ -84,7 +79,7 @@ def append_waters(file_list, flow_rate = None):
             method = str(sample_info.loc[0]['Instrument Method Name'])
         else:
             method = False
-        flow_rate = get_flow_rate(flow_rate, method)
+        flow_rate, _ = get_flow_rate(flow_rate, method)
 
         to_append['mL'] = to_append['Time']*flow_rate
 
@@ -110,9 +105,9 @@ def get_shim_data(file, channel_names = None, flow_rate = None):
         return old_shim_reader(file, channel_names, flow_rate)
 
 # Very old shimadzu exports are much simpler than modern ones
-def old_shim_reader(file, channel_names, flow_rate = None):
+def old_shim_reader(filename, channel_names, flow_rate = None):
     to_append = pd.read_csv(
-        file,
+        filename,
         sep = '\t',
         skiprows = 16,
         names = ['Signal'],
@@ -121,7 +116,7 @@ def old_shim_reader(file, channel_names, flow_rate = None):
     )
 
     sample_info = pd.read_csv(
-        file,
+        filename,
         sep = '\t',
         nrows = 16,
         names = ['Stat'] + channel_names + ['Units'],
@@ -139,17 +134,17 @@ def old_shim_reader(file, channel_names, flow_rate = None):
     to_append['Channel'] = [x for x in channel_names for i in range(number_samples)]
     to_append['Time'] = [x/60 for x in seconds_list]
 
-    flow_rate = get_flow_rate(flow_rate, None)
+    flow_rate, _ = get_flow_rate(flow_rate, filename)
     to_append['mL'] = to_append['Time'] * flow_rate
 
     return (to_append, set_name)
 
-def new_shim_reader(file, channel_names = None, flow_rate = None):
+def new_shim_reader(filename, channel_names = None, flow_rate = None):
     # new shimadzu tables are actually several tables separated by
     # headers, which are in the format `[header]`
     to_append = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample', 'mL'])
 
-    with open(file, 'r') as f:
+    with open(filename, 'r') as f:
         tables = {}
         curr_table = False
         for line in f:
@@ -243,7 +238,7 @@ def append_shim(file_list, channel_mapping, flow_rate = None):
     chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 
     channel_names = list(channel_mapping.keys())
-    flow_rate = get_flow_rate(flow_rate, None)
+    flow_rate, _ = get_flow_rate(flow_rate, 'Shimadzu Traces', search = False)
 
     for i in range(len(file_list)):
 
@@ -275,25 +270,20 @@ def append_agilent(file_list, flow_override = None, channel_override = None):
     else:
         channel = False
 
-    if flow_override:
-        flow_rate = flow_override
-    else:
-        flow_rate = False
-
     for i in range(len(file_list)):
 
         loading_bar(i+1, (len(file_list)), extension = ' Agilent files')
-        file = file_list[i]
+        filename = file_list[i]
 
         to_append = pd.read_csv(
-            file,
+            filename,
             sep = '\t',
             names = ['Time', 'Signal'],
             engine = 'python',
             encoding = 'utf_16'
         )
 
-        filename = os.path.split(file)[1]
+        filename = os.path.split(filename)[1]
         sample_name = filename.replace('.CSV', '').replace('_RT', '')
 
 
@@ -313,11 +303,11 @@ def append_agilent(file_list, flow_override = None, channel_override = None):
                     channel = channel_search.group(0)[-3:]
                     int(channel)
                 except ValueError:
-                    logging.debug(f'Bad channel pattern in file {file}: {channel}')
+                    logging.debug(f'Bad channel pattern in file {filename}: {channel}')
                     channel = False
             
             if not channel:
-                channel = user_input(f'Please provide a channel name for {file}:\n')
+                channel = user_input(f'Please provide a channel name for {filename}:\n')
                 if user_input(f'Set channel to "{channel}" for remaining Agilent files? Y/N\n').lower() == 'y':
                     channel_override = channel
         to_append['Channel'] = channel
@@ -330,31 +320,9 @@ def append_agilent(file_list, flow_override = None, channel_override = None):
             flow_rate = flow_override
 
         if not flow_rate:
-            i = 0
-            while not flow_rate:
-                if i == 0:
-                    flow_reg = r'Flow[0-9]*\.[0-9]*'
-                    flow_search = re.search(flow_reg, sample_name)
-
-                    if flow_search:
-                        sample_name = re.sub(flow_reg, '', sample_name)
-
-                        try:
-                            flow_rate = flow_search.group(0)[4:]
-                            flow_rate = float(flow_rate)
-                        except ValueError:
-                            logging.debug(f'Bad flow rate pattern in file {file}: {flow_rate}')
-                            flow_rate = False
-                else:
-                    try:
-                        input_fr = user_input(f'Please provide a flow rate for {file} (mL/min)\n')
-                        flow_rate = float(input_fr)
-                        if user_input(f'Set flow rate to {flow_rate} for remaining Agilent files? Y/N\n').lower() == 'y':
-                            flow_override = flow_rate
-                    except ValueError:
-                        logging.error('Flow rate must be a number')
-
-                i += 1
+            flow_rate, manual_input = get_flow_rate(flow_rate, filename)
+            if manual_input and input(f'Set remaining flow rates to {flow_rate}? ').lower() == 'y':
+                flow_override = flow_rate
             
         to_append['mL'] = to_append['Time'] * flow_rate
 
