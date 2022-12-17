@@ -4,14 +4,14 @@
 Appia is a set of scripts to process and view chromatography data from AKTA, Shimadzu, and
 Waters systems. Chromatography data can then be viewed on the easy-to-use and intuitive
 web interface, built with [plotly dash](https://plotly.com/dash/). Please check out the
-[web demo](https://traces.baconguislab.com/) hosted on heroku!
+[web demo](https://traces.baconguislab.com/)!
 
 Additionally, automatic plots will be prepared for all 
 data using [ggplot](https://ggplot2.tidyverse.org/) in R. Options to copy a manual file for plot tweaking are
 available.
 
-## Installation
-### Server installation
+## Installation 👷
+### Server installation 
 1. Install [docker](https://www.docker.com/)
 2. Copy `docker-compose.yml` wherever you want the database to save data
 3. Set the $COUCHDB_USER and $COUCHDB_PASSWORD environment variables (**in your environment!**)
@@ -50,28 +50,29 @@ to install R and RStudio.
 1. Install [python3](https://www.python.org/) 
     1. *(Recommended)* Run `python -m virtualenv venv` 
     2. *(Recommended)* Run `venv/Scripts/activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
-    3. Run `python -m pip install appia` (`python3` for linux)
-2. *(If using Appia Web)* create a config file or set the $COUCHDB_USERNAME, $COUCHDB_PASSWORD, and $COUCHDB_HOST environment variables to upload to your database.
-3. *(Optional) Install [R](https://www.r-project.org/) for manual plotting*
-    1. *In an R session (`R.exe` or `R` for Windows or Mac)
-    run `install.packages('tidyverse')`*
-4. *(Optional) Install [R Studio](https://www.rstudio.com/) for easier use of the
-    manual plot scripts*
+2. Run `python -m pip install appia` (`python3` for linux)
+3. *(If using Appia Web)* create a config file or set the $COUCHDB_USERNAME, $COUCHDB_PASSWORD, and $COUCHDB_HOST environment variables to upload to your database.
 
 After performing these steps, Appia is ready to process your data! Detailed information about
 processing supported instruments is given below, but if you want to jump right in, you can
 either use the included batch scripts, or run `appia process {filenames}` to start processing!
 
-## HPLC Processing
-Appia reads `.arw` or `.asc` files (from Waters and Shimadzu HPLCs, respectively)
-for information about the sample and how it was run, then optionally collects all the indicated
-traces into an Experiment for upload to the visualization database.
+## Analytic Chromatography Processing 📈
 
-**Please note** that our lab uses Waters instruments. Others are supported, but
+Appia can currently process the following HPLC data files:
+
+| Manufacturer | Expected File Format       |
+| ------------ | -------------------------- |
+| Waters       | `.arw`                     |
+| Shimadzu     | `.asc` (old), `.txt` (new) |
+| Agilent      | `.csv`                     |
+
+
+*Please note that our lab uses Waters instruments*. Others are supported, but
 we will need more information from you for non-Waters bug reports and
 feature requests!
 
-## Flow Rates
+### Flow Rates
 To be able to convert between retention volume and time, Appia needs flow rates.
 You can provide these in a few ways.
 
@@ -80,7 +81,7 @@ rate. You can add just a part of the method name. For example, `appia utils
 --flow-rate 10_300 0.5` will create a flow rate entry which would match
 methods like `Sup6_10_300_PumpA` and `10_300_FLR-GFP` but not `5_150_ChA`.
 Multiple matches will force you to manually enter, so don't make them
-too broad.
+too broad. These settings are stored at `~/.appia-settings.json`.
 2. Provide a flow rate during processing. This will set *all* HPLC flow rates
 for this processing batch.
 3. Provide flow rates for each file manually. If you did not use one of the
@@ -102,11 +103,15 @@ argument.
 
 ### Shimadzu Data Export
 
+**Older Instruments**
+
 If you are using an old Shimadzu instrument, your method will need the
 standard headers, including `Sample ID`, `Total Data Points`, and `Sampling Rate`. When you process, you will need
 to pass a set of arguments to tell Appia which channel corresponds to what,
 since Shimadzu instruments only output a letter. Additionally, you will be prompted
 for a flow rate (or you can provide one with `--hplc-flow-rate`).
+
+**New Instruments**
 
 Newer Shimadzu instruments output much more information about samples, which is great.
 Manual input of flow rate is still necessary, and if you have more than one sample
@@ -133,7 +138,11 @@ information at the command line.
 
 We do not have access to an Agilent instrument, and we welcome collaboration on this front!
 
-## AKTA FPLC Processing
+## Preparative Chromatography Processing 🧪
+Currently, only GE/Cytiva AKTA preparative instruments are supported.
+If you have a different manufacturer, or if your AKTA files do not work
+with Appia, **please** open an issue so we can add more support!
+
 The AKTA processing is straightforward. First, export your data from the AKTA in
 .csv format. You'll have to open the trace in Unicorn and use the export button there,
 just using "Export Data" saves a zipped binary which Appia can't read. Everything is
@@ -181,13 +190,15 @@ Same as above, but specify an Experiment ID yourself instead of reading one from
 the data.
 
 ## Manual plot fine-tuning
-For final publication plots, we recommend fine-tuning the appearance of the plot
+For final publication plots, we typically fine-tune the appearance of the plot
 using [ggplot2](https://ggplot2.tidyverse.org/). To this end, we include some
 R scripts as suggested starting points for building publication plots. These manual
 plotting scripts can be copied into the processed data directory using the
 `--copy-manual` argument during processing. As you develop your own style, you
 can save your own templates (still named `manual_plot_HPLC.R` and `manual_plot_FPLC.R`)
 and pass the directory containing these templates to the `--copy-manual` argument.
+You can, of course, use any plotting software you wish since the data is output
+in both wide and long format.
 
 # Example Data
 Examples of correctly-formatted Waters, Shimadzu, and AKTA files can be found in `/test-files/`. The directory `/processed-tests/` is the result of the command:
