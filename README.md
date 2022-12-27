@@ -57,6 +57,21 @@ After performing these steps, Appia is ready to process your data! Detailed info
 processing supported instruments is given below, but if you want to jump right in, you can
 either use the included batch scripts, or run `appia process {filenames}` to start processing!
 
+### Updating Appia
+
+To update Appia Web, open a terminal/powershell window and run the following
+commands in the Appia Web directory:
+
+```
+docker-compose pull
+docker-compose down
+docker-compose up -d --remove-orphans
+```
+
+This will download the latest docker image and start it up on your server.
+
+To update the Appia processing scripts, simply run `python3 -m pip install --upgrade appia` in any terminal window.
+
 ## Analytic Chromatography Processing 📈
 
 Appia can currently process the following HPLC data files:
