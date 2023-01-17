@@ -6,9 +6,7 @@ Waters systems. Chromatography data can then be viewed on the easy-to-use and in
 web interface, built with [plotly dash](https://plotly.com/dash/). Please check out the
 [web demo](https://traces.baconguislab.com/)!
 
-Additionally, automatic plots will be prepared for all 
-data using [ggplot](https://ggplot2.tidyverse.org/) in R. Options to copy a manual file for plot tweaking are
-available.
+If you find Appia useful in your research, please [cite it](10.1371/journal.pone.0280255).
 
 ## Installation 👷
 ### Server installation 
