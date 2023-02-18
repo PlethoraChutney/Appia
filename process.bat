@@ -1,7 +1,7 @@
 @echo off
 
-python appia.py process ./* --database
+appia process ./* --database
 
-if %ERRORLEVEL%==1 (
+if not %ERRORLEVEL% lss 1 (
     PAUSE
 )
