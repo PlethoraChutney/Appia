@@ -1,13 +1,10 @@
 import argparse
 import os
-from appia.processors.database import Database, Config
 from appia.processors.core import three_column_print
 
 def main(args):
-    if args.config == 'env':
-        db = Database(Config())
-    else:
-        db = Database(Config(args.config))
+
+    from appia.processors.database import db
 
     if args.list or args.check_versions:
         list = db.update_experiment_list()
@@ -50,11 +47,6 @@ parser = argparse.ArgumentParser(
     add_help=False
 )
 parser.set_defaults(func = main)
-parser.add_argument(
-    'config',
-    help = 'Config JSON file',
-    type = str
-)
 parser.add_argument(
     '-l', '--list',
     help = 'Print list of all experiments in database',

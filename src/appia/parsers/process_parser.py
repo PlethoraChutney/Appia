@@ -4,11 +4,11 @@ import sys
 import logging
 import shutil
 from appia.processors import hplc, fplc, experiment, core
-from appia.processors.database import Database, Config
 from appia.plotters import auto_plot
 from appia.processors.gui import user_input
 
 def main(args):
+    from appia.processors.database import db
     file_list = core.get_files(args.files)
     logging.debug(file_list)
 
@@ -146,30 +146,9 @@ def main(args):
                 os.path.join(out_dir, f'{exp.id}_manual-plot-FPLC.R')
             )
 
-    if args.config:
-        if args.config == 'env':
-            db = Database(Config())
-        else:
-            db = Database(Config(args.config))
-
+    if args.database:
         exp.reduce_hplc(args.reduce)
         db.upload_experiment(exp, args.overwrite)
-
-    if args.post_to_slack:
-        config = Config(args.post_to_slack)
-
-        if config.slack:
-            from processors import slackbot
-
-            client = slackbot.get_client(config)
-
-            if client is not None:
-                slackbot.send_graphs(
-                    config,
-                    client,
-                    os.path.join(out_dir, 'fsec_traces.pdf')
-                )
-
 
 parser = argparse.ArgumentParser(
     description = 'Process chromatography data',
@@ -204,12 +183,6 @@ file_io.add_argument(
 	help = 'Copy R template file for manual plot editing. Argument is directory relative to Appia root in which templates reside.',
 	nargs = '?',
     const = 'plotters'
-)
-file_io.add_argument(
-	'-s', '--post-to-slack',
-	help = "Send completed plots to Slack. Need a config JSON with slack token and channel.",
-	nargs = '?',
-    const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json')
 )
 
 process_args = parser.add_argument_group('Processing Options')
@@ -260,10 +233,8 @@ web_up.add_argument(
 )
 web_up.add_argument(
     '-d', '--database',
-    help = '''Upload experiment to couchdb. Optionally, provide config file location. Default config location is "config.json" in appia directory. Enter "env" to use environment variables instead.''',
-    dest = 'config',
-    nargs = '?',
-    const = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', 'config.json')
+    help = '''Upload experiment to couchdb. Must have set your parameters using `appia database`.''',
+    action = 'store_true'
 )
 web_up.add_argument(
     '--overwrite',

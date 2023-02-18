@@ -1,15 +1,12 @@
 import pandas as pd
 import numpy as np
 from io import StringIO
-import json
 import os
 import logging
 import re
 from appia.processors.core import loading_bar, normalizer
 from appia.processors.gui import user_input
-from appia.parsers.user_settings import AppiaSettings
-
-user_settings = AppiaSettings()
+from appia.parsers.user_settings import appia_settings
 
 def get_flow_rate(flow_rate, method, search = True):
     # If user provides in argument we don't need to do this
@@ -21,9 +18,9 @@ def get_flow_rate(flow_rate, method, search = True):
 
     if method and search:
         logging.debug(f'Looking for fr for method {method}')
-        flow_rate = user_settings.check_flow_rate(method)
+        flow_rate = appia_settings.check_flow_rate(method)
         if flow_rate is not None:
-            logging.debug(f'Flow rate found in user_settings: {flow_rate}')
+            logging.debug(f'Flow rate found in appia_settings: {flow_rate}')
             return flow_rate, False
 
     while not flow_rate:

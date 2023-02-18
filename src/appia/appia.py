@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import logging
-import sys
 
 from appia.parsers.process_parser import parser as process_parser
 from appia.parsers.database_parser import parser as db_parser

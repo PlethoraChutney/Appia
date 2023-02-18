@@ -2,11 +2,9 @@ import argparse
 import os
 import shutil
 import logging
-import json
-from appia.parsers.user_settings import AppiaSettings
+from appia.parsers.user_settings import appia_settings
 
 def main(args):
-    user_settings = AppiaSettings()
 
     if args.copy_manual is not None:
         script_location = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
@@ -30,19 +28,42 @@ def main(args):
                 logging.error('Bad flow rate. Give as --flow-rate {name} {mL/min number}')
                 raise TypeError
 
-        user_settings.update_flow_rates(new_flow_rates)
-        user_settings.save_settings()
+        appia_settings.update_flow_rates(new_flow_rates)
+        appia_settings.save_settings()
 
     if args.list_flow_rates:
         print('User specified flow rates:')
-        for method, fr in user_settings.flow_rates.items():
+        for method, fr in appia_settings.flow_rates.items():
             print(f' {method + ":":>20} {fr}')
     
     if args.delete_flow_rate:
         for fr_key in args.delete_flow_rate:
-            user_settings.delete_flow_rate(fr_key)
+            appia_settings.delete_flow_rate(fr_key)
 
-        user_settings.save_settings()
+        appia_settings.save_settings()
+
+    if args.database_setup:
+        print("Setting up database. To leave any of these settings unchanged, leave them blank.")
+
+        new_settings = {}
+        new_settings['database_host'] = input('Database host (something like blah.domain.edu): ')
+        new_settings['database_user'] = input('Database username. (You set this during the docker installation): ')
+        new_settings['database_password'] = input('Database password. (You set this during the docker installation): ')
+        port = input("Database port number. (If you don't know, it's the default so leave it blank): ")
+        new_settings['database_port'] = port if len(port) == 0 else int(port)
+
+        for setting, value in new_settings.items():
+            logging.debug(f'Setting {setting} is {value}')
+            if isinstance(value, int) or len(value) > 0:
+                setattr(appia_settings, setting, value)
+
+        appia_settings.save_settings()
+    
+    if args.check_database_login:
+        print('Host:', appia_settings.database_host)
+        print('Username:', appia_settings.database_user)
+        print('Password:', appia_settings.database_password)
+        print('Port:', appia_settings.database_port)
 
 
 parser = argparse.ArgumentParser(
@@ -72,4 +93,14 @@ parser.add_argument(
     '--delete-flow-rate',
     help = 'Remove a flow rate from user settings. Give the method names. Can give multiple method names.',
     nargs='+'
+)
+parser.add_argument(
+    '--database-setup',
+    help = 'Set database access parameters',
+    action = 'store_true'
+)
+parser.add_argument(
+    '--check-database-login',
+    help = 'Print login info to the terminal',
+    action = 'store_true'
 )
