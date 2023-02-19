@@ -49,7 +49,7 @@ to install R and RStudio.
     1. *(Recommended)* Run `python -m virtualenv venv` 
     2. *(Recommended)* Run `venv/Scripts/activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
 2. Run `python -m pip install appia` (`python3` for linux)
-3. *(If using Appia Web)* create a config file or set the $COUCHDB_USERNAME, $COUCHDB_PASSWORD, and $COUCHDB_HOST environment variables to upload to your database.
+3. *(If using Appia Web)* set up database access using `appia utils --database-setup`.
 
 After performing these steps, Appia is ready to process your data! Detailed information about
 processing supported instruments is given below, but if you want to jump right in, you can
