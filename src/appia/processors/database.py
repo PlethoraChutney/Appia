@@ -2,6 +2,8 @@ import couchdb
 import logging
 import pandas as pd
 import sys
+import os
+import json
 from appia.processors.experiment import Experiment
 from appia.parsers.user_settings import appia_settings
 
@@ -14,8 +16,49 @@ class Database:
         port = appia_settings.database_port
 
         if any([x is None for x in [username, password, hostname, port]]):
-            logging.error('You have not set your database login information. Please run `appia utils --database-setup`')
-            sys.exit(10)
+
+            # deprecation handling 
+
+            try:
+                appia_settings.database_user = os.environ['COUCHDB_USERNAME']
+                appia_settings.database_password = os.environ['COUCHDB_PASSWORD']
+                appia_settings.database_host = os.environ['COUCHDB_HOST']
+                appia_settings.save_settings()
+                logging.info('Appia no longer uses environment variables for couchDB access. Your current environment variables have been saved to the new user settings system and are no longer required.')
+                logging.info('To update these values in the future, run `appia utils --database-setup`')
+
+                username = appia_settings.database_user
+                password = appia_settings.database_password
+                hostname = appia_settings.database_host
+            except KeyError:
+                try:
+                    logging.info('Appia no longer uses separate JSON files for couchDB login. If you use an Appia config file, please enter the location below to transfer the information to the new user settings system. Otherwise, leave the entry blank.')
+                    old_settings = input('Location of config.json: ')
+                    old_settings = os.path.expanduser(old_settings)
+                    if len(old_settings) == 0:
+                        logging.error('Please run `appia utils --database-setup` to input database access information manually')
+                        sys.exit(10)
+                        
+                    with open(old_settings, 'r') as settings_file:
+                        old_config = json.load(settings_file)
+
+                    appia_settings.database_user = old_config['user']
+                    appia_settings.database_password = old_config['password']
+                    appia_settings.database_host = old_config['host']
+                    appia_settings.save_settings()
+
+                    username = appia_settings.database_user
+                    password = appia_settings.database_password
+                    hostname = appia_settings.database_host
+                
+                except (FileNotFoundError, KeyboardInterrupt):
+                    logging.error('Could not locate old Appia config file.')
+                    logging.error('Please run `appia utils --database-setup` to input database access information manually')
+                    sys.exit(10)
+                except KeyError:
+                    logging.error('Config file was missing couchDB access info.')
+                    logging.error('Please run `appia utils --database-setup` to input database access information manually')
+                    sys.exit(11)
 
         couchserver = couchdb.Server(f'http://{username}:{password}@{hostname}:{port}')
 
