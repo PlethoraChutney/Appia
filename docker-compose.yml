@@ -21,6 +21,6 @@ services:
     ports:
       - 8080:8080
     environment:
-      - COUCHDB_USER
+      - COUCHDB_USERNAME=${COUCHDB_USER}
       - COUCHDB_PASSWORD
       - COUCHDB_HOST=couchdb
