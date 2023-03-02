@@ -7,13 +7,13 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 from urllib.parse import parse_qs
-from appia.processors.database import Database, Config
+from appia.processors.database import Database
 from appia.processors.experiment import concat_experiments
 
 url_basename = '/traces/'
 app = dash.Dash(__name__, url_base_pathname = url_basename)
 server = app.server
-db = Database(Config())
+db = Database()
 
 def exp_list_from_pathname(pathname):
     path_string = pathname.replace(url_basename, '')
@@ -53,7 +53,8 @@ def make_combined_table(exp):
 
 def get_hplc_graphs(
     exp, view_range = None,
-    x_ax = 'mL', overlay = False
+    x_ax = 'mL', overlay = False,
+    format='png'
 ):
     exp.rename_channels(channel_dict)
     raw_graphs = []
@@ -81,7 +82,8 @@ def get_hplc_graphs(
             color = 'Sample',
             facet_row = 'Channel',
             template = 'plotly_white',
-            color_discrete_sequence=disc_color_scheme
+            color_discrete_sequence=disc_color_scheme,
+            render_mode = 'auto' if format != 'svg' else 'svg'
         )
 
         if norm == 'Normalized':
@@ -120,7 +122,7 @@ def get_hplc_graphs(
 
     return raw_graphs
 
-def get_fplc_graphs(exp):
+def get_fplc_graphs(exp, format = 'png'):
     fplc = exp.fplc
 
     if fplc is None:
@@ -170,7 +172,8 @@ def get_fplc_graphs(exp):
             color = 'Sample',
             facet_row = 'Normalization',
             hover_data = ['Value', 'mL', 'Fraction'],
-            template = 'plotly_white'
+            template = 'plotly_white',
+            render_mode = 'auto' if format != 'svg' else 'svg'
         )
         try:
             fplc_graph.layout.yaxis2.update(matches = None)
@@ -195,7 +198,7 @@ def get_plotly(exp, view_range = None, x_ax = 'mL', format_val = 'png', overlay 
     html_graphs = []
     
     if exp.hplc is not None:
-        combined_graphs['Signal'], combined_graphs['Normalized'] = get_hplc_graphs(exp, view_range, x_ax, overlay)
+        combined_graphs['Signal'], combined_graphs['Normalized'] = get_hplc_graphs(exp, view_range, x_ax, overlay, format_val)
 
 
     if exp.fplc is not None:
