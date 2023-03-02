@@ -8,7 +8,6 @@ from appia.plotters import auto_plot
 from appia.processors.gui import user_input
 
 def main(args):
-    from appia.processors.database import db
     file_list = core.get_files(args.files)
     logging.debug(file_list)
 
@@ -147,6 +146,7 @@ def main(args):
             )
 
     if args.database:
+        from appia.processors.database import db
         exp.reduce_hplc(args.reduce)
         db.upload_experiment(exp, args.overwrite)
 
