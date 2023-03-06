@@ -51,16 +51,22 @@ class TestProcessing(unittest.TestCase):
             appia_dir, 'test-files', '05_25_BB.asc'
         )
 
-        results = hplc.append_shim([shim_file], {'A': 'Trp', 'B': 'GFP'}, 0.5)[0]
-        self.assertEqual(results.shape[0], 24004)
-        self.assertEqual(results.shape[1], 6)
-        self.assertEqual(results.Sample[0], '05_25_BB')
-        self.assertAlmostEqual(sum(results['Value']), 51986033.029039636)
+        results = hplc.OldShimProcessor(
+            shim_file,
+            flow_rate = 0.5,
+            channel_dict = {'A': 'Trp', 'B': 'GFP'}
+        )
 
-        channels = set(results.Channel)
+        df = results.df
+        self.assertEqual(df.shape[0], 24004)
+        self.assertEqual(df.shape[1], 6)
+        self.assertEqual(df.Sample[0], '05_25_BB')
+        self.assertAlmostEqual(sum(df['Value']), 51986033.02903766)
+
+        channels = set(df.Channel)
         self.assertEqual(channels, {'Trp', 'GFP'})
 
-        norm = results.loc[results['Normalization'] == 'Normalized']
+        norm = df.loc[df['Normalization'] == 'Normalized']
         self.assertEqual(min(norm.Value), 0)
         self.assertEqual(max(norm.Value), 1)
 

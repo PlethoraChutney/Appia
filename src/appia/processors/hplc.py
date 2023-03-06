@@ -18,25 +18,24 @@ class HplcProcessor(object):
     df:         This attribute should return the standard dataframe.
                 Implementation of this is left to each processor, since
                 some manufacturers use multiple channels per file, etc.
-                You can do this by storing a pd.DataFrame in self._df,
-                or by storing each variable in their relevant attribute.
-    get_sample_info: this method is called during __init__, and should
+    prepare_sample: this method is called during __init__, and should
                 collect all information about the sample necessary to
                 process the actual trace data
-    process_file: this method is calle during __init__ after get_sample_info()
+    process_file: this method is calle during __init__ after prepare_sample()
                 and should produce the dataframe
     """
     def __init__(self, filename, **kwargs):
+        self.__class__.flow_rate_override = None
         self.filename = filename
         self.manufacturer = None
         self.method = None
         self._flow_rate = kwargs.get('flow_rate')
         self.__dict__.update(**kwargs)
 
-        self.get_sample_info()
+        self.prepare_sample()
         self.process_file()
 
-    def get_sample_info(self):
+    def prepare_sample(self):
         pass
 
     def process_file(self):
@@ -79,21 +78,11 @@ class HplcProcessor(object):
     
     @property
     def df(self):
-        try:
-            # put the columns in a standard order
-            return self._df[[
-                'Time', 'mL', 'Channel',
-                'Sample', 'Normalization', 'Value'
-            ]]
-        except AttributeError:
-            return pd.DataFrame({
-                'Time': self.time,
-                'mL': self.ml,
-                'Channel': self.channel,
-                'Sample': self.sample,
-                'Normalization': self.normalization,
-                'Value': self.value
-            })
+        # put the columns in a standard order
+        return self._df[[
+            'Time', 'mL', 'Channel',
+            'Sample', 'Normalization', 'Value'
+        ]]
         
     @df.setter
     def df(self, in_df):
@@ -103,12 +92,11 @@ class HplcProcessor(object):
             
 
 class WatersProcessor(HplcProcessor):
-    flow_rate_override = None
     def __init__(self, filename, **kwargs):
         super().__init__(filename, **kwargs)
         self.manufacturer = 'Waters'
 
-    def get_sample_info(self):
+    def prepare_sample(self):
         sample_info = pd.read_csv(
             self.filename,
             delim_whitespace = True,
@@ -142,32 +130,65 @@ class WatersProcessor(HplcProcessor):
 
         self.df = df
 
+class OldShimProcessor(HplcProcessor):
+    def __init__(self, filename, **kwargs):
+        self.channel_dict = kwargs.get('channel_dict', {})
+        super().__init__(filename, **kwargs)
+        self.manufacturer = 'Shimadzu'
 
+    def prepare_sample(self):
+        with open(self.filename, 'r') as f:
+            lines = [x.rstrip() for x in f]
 
+        line = lines.pop(0)
+        while ':' in line:
+            line = line.split('\t')
 
-def get_flow_rate(flow_rate, method, search = True):
-    # If user provides in argument we don't need to do this
-    #
-    # return flow rate and whether it was manually entered
-    if flow_rate:
-        logging.debug(f'Flow rate provided manually: {flow_rate}')
-        return flow_rate, False
+            print(line)
+            if line[0] == 'Sample ID:':
+                self.sample_name = line[1]
+            elif line[0] == 'Method:':
+                self.method = line[1].split('\\')[-1]
+            elif line[0] == 'Sampling Rate:':
+                # final entry in line is the units
+                self.sampling_rate = [float(x) for x in line[1:-1]]
+            elif line[0] == 'Total Data Points:':
+                self.data_points = [int(x) for x in line[1:-1]]
 
-    if method and search:
-        logging.debug(f'Looking for fr for method {method}')
-        flow_rate = appia_settings.check_flow_rate(method)
-        if flow_rate is not None:
-            logging.debug(f'Flow rate found in appia_settings: {flow_rate}')
-            return flow_rate, False
+            line = lines.pop(0)
 
-    while not flow_rate:
-        try:
-            input_fr = user_input(f'Please provide a flow rate for {method} (mL/min)\n')
-            flow_rate = float(input_fr)
-        except ValueError:
-            logging.error('Flow rate must be a number')
+        # the rest of the lines are just signal reads, but we
+        # need to add it to the one we've already read into
+        # the `line` var.
+        self.signal_column = [float(line)]
+        self.signal_column.extend([float(x) for x in lines])
 
-    return flow_rate, True
+    def process_file(self):
+        time_column = []
+        for i in range(len(self.data_points)):
+            time_column.extend([x * self.sampling_rate[i] for x in range(self.data_points[i])])
+
+        channel_column = []
+        for i in range(len(self.data_points)):
+            channel_column.extend(['ABCDEFG'[i]] * self.data_points[i])
+
+        df = pd.DataFrame({
+            'Time': time_column,
+            'Sample': self.sample_name,
+            'Channel': channel_column,
+            'Signal': self.signal_column
+        })
+        df['mL'] = df.Time * super().flow_rate
+        df = df.replace({'Channel': self.channel_dict})
+        df = df.groupby(['Sample', 'Channel'], group_keys=False).apply(normalizer)
+        df = df.melt(
+            id_vars = ['mL', 'Sample', 'Channel', 'Time'],
+            value_vars = ['Signal', 'Normalized'],
+            var_name = 'Normalization',
+            value_name = 'Value'
+        )
+
+        self.df = df
 
 def get_shim_data(file, channel_names = None, flow_rate = None):
     with open(file, 'r') as f:
@@ -177,41 +198,6 @@ def get_shim_data(file, channel_names = None, flow_rate = None):
         return new_shim_reader(file, channel_names, flow_rate)
     else:
         return old_shim_reader(file, channel_names, flow_rate)
-
-# Very old shimadzu exports are much simpler than modern ones
-def old_shim_reader(filename, channel_names, flow_rate = None):
-    to_append = pd.read_csv(
-        filename,
-        sep = '\t',
-        skiprows = 16,
-        names = ['Signal'],
-        header = None,
-        dtype = np.float32
-    )
-
-    sample_info = pd.read_csv(
-        filename,
-        sep = '\t',
-        nrows = 16,
-        names = ['Stat'] + channel_names + ['Units'],
-        engine = 'python'
-    )
-
-    sample_info.set_index('Stat', inplace = True)
-
-    number_samples = int(sample_info.loc['Total Data Points:'][0])
-    sampling_interval = float(sample_info.loc['Sampling Rate:'][0])
-    seconds_list = [x * sampling_interval for x in range(number_samples)] * len(channel_names)
-    set_name = str(sample_info.loc['Acquisition Date and Time:'][0]).replace('/', '-').replace(' ', '_').replace(':', '-')
-
-    to_append['Sample'] = str(sample_info.loc['Sample ID:'][0])
-    to_append['Channel'] = [x for x in channel_names for i in range(number_samples)]
-    to_append['Time'] = [x/60 for x in seconds_list]
-
-    flow_rate, _ = get_flow_rate(flow_rate, filename)
-    to_append['mL'] = to_append['Time'] * flow_rate
-
-    return (to_append, set_name)
 
 def new_shim_reader(filename, channel_names = None, flow_rate = None):
     # new shimadzu tables are actually several tables separated by
