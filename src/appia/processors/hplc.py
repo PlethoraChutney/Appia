@@ -9,40 +9,97 @@ from appia.processors.gui import user_input
 from appia.parsers.user_settings import appia_settings
 
 class HplcProcessor(object):
+    """
+    The parent processor for all Appia HPLC processing. Any
+    processors should inherit from this class.
+    flow_rate:  If a float is provided to this argument, it will
+                stored in the _flow_rate attribute. This is the first
+                place the get_flow_rate() method checks.
+    df:         This attribute should return the standard dataframe.
+                Implementation of this is left to each processor, since
+                some manufacturers use multiple channels per file, etc.
+                You can do this by storing a pd.DataFrame in self._df,
+                or by storing each variable in their relevant attribute.
+    get_sample_info: this method is called during __init__, and should
+                collect all information about the sample necessary to
+                process the actual trace data
+    process_file: this method is calle during __init__ after get_sample_info()
+                and should produce the dataframe
+    """
     def __init__(self, filename, **kwargs):
         self.filename = filename
         self.manufacturer = None
         self.method = None
+        self._flow_rate = kwargs.get('flow_rate')
         self.__dict__.update(**kwargs)
+
         self.get_sample_info()
-        self._flow_rate = None
+        self.process_file()
 
     def get_sample_info(self):
         pass
 
-    def get_flow_rate(self):
-        # if it's been set for this experiment, use that
-        if self.__class__.flow_rate_override is not None:
-            self._flow_rate = self.__class__.flow_rate_override
-        # otherwise check user settings
-        elif self.method is not None and self.method in appia_settings.flow_rates:
-            self._flow_rate = appia_settings.check_flow_rate(self.method)
-        # otherwise prompt the user
+    def process_file(self):
+        pass    
+    
+    @property
+    def flow_rate(self):
+        if self._flow_rate is not None:
+            return self._flow_rate
         else:
-            while not isinstance(self._flow_rate, float):
-                try:
-                    self._flow_rate = float(input(f'Please enter a flow rate for {self.sample_name} (mL/min): '))
-                except ValueError:
-                    logging.error('Flow rate must be a number (e.g., 0.5)')
+            # if it's been set for this experiment, use that
+            if self.__class__.flow_rate_override is not None:
+                self.flow_rate = self.__class__.flow_rate_override
+            # otherwise check user settings
+            elif self.method is not None and self.method in appia_settings.flow_rates:
+                self.flow_rate = appia_settings.check_flow_rate(self.method)
+            # otherwise prompt the user
+            else:
+                while not isinstance(self._flow_rate, float):
+                    try:
+                        self.flow_rate = float(input(f'Please enter a flow rate for {self.sample_name} (mL/min): '))
+                    except ValueError:
+                        logging.error('Flow rate must be a number (e.g., 0.5)')
 
-            if input(f'Set all remaining {self.manufacturer} trace flow rates to {self._flow_rate} for this experiment? (y/n)').lower() == 'y':
-                self.__class__.flow_rate_override = self._flow_rate
-            if input(f'Save flow rate of {self._flow_rate} for all future traces using method {self.method}? (y/n)').lower() == 'y':
-                appia_settings.update_flow_rates({self.method: self._flow_rate})
-                appia_settings.save_settings()
-                print(f'Saved flow rate: {self.method} = {self._flow_rate}.\nYou can change it later using appia utils.')
+                if input(f'Set all remaining {self.manufacturer} trace flow rates to {self._flow_rate} for this experiment? (y/n)').lower() == 'y':
+                    self.__class__.flow_rate_override = self._flow_rate
+                if self.method is not None:
+                    if input(f'Save flow rate of {self._flow_rate} for all future traces using method {self.method}? (y/n)').lower() == 'y':
+                        appia_settings.update_flow_rates({self.method: self._flow_rate})
+                        appia_settings.save_settings()
+                        print(f'Saved flow rate: {self.method} = {self._flow_rate}.\nYou can change it later using appia utils.')
+            
+            return self._flow_rate
         
-        return self._flow_rate
+    @flow_rate.setter
+    def flow_rate(self, in_flow_rate:float):
+        if not isinstance(in_flow_rate, float):
+            raise TypeError
+        self._flow_rate = in_flow_rate
+    
+    @property
+    def df(self):
+        try:
+            # put the columns in a standard order
+            return self._df[[
+                'Time', 'mL', 'Channel',
+                'Sample', 'Normalization', 'Value'
+            ]]
+        except AttributeError:
+            return pd.DataFrame({
+                'Time': self.time,
+                'mL': self.ml,
+                'Channel': self.channel,
+                'Sample': self.sample,
+                'Normalization': self.normalization,
+                'Value': self.value
+            })
+        
+    @df.setter
+    def df(self, in_df):
+        if not isinstance(in_df, pd.DataFrame):
+            raise TypeError
+        self._df = in_df
             
 
 class WatersProcessor(HplcProcessor):
@@ -62,14 +119,28 @@ class WatersProcessor(HplcProcessor):
         self.channel = re.sub('2475Ch[A-D] ', '', str(sample_info.loc[0]['Channel']))
         self.set_name = str(sample_info.loc[0].get('Sample Set Name'))
         self.method = str(sample_info.loc[0].get('Instrument Method Name'))
+        
+    def process_file(self):
+        df = pd.read_csv(
+            self.filename,
+            delim_whitespace = True,
+            skiprows = 2,
+            names = ["Time", "Signal"],
+            header = None,
+            dtype = {'Time': np.float32, 'Signal': np.float32}
+        )
+        df['mL'] = df['Time'] * super().flow_rate
+        df['Sample'] = self.sample_name
+        df['Channel'] = self.channel
+        df = df.groupby(['Sample', 'Channel'], group_keys=False).apply(normalizer)
+        df = df.melt(
+            id_vars = ['mL', 'Sample', 'Channel', 'Time'],
+            value_vars = ['Signal', 'Normalized'],
+            var_name = 'Normalization',
+            value_name = 'Value'
+        )
 
-    @property
-    def flow_rate(self):
-        if self._flow_rate is not None:
-            return self._flow_rate
-        else:
-            self._flow_rate = self.get_flow_rate()
-            return self._flow_rate
+        self.df = df
 
 
 
@@ -97,66 +168,6 @@ def get_flow_rate(flow_rate, method, search = True):
             logging.error('Flow rate must be a number')
 
     return flow_rate, True
-
-
-def append_waters(file_list, flow_rate = None):
-
-    chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
-
-    for i in range(len(file_list)):
-        loading_bar(i+1, (len(file_list)), extension = ' Waters files')
-        file = file_list[i]
-        to_append = pd.read_csv(
-				file,
-				delim_whitespace = True,
-				skiprows = 2,
-				names = ["Time", "Signal"],
-				header = None,
-				dtype = {'Time': np.float32, 'Signal': np.float32}
-			)
-        if to_append.shape[0] == 0:
-            logging.warning(f'File {file} is empty. Ignoring that file.')
-            continue
-        sample_info = pd.read_csv(
-            file,
-            delim_whitespace = True,
-            nrows = 2,
-            dtype = str
-        )
-
-        # pull sample info from the headers (in a separate df since the shape
-        # is inconsistent). Then add the data
-
-        sample_name = str(sample_info.loc[0]['SampleName'])
-        channel_ID = re.sub('2475Ch[A-D] ', '', str(sample_info.loc[0]['Channel']))
-        try:
-            set_name = str(sample_info.loc[0]['Sample Set Name'])
-        except KeyError:
-            logging.error('\nNo Sample Set Name found in arw file')
-            set_name = None
-        to_append['Channel'] = channel_ID
-        to_append['Sample'] = sample_name
-
-
-        if 'Instrument Method Name' in sample_info:
-            method = str(sample_info.loc[0]['Instrument Method Name'])
-        else:
-            method = False
-        flow_rate, _ = get_flow_rate(flow_rate, method)
-
-        to_append['mL'] = to_append['Time']*flow_rate
-
-        chroms = pd.concat([chroms, to_append], ignore_index = True)
-
-    chroms = chroms.groupby(['Sample', 'Channel'], group_keys=False).apply(normalizer)
-    chroms = chroms.melt(
-        id_vars = ['mL', 'Sample', 'Channel', 'Time'],
-        value_vars = ['Signal', 'Normalized'],
-        var_name = 'Normalization',
-        value_name = 'Value'
-    )
-
-    return chroms, set_name
 
 def get_shim_data(file, channel_names = None, flow_rate = None):
     with open(file, 'r') as f:

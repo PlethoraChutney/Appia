@@ -2,6 +2,7 @@ from math import floor
 from glob import glob
 import logging
 import os
+import pandas as pd
 
 def loading_bar(current, total, extension = '', force = False):
     try:
@@ -80,7 +81,9 @@ def get_files(globs):
         'akta': akta
     }
 
-def normalizer(df, norm_range = None, strict = False):
+def normalizer(df:pd.DataFrame, norm_range = None, strict = False):
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError('df is not a pd.DataFrame')
     if not norm_range:
         norm_range = [0.5, df.mL.max()]
 
