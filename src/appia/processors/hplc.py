@@ -8,6 +8,72 @@ from appia.processors.core import loading_bar, normalizer
 from appia.processors.gui import user_input
 from appia.parsers.user_settings import appia_settings
 
+class HplcProcessor(object):
+    def __init__(self, filename, **kwargs):
+        self.filename = filename
+        self.manufacturer = None
+        self.method = None
+        self.__dict__.update(**kwargs)
+        self.get_sample_info()
+        self._flow_rate = None
+
+    def get_sample_info(self):
+        pass
+
+    def get_flow_rate(self):
+        # if it's been set for this experiment, use that
+        if self.__class__.flow_rate_override is not None:
+            self._flow_rate = self.__class__.flow_rate_override
+        # otherwise check user settings
+        elif self.method is not None and self.method in appia_settings.flow_rates:
+            self._flow_rate = appia_settings.check_flow_rate(self.method)
+        # otherwise prompt the user
+        else:
+            while not isinstance(self._flow_rate, float):
+                try:
+                    self._flow_rate = float(input(f'Please enter a flow rate for {self.sample_name} (mL/min): '))
+                except ValueError:
+                    logging.error('Flow rate must be a number (e.g., 0.5)')
+
+            if input(f'Set all remaining {self.manufacturer} trace flow rates to {self._flow_rate} for this experiment? (y/n)').lower() == 'y':
+                self.__class__.flow_rate_override = self._flow_rate
+            if input(f'Save flow rate of {self._flow_rate} for all future traces using method {self.method}? (y/n)').lower() == 'y':
+                appia_settings.update_flow_rates({self.method: self._flow_rate})
+                appia_settings.save_settings()
+                print(f'Saved flow rate: {self.method} = {self._flow_rate}.\nYou can change it later using appia utils.')
+        
+        return self._flow_rate
+            
+
+class WatersProcessor(HplcProcessor):
+    flow_rate_override = None
+    def __init__(self, filename, **kwargs):
+        super().__init__(filename, **kwargs)
+        self.manufacturer = 'Waters'
+
+    def get_sample_info(self):
+        sample_info = pd.read_csv(
+            self.filename,
+            delim_whitespace = True,
+            nrows = 2,
+            dtype = str
+        )
+        self.sample_name = str(sample_info.loc[0]['SampleName'])
+        self.channel = re.sub('2475Ch[A-D] ', '', str(sample_info.loc[0]['Channel']))
+        self.set_name = str(sample_info.loc[0].get('Sample Set Name'))
+        self.method = str(sample_info.loc[0].get('Instrument Method Name'))
+
+    @property
+    def flow_rate(self):
+        if self._flow_rate is not None:
+            return self._flow_rate
+        else:
+            self._flow_rate = self.get_flow_rate()
+            return self._flow_rate
+
+
+
+
 def get_flow_rate(flow_rate, method, search = True):
     # If user provides in argument we don't need to do this
     #
