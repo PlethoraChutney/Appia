@@ -18,6 +18,8 @@ class HplcProcessor(object):
     df:         This attribute should return the standard dataframe.
                 Implementation of this is left to each processor, since
                 some manufacturers use multiple channels per file, etc.
+    claim_file: this class method should return True if the processor
+                thinks it is capable of processing a file and False otherwise
     prepare_sample: this method is called during __init__, and should
                 collect all information about the sample necessary to
                 process the actual trace data
@@ -29,20 +31,24 @@ class HplcProcessor(object):
         self.filename = filename
         self.manufacturer = None
         self.method = None
-        self._flow_rate = kwargs.get('flow_rate')
+        self.flow_rate = kwargs.get('flow_rate')
         self.__dict__.update(**kwargs)
 
         self.prepare_sample()
         self.process_file()
 
+    @classmethod
+    def claim_file(cls, filename):
+        pass
+
     def prepare_sample(self):
         pass
 
     def process_file(self):
-        pass    
+        pass
     
     @property
-    def flow_rate(self):
+    def flow_rate(self) -> float:
         if self._flow_rate is not None:
             return self._flow_rate
         else:
@@ -71,13 +77,14 @@ class HplcProcessor(object):
             return self._flow_rate
         
     @flow_rate.setter
-    def flow_rate(self, in_flow_rate:float):
-        if not isinstance(in_flow_rate, float):
+    def flow_rate(self, in_flow_rate:float|None):
+        if isinstance(in_flow_rate, float) or in_flow_rate is None:
+            self._flow_rate = in_flow_rate
+        else:
             raise TypeError
-        self._flow_rate = in_flow_rate
     
     @property
-    def df(self):
+    def df(self) -> pd.DataFrame:
         # put the columns in a standard order
         return self._df[[
             'Time', 'mL', 'Channel',
@@ -85,18 +92,22 @@ class HplcProcessor(object):
         ]]
         
     @df.setter
-    def df(self, in_df):
+    def df(self, in_df:pd.DataFrame):
         if not isinstance(in_df, pd.DataFrame):
             raise TypeError
         self._df = in_df
             
 
 class WatersProcessor(HplcProcessor):
-    def __init__(self, filename, **kwargs):
+    def __init__(self, filename:str, **kwargs):
         super().__init__(filename, **kwargs)
         self.manufacturer = 'Waters'
 
-    def prepare_sample(self):
+    @classmethod
+    def claim_file(cls, filename) -> bool:
+        return filename[-4:] == '.arw'
+
+    def prepare_sample(self) -> None:
         sample_info = pd.read_csv(
             self.filename,
             delim_whitespace = True,
@@ -108,7 +119,7 @@ class WatersProcessor(HplcProcessor):
         self.set_name = str(sample_info.loc[0].get('Sample Set Name'))
         self.method = str(sample_info.loc[0].get('Instrument Method Name'))
         
-    def process_file(self):
+    def process_file(self) -> None:
         df = pd.read_csv(
             self.filename,
             delim_whitespace = True,
@@ -136,7 +147,11 @@ class OldShimProcessor(HplcProcessor):
         super().__init__(filename, **kwargs)
         self.manufacturer = 'Shimadzu'
 
-    def prepare_sample(self):
+    @classmethod
+    def claim_file(cls, filename:str) -> bool:
+        return filename[-4:] == '.asc'
+
+    def prepare_sample(self) -> None:
         with open(self.filename, 'r') as f:
             lines = [x.rstrip() for x in f]
 
@@ -163,7 +178,7 @@ class OldShimProcessor(HplcProcessor):
         self.signal_column = [float(line)]
         self.signal_column.extend([float(x) for x in lines])
 
-    def process_file(self):
+    def process_file(self) -> None:
         time_column = []
         for i in range(len(self.data_points)):
             time_column.extend([x * self.sampling_rate[i] for x in range(self.data_points[i])])
@@ -190,14 +205,21 @@ class OldShimProcessor(HplcProcessor):
 
         self.df = df
 
-def get_shim_data(file, channel_names = None, flow_rate = None):
-    with open(file, 'r') as f:
-        first_line = f.readline().strip()
+class NewShimProcessor(HplcProcessor):
+    def __init__(self, filename, **kwargs):
+        super().__init__(filename, **kwargs)
+        self.manufacturer = 'Shimadzu'
 
-    if first_line == '[Header]':
-        return new_shim_reader(file, channel_names, flow_rate)
-    else:
-        return old_shim_reader(file, channel_names, flow_rate)
+    @classmethod
+    def claim_file(cls, filename:str) -> bool:
+        if filename[-4:] != '.txt':
+            return False
+        
+        with open(filename, 'r') as f:
+            first_line = f.readline().rstrip()
+
+        return first_line == '[Header]'
+
 
 def new_shim_reader(filename, channel_names = None, flow_rate = None):
     # new shimadzu tables are actually several tables separated by
