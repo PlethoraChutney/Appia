@@ -164,6 +164,8 @@ class OldShimProcessor(HplcProcessor):
                 self.sample_name = line[1]
             elif line[0] == 'Method:':
                 self.method = line[1].split('\\')[-1]
+            elif line[0] == 'Acquisition Date and Time:':
+                self.set_name = line[1].split()[0]
             elif line[0] == 'Sampling Rate:':
                 # final entry in line is the units
                 self.sampling_rate = [float(x) for x in line[1:-1]]
@@ -219,6 +221,109 @@ class NewShimProcessor(HplcProcessor):
             first_line = f.readline().rstrip()
 
         return first_line == '[Header]'
+    
+    def prepare_sample(self) -> None:
+        # parse file into its constituent tables
+        with open(self.filename, 'r') as f:
+            tables = {}
+            curr_table = False
+            for line in f:
+                table_header_match = re.match(r'\[(.*)\]', line)
+                if table_header_match:
+                    curr_table = table_header_match.group(1).strip()
+                else:
+                    if curr_table not in tables:
+                        tables[curr_table] = [line]
+                    else:
+                        tables[curr_table].append(line)
+
+        # get sample name
+        for line in tables['Sample Information']:
+            if 'Sample Name' in line:
+                self.sample_name = line.strip().split('\t')[1]
+            elif 'Sample ID' in line:
+                try:
+                    self.sample_id = line.strip().split('\t')[1]
+                except IndexError:
+                    self.sample_id = ''
+        
+        # correct for duplicate sample names
+        if self.sample_name != self.sample_id and self.sample_id != '':
+            self.sample_name = self.sample_name + "_" + self.sample_id
+        else:
+            self.sample_name = self.sample_name
+
+        # Get sample set name
+        for line in tables['Original Files']:
+            if 'Method File' in line:
+                method_path = line.strip().split('\t')[1]
+                self.method = method_path.split('\\')[-1]
+            if 'Batch File' in line:
+                batch_path = line.strip().split('\t')[1]
+        self.set_name = os.path.split(batch_path)[1][:-4]
+
+
+        # Get detectors and channels
+        for line in tables['Configuration']:
+            if 'Detector ID' in line:
+                self.detectors = line.strip().split('\t')[1:]
+            elif 'Detector Name' in line:
+                self.channels = line.strip().split('\t')[1:]
+
+        self.det_to_channel = {}
+        for i in range(len(self.detectors)):
+            self.det_to_channel[self.detectors[i]] = self.channels[i]
+
+        # Get all chromatograms
+        self.chroms = []
+        for key in tables:
+            if re.match('LC Chromatogram', key):
+                self.chroms.append(tables[key])
+
+    def process_file(self) -> None:
+        processed_tables = []
+        channel_index = -1
+        for chrom in self.chroms:
+            channel_index += 1
+            info_lines = chrom[:15]
+            info = {}
+            info_patterns = {
+                'interval': 'Interval(msec)',
+                'num_samples': '# of Points',
+                'ex': r'Ex\. Wavelength',
+                'em': r'Em\. Wavelength'
+            }
+            for key in info_patterns:
+                for line in info_lines:
+                    if re.match(info_patterns[key], line):
+                        info[key] = line.strip().split('\t')[1]
+                    elif re.match(r'R\.Time', line):
+                        skip = info_lines.index(line) + 1
+            
+            df = pd.read_csv(
+                StringIO(''.join(chrom)),
+                sep = '\t',
+                skiprows = skip,
+                names = ['Time', 'Signal']
+            )
+            if 'ex' in info:
+                df['Channel'] = f'Ex:{info["ex"]}/Em:{info["em"]}'
+            else:
+                df['Channel'] = self.channels[channel_index]
+            df['Sample'] = self.sample_name
+            
+            df['mL'] = df['Time'] * self.flow_rate
+            processed_tables.append(df)
+
+        df = pd.concat(processed_tables)
+        df = df.groupby(['Sample', 'Channel'], group_keys=False).apply(normalizer)
+        df = df.melt(
+            id_vars = ['mL', 'Sample', 'Channel', 'Time'],
+            value_vars = ['Signal', 'Normalized'],
+            var_name = 'Normalization',
+            value_name = 'Value'
+        )
+        self.df = df
 
 
 def new_shim_reader(filename, channel_names = None, flow_rate = None):

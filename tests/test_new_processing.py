@@ -70,6 +70,27 @@ class TestProcessing(unittest.TestCase):
         self.assertEqual(min(norm.Value), 0)
         self.assertEqual(max(norm.Value), 1)
 
+    def test_new_shim(self):
+        shim_file = os.path.join(
+            appia_dir, 'test-files', 'new-shim-1.txt'
+        )
+        results = hplc.NewShimProcessor(
+            shim_file,
+            flow_rate = 0.5
+        )
+
+        df = results.df
+        self.assertEqual(df.shape, (14406, 6))
+        self.assertEqual(df.Sample[0], 'Tommy-S-1-031022')
+        self.assertAlmostEqual(sum(df.Value), 507623541.7662889)
+
+        channels = set(df.Channel)
+        self.assertEqual(channels, {'UV', 'Ex:280/Em:330', 'Ex:494/Em:520'})
+
+        norm = df.loc[df['Normalization'] == 'Normalized']
+        self.assertEqual(min(norm.Value), 0)
+        self.assertEqual(max(norm.Value), 1)
+
     def test_agilent(self):
         ag_file = os.path.join(
             appia_dir, 'test-files', 'NAI-A594_0H_RT_Channel540Flow1.0.CSV'
