@@ -103,7 +103,7 @@ class WatersProcessor(HplcProcessor):
     def __init__(self, filename:str, **kwargs):
         super().__init__(
             filename,
-            manufactrer = 'Waters',
+            manufacturer = 'Waters',
             **kwargs
         )
 
