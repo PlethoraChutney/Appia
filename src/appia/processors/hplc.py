@@ -29,8 +29,8 @@ class HplcProcessor(object):
     def __init__(self, filename, **kwargs):
         self.__class__.flow_rate_override = None
         self.filename = filename
-        self.manufacturer = None
-        self.method = None
+        self.manufacturer = kwargs.get('manufacturer')
+        self.method = kwargs.get('method')
         self.flow_rate = kwargs.get('flow_rate')
         self.__dict__.update(**kwargs)
 
@@ -52,6 +52,7 @@ class HplcProcessor(object):
         if self._flow_rate is not None:
             return self._flow_rate
         else:
+            print(f'Self flow rate: {self._flow_rate}')
             # if it's been set for this experiment, use that
             if self.__class__.flow_rate_override is not None:
                 self.flow_rate = self.__class__.flow_rate_override
@@ -78,10 +79,10 @@ class HplcProcessor(object):
         
     @flow_rate.setter
     def flow_rate(self, in_flow_rate:float|None):
-        if isinstance(in_flow_rate, float) or in_flow_rate is None:
-            self._flow_rate = in_flow_rate
+        if in_flow_rate is None:
+            self._flow_rate = None
         else:
-            raise TypeError
+            self._flow_rate = float(in_flow_rate)
     
     @property
     def df(self) -> pd.DataFrame:
@@ -100,8 +101,11 @@ class HplcProcessor(object):
 
 class WatersProcessor(HplcProcessor):
     def __init__(self, filename:str, **kwargs):
-        super().__init__(filename, **kwargs)
-        self.manufacturer = 'Waters'
+        super().__init__(
+            filename,
+            manufactrer = 'Waters',
+            **kwargs
+        )
 
     @classmethod
     def claim_file(cls, filename) -> bool:
@@ -144,8 +148,11 @@ class WatersProcessor(HplcProcessor):
 class OldShimProcessor(HplcProcessor):
     def __init__(self, filename, **kwargs):
         self.channel_dict = kwargs.get('channel_dict', {})
-        super().__init__(filename, **kwargs)
-        self.manufacturer = 'Shimadzu'
+        super().__init__(
+            filename,
+            manufacturer = 'Shimadzu',
+            **kwargs
+        )
 
     @classmethod
     def claim_file(cls, filename:str) -> bool:
@@ -209,8 +216,11 @@ class OldShimProcessor(HplcProcessor):
 
 class NewShimProcessor(HplcProcessor):
     def __init__(self, filename, **kwargs):
-        super().__init__(filename, **kwargs)
-        self.manufacturer = 'Shimadzu'
+        super().__init__(
+            filename,
+            manufacturer = 'Shimadzu',
+            **kwargs
+        )
 
     @classmethod
     def claim_file(cls, filename:str) -> bool:
@@ -300,12 +310,18 @@ class NewShimProcessor(HplcProcessor):
                     elif re.match(r'R\.Time', line):
                         skip = info_lines.index(line) + 1
             
-            df = pd.read_csv(
-                StringIO(''.join(chrom)),
-                sep = '\t',
-                skiprows = skip,
-                names = ['Time', 'Signal']
-            )
+            try:
+                df = pd.read_csv(
+                    StringIO(''.join(chrom)),
+                    sep = '\t',
+                    skiprows = skip,
+                    names = ['Time', 'Signal']
+                )
+            except NameError:
+                # if `skip` is unbound, we should fail to read this file
+                logging.error(f'Failed to read {self.filename}')
+                return
+            
             if 'ex' in info:
                 df['Channel'] = f'Ex:{info["ex"]}/Em:{info["em"]}'
             else:
@@ -325,205 +341,114 @@ class NewShimProcessor(HplcProcessor):
         )
         self.df = df
 
+class AgilentProcessor(HplcProcessor):
+    # Agilent files have basically no metadata,
+    # so we need to provide a mechanism similar to our
+    # flow-rate solution.
+    channel_override = None
+    channel_pattern = r'_Channel(.*?)[_.]'
+    # tricky one. Gotta use the lookahead so we don't match a
+    # dot that's part of the flow.
+    flow_pattern = r'_Flow([0-9]*?\.[0-9]*?)?(_|\.(?![0-9]))'
 
-def new_shim_reader(filename, channel_names = None, flow_rate = None):
-    # new shimadzu tables are actually several tables separated by
-    # headers, which are in the format `[header]`
-    to_append = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample', 'mL'])
-
-    with open(filename, 'r') as f:
-        tables = {}
-        curr_table = False
-        for line in f:
-            if re.match('\[.*\]', line):
-                curr_table = line.replace('[', '').replace(']', '').strip()
-            else:
-                if curr_table not in tables:
-                    tables[curr_table] = [line]
-                else:
-                    tables[curr_table].append(line)
-
-        # Get sample name
-        for line in tables['Sample Information']:
-            if 'Sample Name' in line:
-                sample_name = line.strip().split('\t')[1]
-            elif 'Sample ID' in line:
-                try:
-                    sample_id = line.strip().split('\t')[1]
-                except IndexError:
-                    sample_id = ''
+    def __init__(self, filename, **kwargs):
+        self._channel = None
         
-
-
-        if sample_name != sample_id and sample_id != '':
-            sample = sample_name + "_" + sample_id
+        flow_match = re.search(
+            AgilentProcessor.flow_pattern,
+            filename
+        )
+        if flow_match:
+            flow_rate = float(flow_match.group(1))
         else:
-            sample = sample_name
-        logging.debug(sample)
-
-        # Get sample set name
-        for line in tables['Original Files']:
-            if 'Batch File' in line:
-                batch_path = line.strip().split('\t')[1]
-        logging.debug(batch_path)
-        sample_set = os.path.split(batch_path)[1][:-4]
-
-
-        # Get detectors and channels
-        for line in tables['Configuration']:
-            if 'Detector ID' in line:
-                detectors = line.strip().split('\t')[1:]
-            elif 'Detector Name' in line:
-                channels = line.strip().split('\t')[1:]
-
-        det_to_channel = {}
-        for i in range(len(detectors)):
-            det_to_channel[detectors[i]] = channels[i]
-
-        # Get all chromatograms
-        chroms = []
-        for key in tables:
-            if re.match('LC Chromatogram', key):
-                chroms.append(tables[key])
-
-        channel_index = -1
-        for chrom in chroms:
-            channel_index += 1
-            info_lines = chrom[:15]
-            info = {}
-            info_patterns = {
-                'interval': 'Interval(msec)',
-                'num_samples': '# of Points',
-                'ex': 'Ex\. Wavelength',
-                'em': 'Em\. Wavelength'
-            }
-            for key in info_patterns:
-                for line in info_lines:
-                    if re.match(info_patterns[key], line):
-                        info[key] = line.strip().split('\t')[1]
-                    elif re.match('R\.Time', line):
-                        skip = info_lines.index(line) + 1
-            
-            df = pd.read_csv(
-                StringIO(''.join(chrom)),
-                sep = '\t',
-                skiprows = skip,
-                names = ['Time', 'Signal']
-            )
-            if 'ex' in info:
-                df['Channel'] = f'Ex:{info["ex"]}/Em:{info["em"]}'
-            else:
-                df['Channel'] = channels[channel_index]
-            df['Sample'] = sample
-            
-            to_append = pd.concat([to_append, df], ignore_index=True, sort = True)
-            to_append['mL'] = to_append['Time'] * flow_rate
-
-        return(to_append, sample_set)
-
-def append_shim(file_list, channel_mapping, flow_rate = None):
-    chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
-
-    channel_names = list(channel_mapping.keys())
-    flow_rate, _ = get_flow_rate(flow_rate, 'Shimadzu Traces', search = False)
-
-    for i in range(len(file_list)):
-
-        loading_bar(i+1, (len(file_list)), extension = ' Shimadzu files')
-        file = file_list[i]
-
-        to_append, set_name = get_shim_data(file, channel_names, flow_rate)
-
-        chroms = pd.concat([chroms, to_append], ignore_index = True, sort = True)
-
-    chroms = chroms[['Time', 'Signal', 'Channel', 'Sample', 'mL']]
-    chroms = chroms.replace(channel_mapping)
-
-    chroms = chroms.groupby(['Sample', 'Channel'], group_keys=False).apply(normalizer)
-    chroms = chroms.melt(
-        id_vars = ['mL', 'Sample', 'Channel', 'Time'],
-        value_vars = ['Signal', 'Normalized'],
-        var_name = 'Normalization',
-        value_name = 'Value'
-    )
-
-    return chroms, set_name
-
-def append_agilent(file_list, flow_override = None, channel_override = None):
-    chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample', 'mL'])
-
-    if channel_override:
-        channel = channel_override
-    else:
-        channel = False
-
-    for i in range(len(file_list)):
-
-        loading_bar(i+1, (len(file_list)), extension = ' Agilent files')
-        filename = file_list[i]
-
-        to_append = pd.read_csv(
+            flow_rate = None
+        super().__init__(
             filename,
+            manufacturer = 'Agilent',
+            flow_rate = flow_rate,
+            **kwargs
+        )
+
+
+    @classmethod
+    def claim_file(cls, filename):
+        if filename[-4:] != '.csv':
+            return False
+        
+        with open(filename, 'r') as f:
+            line = f.readline().rstrip()
+
+        try:
+            # if the first cell is a number, it's an
+            # Agilent file. Otherwise it's not. EZPZ.
+            _ = float(line.split()[0])
+            return True
+        except TypeError:
+            return False
+
+    @property
+    def channel(self) -> str:
+        if self._channel is not None:
+            return self._channel
+        if AgilentProcessor.channel_override is not None:
+            return AgilentProcessor.channel_override
+        
+        # also match a dot in case it's at the end of the file
+        channel_match = re.search(AgilentProcessor.channel_pattern, self.filename)
+        if channel_match:
+            self.channel = channel_match.group(1)
+            return self._channel
+        
+        else:
+            self.channel = input(f'Please enter a channel name for {self.filename}: ')
+            print('To avoid entering manually in the future, include the channel in the filename like so:')
+            print('{filename}_Channel{channel name}_{rest of filename}.csv')
+
+            if input(f'Set channel for all following Agilent files in this experiment to {self._channel}? (y/n) ').lower() == 'y':
+                AgilentProcessor.channel_override = self._channel
+
+            return self._channel
+        
+    @channel.setter
+    def channel(self, new_channel:str) -> None:
+        self._channel = str(new_channel)
+
+    def prepare_sample(self):
+        just_file = os.path.split(self.filename)[1]
+        self.sample_name = re.sub(
+            AgilentProcessor.channel_pattern,
+            # replace with _ for future regex patterns to match
+            '_',
+            # keep dot in filename in case channel_pattern
+            # needs to match it
+            just_file[:-3]
+        )
+        self.sample_name = re.sub(
+            AgilentProcessor.flow_pattern,
+            '_',
+            self.sample_name
+        )
+        if self.sample_name[-1] in ['.', '_']:
+            self.sample_name = self.sample_name[:-1]
+
+    def process_file(self):
+        df = pd.read_csv(
+            self.filename,
             sep = '\t',
             names = ['Time', 'Signal'],
             engine = 'python',
-            encoding = 'utf_16'
+            encoding='utf-16'
+        )
+        df['mL'] = df.Time * self.flow_rate
+        df['Channel'] = self.channel
+        df['Sample'] = self.sample_name
+
+        df = df.groupby(['Sample', 'Channel'], group_keys=False).apply(normalizer)
+        df = df.melt(
+            id_vars = ['mL', 'Sample', 'Channel', 'Time'],
+            value_vars = ['Signal', 'Normalized'],
+            var_name = 'Normalization',
+            value_name = 'Value'
         )
 
-        filename = os.path.split(filename)[1]
-        sample_name = filename.replace('.CSV', '').replace('_RT', '')
-
-
-        # Channel
-        if not channel_override:
-            channel = False
-        else:
-            channel = channel_override
-        
-        if not channel:
-            channel_reg = r'Channel[0-9]{3}'
-            channel_search = re.search(channel_reg, sample_name)
-            if channel_search:
-                sample_name = re.sub(channel_reg, '', sample_name)
-                try:
-                    # pull the last three characters of the matching regex and check if they're an int
-                    channel = channel_search.group(0)[-3:]
-                    int(channel)
-                except ValueError:
-                    logging.debug(f'Bad channel pattern in file {filename}: {channel}')
-                    channel = False
-            
-            if not channel:
-                channel = user_input(f'Please provide a channel name for {filename}:\n')
-                if user_input(f'Set channel to "{channel}" for remaining Agilent files? Y/N\n').lower() == 'y':
-                    channel_override = channel
-        to_append['Channel'] = channel
-
-
-        # Flow rate
-        if not flow_override:
-            flow_rate = False
-        else:
-            flow_rate = flow_override
-
-        if not flow_rate:
-            flow_rate, manual_input = get_flow_rate(flow_rate, filename)
-            if manual_input and input(f'Set remaining flow rates to {flow_rate}? ').lower() == 'y':
-                flow_override = flow_rate
-            
-        to_append['mL'] = to_append['Time'] * flow_rate
-
-        # Set sample name down here so that flow and channel information have been removed
-        to_append['Sample'] = sample_name
-
-        chroms = pd.concat([chroms, to_append], ignore_index = True, sort = True)
-        
-    chroms = chroms.groupby(['Sample', 'Channel'], group_keys=False).apply(normalizer)
-    chroms = chroms.melt(
-        id_vars = ['mL', 'Sample', 'Channel', 'Time'],
-        value_vars = 'Signal',
-        var_name = 'Normalization',
-        value_name = 'Value'
-    )
-
-    return chroms
+        self.df = df

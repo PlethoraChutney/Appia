@@ -16,7 +16,7 @@ class TestProcessing(unittest.TestCase):
         found_files = appia.processors.core.get_files(test_files_glob)
 
         self.assertEqual(len(found_files['waters']), 27)
-        self.assertEqual(len(found_files['shimadzu']), 7)
+        self.assertEqual(len(found_files['shimadzu']), 11)
         self.assertEqual(len(found_files['agilent']), 3)
         self.assertEqual(len(found_files['akta']), 1)
 
@@ -93,19 +93,24 @@ class TestProcessing(unittest.TestCase):
 
     def test_agilent(self):
         ag_file = os.path.join(
-            appia_dir, 'test-files', 'NAI-A594_0H_RT_Channel540Flow1.0.CSV'
+            appia_dir, 'test-files', 'NAI-A594_0H_RT_Channel540_Flow1.0.CSV'
         )
 
-        results = hplc.append_agilent([ag_file], 0.5, 'GFP')
-        self.assertEqual(results.shape[0], 26400)
-        self.assertEqual(results.shape[1], 6)
-        self.assertEqual(results.Sample[0], 'NAI-A594_0H_Channel540Flow1.0')
-        self.assertAlmostEqual(sum(results['Value']), 37618.857383728035)
+        results = hplc.AgilentProcessor(ag_file)
+        self.assertEqual(results.channel, '540')
+        self.assertEqual(results.flow_rate, 1)
 
-        channels = set(results.Channel)
-        self.assertEqual(channels, {'GFP'})
+        df = results.df
+        self.assertEqual(df.shape, (52800, 6))
+        self.assertEqual(df.Sample[0], 'NAI-A594_0H_RT')
+        self.assertAlmostEqual(sum(df.Value), 37860.58000314166)
 
-        # turns out agilent normalization is broken
+        channels = set(df.Channel)
+        self.assertEqual(channels, {'540'})
+
+        norm = df.loc[df['Normalization'] == 'Normalized']
+        self.assertEqual(min(norm.Value), 0)
+        self.assertEqual(max(norm.Value), 1)
 
 
 if __name__ == '__main__':
