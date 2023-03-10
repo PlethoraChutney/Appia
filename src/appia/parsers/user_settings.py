@@ -50,6 +50,20 @@ class AppiaSettings(object):
 
         return None
     
+    # FPLC column volumes
+
+    @property
+    def default_column_volume(self):
+        return self._user_settings.get('default_column_volume')
+
+    @default_column_volume.setter
+    def default_column_volume(self, cv):
+        if isinstance(cv, float) or cv is None:
+            self._user_settings['default_column_volume'] = cv
+            self.save_settings()
+        else:
+            raise TypeError('Column volume must be a number')
+    
     # Database -------------------------------------------------------------
 
     @property

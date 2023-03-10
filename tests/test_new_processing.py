@@ -1,7 +1,7 @@
 import unittest
 import os
 import appia
-from appia.processors import hplc
+from appia.processors import hplc, fplc
 
 
 appia_dir = os.path.split(
@@ -108,6 +108,23 @@ class TestProcessing(unittest.TestCase):
         channels = set(df.Channel)
         self.assertEqual(channels, {'540'})
 
+        norm = df.loc[df['Normalization'] == 'Normalized']
+        self.assertEqual(min(norm.Value), 0)
+        self.assertEqual(max(norm.Value), 1)
+
+    def test_akta(self):
+        akta_file = os.path.join(
+            appia_dir, 'test-files', '2018_0821SEC_detergentENaC.csv'
+        )
+
+        results = fplc.AktaProcessor(akta_file, column_volume = 24)
+        df = results.df
+
+        self.assertEqual(df.shape, (87002, 7))
+        self.assertEqual(df.Sample[0], '2018_0821SEC_detergentENaC')
+        self.assertAlmostEqual(sum(df.Value), 1062056.7151461844)
+        self.assertEqual(set(df.Channel), {'mS/cm', 'mAU', '%'})
+        
         norm = df.loc[df['Normalization'] == 'Normalized']
         self.assertEqual(min(norm.Value), 0)
         self.assertEqual(max(norm.Value), 1)

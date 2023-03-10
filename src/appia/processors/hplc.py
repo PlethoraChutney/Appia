@@ -27,7 +27,11 @@ class HplcProcessor(object):
     """
     def __init__(self, filename, **kwargs):
         if not hasattr(self.__class__, 'flow_rate_override'):
+            # don't want to reset this every time we instantiate
+            # a processor, but I also don't want to add it at the
+            # beginning of every class definition
             self.__class__.flow_rate_override = None
+        self.proc_type = 'hplc'
         self.filename = filename
         self.manufacturer = kwargs.get('manufacturer')
         self.method = kwargs.get('method')
