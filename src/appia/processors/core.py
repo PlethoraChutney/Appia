@@ -22,6 +22,20 @@ def loading_bar(current, total, extension = '', force = False):
         if current == total:
             print()
 
+def process_globs(globs):
+    globbed_files = []
+    
+    if isinstance(globs, str):
+        globbed_files.extend(glob(globs))
+    else:
+        for pattern in globs:
+            globbed_files.extend(glob(pattern))
+
+    logging.debug(f'Globbed files: {globbed_files}')
+
+    return globbed_files
+
+
 def get_files(globs):
     globbed_files = []
     

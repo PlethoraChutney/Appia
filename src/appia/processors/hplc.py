@@ -26,15 +26,21 @@ class HplcProcessor(object):
                 and should produce the dataframe
     """
     def __init__(self, filename, **kwargs):
-        self.__class__.flow_rate_override = None
+        if not hasattr(self.__class__, 'flow_rate_override'):
+            self.__class__.flow_rate_override = None
         self.filename = filename
         self.manufacturer = kwargs.get('manufacturer')
         self.method = kwargs.get('method')
         self.flow_rate = kwargs.get('flow_rate')
         self.__dict__.update(**kwargs)
 
-        self.prepare_sample()
-        self.process_file()
+        if self.claim_file(filename):
+            logging.debug(f'{self.manufacturer} claims {filename}')
+            self.claimed = True
+            self.prepare_sample()
+            self.process_file()
+        else:
+            self.claimed = False
 
     @classmethod
     def claim_file(cls, filename):
@@ -48,10 +54,10 @@ class HplcProcessor(object):
     
     @property
     def flow_rate(self) -> float:
+        logging.debug(f'Flow rate info: self: {self._flow_rate}, override: {self.__class__.flow_rate_override}')
         if self._flow_rate is not None:
             return self._flow_rate
         else:
-            print(f'Self flow rate: {self._flow_rate}')
             # if it's been set for this experiment, use that
             if self.__class__.flow_rate_override is not None:
                 self.flow_rate = self.__class__.flow_rate_override
@@ -108,7 +114,7 @@ class WatersProcessor(HplcProcessor):
 
     @classmethod
     def claim_file(cls, filename) -> bool:
-        return filename[-4:] == '.arw'
+        return filename[-4:].lower() == '.arw'
 
     def prepare_sample(self) -> None:
         sample_info = pd.read_csv(
@@ -155,7 +161,7 @@ class OldShimProcessor(HplcProcessor):
 
     @classmethod
     def claim_file(cls, filename:str) -> bool:
-        return filename[-4:] == '.asc'
+        return filename[-4:].lower() == '.asc'
 
     def prepare_sample(self) -> None:
         with open(self.filename, 'r') as f:
@@ -165,7 +171,6 @@ class OldShimProcessor(HplcProcessor):
         while ':' in line:
             line = line.split('\t')
 
-            print(line)
             if line[0] == 'Sample ID:':
                 self.sample_name = line[1]
             elif line[0] == 'Method:':
@@ -223,7 +228,7 @@ class NewShimProcessor(HplcProcessor):
 
     @classmethod
     def claim_file(cls, filename:str) -> bool:
-        if filename[-4:] != '.txt':
+        if filename[-4:].lower() != '.txt':
             return False
         
         with open(filename, 'r') as f:
@@ -371,10 +376,10 @@ class AgilentProcessor(HplcProcessor):
 
     @classmethod
     def claim_file(cls, filename):
-        if filename[-4:] != '.csv':
+        if filename[-4:].lower() != '.csv':
             return False
         
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-16') as f:
             line = f.readline().rstrip()
 
         try:
@@ -382,7 +387,7 @@ class AgilentProcessor(HplcProcessor):
             # Agilent file. Otherwise it's not. EZPZ.
             _ = float(line.split()[0])
             return True
-        except TypeError:
+        except ValueError:
             return False
 
     @property

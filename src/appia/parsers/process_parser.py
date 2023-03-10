@@ -8,8 +8,24 @@ from appia.plotters import auto_plot
 from appia.processors.gui import user_input
 
 def main(args):
-    file_list = core.get_files(args.files)
-    logging.debug(file_list)
+    file_list = core.process_globs(args.files)
+    num_files = len(file_list)
+    processors = hplc.HplcProcessor.__subclasses__()
+    processed_files = []
+
+    for i, filename in enumerate(file_list):
+        core.loading_bar(i + 1, num_files)
+        claimed = [Proc(filename) for Proc in processors]
+        claimed = [x for x in claimed if x.claimed]
+        if len(claimed) != 1:
+            logging.error(f'{filename} claimed by multiple processors. Skipping.')
+        else:
+            processed_files.append(claimed[0])
+
+    print(processed_files)
+    sys.exit()
+    # for filename, claimed in claimed_files.items():
+
 
     # Make Experiment ------------------------------------------------------------
     if args.id:
