@@ -5,7 +5,6 @@ import os
 import logging
 import re
 from appia.processors.core import loading_bar, normalizer
-from appia.processors.gui import user_input
 from appia.parsers.user_settings import appia_settings
 
 class HplcProcessor(object):
