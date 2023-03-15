@@ -16,7 +16,7 @@ services:
   appia:
     depends_on:
       - couchdb
-    image: plethorachutney/appia:latest
+    image: plethorachutney/appia:${APPIA_ARCH}latest
     container_name: appia-web
     ports:
       - 8080:8080
