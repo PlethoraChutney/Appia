@@ -11,7 +11,7 @@ If you find Appia useful in your research, please [cite it](https://dx.doi.org/1
 ## Installation 👷
 ### Server installation 
 1. Install [docker](https://www.docker.com/)
-2. Copy `docker-compose.yml` wherever you want the database to save data
+2. Copy `docker-compose.yml` and `local.ini` wherever you want the database to save data
 3. If you're installing Appia Web on an Apple Silicon Mac, set $APPIA_ARCH to "arm64-"
 3. Set the $COUCHDB_USER and $COUCHDB_PASSWORD environment variables (**in your environment!**)
 4. Run `docker-compose up` in the same directory as docker-compose.yml
