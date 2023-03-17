@@ -278,38 +278,111 @@ class NewShimProcessor(HplcProcessor):
                 self.method = method_path.split('\\')[-1]
             if 'Batch File' in line:
                 batch_path = line.strip().split('\t')[1]
-        self.set_name = os.path.split(batch_path)[1][:-4]
-
-
-        # Get detectors and channels
-        for line in tables['Configuration']:
-            if 'Detector ID' in line:
-                self.detectors = line.strip().split('\t')[1:]
-            elif 'Detector Name' in line:
-                self.channels = line.strip().split('\t')[1:]
-
-        self.det_to_channel = {}
-        for i in range(len(self.detectors)):
-            self.det_to_channel[self.detectors[i]] = self.channels[i]
+                self.set_name = os.path.split(batch_path)[1][:-4]
 
         # Get all chromatograms
-        self.chroms = []
+        self.chroms = {}
         for key in tables:
             if re.match('LC Chromatogram', key):
-                self.chroms.append(tables[key])
+                chrom_channel = re.search(
+                    r'Chromatogram\((.*?)\)',
+                    key
+                )
+                self.chroms[chrom_channel.group(1)] = tables[key]
+
+        # Get detectors and channels
+        # - First, read through the config table to get detector
+        # - default channel names.
+
+        for line in tables['Configuration']:
+            if 'Detector ID' in line:
+                detectors = line.strip().split('\t')[1:]
+            elif 'Detector Name' in line:
+                channels = line.strip().split('\t')[1:]
+
+        default_det_to_channel = {}
+        for i in range(len(detectors)):
+            default_det_to_channel[detectors[i]] = channels[i]
+
+        # . Next, read through the data tables to get the
+        # . detector channels if they're specified there.
+        # . One detector can have multiple channels, so that's
+        # . why we have to do this
+
+        detector_channel_pairs = {}
+        for detector, table in self.chroms.items():
+            excitation = None
+            emission = None
+
+            row_number = 0
+            line = table[row_number]
+            while 'R.Time' not in line:
+                if 'Ex.' in line:
+                    excitation = line.rstrip().split('\t')[-1]
+                if 'Em.' in line:
+                    emission = line.rstrip().split('\t')[-1]
+                row_number += 1
+                line = table[row_number]
+
+            if excitation is not None and emission is not None:
+                channel = f'Ex:{excitation}/Em:{emission}'
+            else:
+                channel = default_det_to_channel[detector]
+
+            detector_channel_pairs[detector] = channel
+
+        # - Now, check if any channels are duplicates of each other
+        # - and have the user resolve duplicates if they exist
+
+        if len(set(detector_channel_pairs.values())) != len(detector_channel_pairs.values()):
+            logging.warning('Duplicate channels detected: ')
+
+            counter = {}
+            for channel in detector_channel_pairs.values():
+                try:
+                    counter[channel] += 1
+                except KeyError:
+                    counter[channel] = 1
+            
+            duplicate_channels = [x for x in counter.keys() if counter[x] > 1]
+
+            # user selection
+            for dup in duplicate_channels:
+                duped_detectors = []
+                for detector, channel in detector_channel_pairs.items():
+                    if channel == dup:
+                        duped_detectors.append(detector)
+
+                print(f'Select a detector for {dup}. Any non-numeric choice will default to 0.')
+                for i in range(len(duped_detectors)):
+                    print(f'{i}: {duped_detectors[i]}')
+                
+                try:
+                    selected_detector = duped_detectors[int(input())]
+                except (ValueError, IndexError):
+                    selected_detector = duped_detectors[0]
+
+                # drop other detectors for this channel from the paired dict
+                to_drop = []
+                for detector, channel in detector_channel_pairs.items():
+                    if channel == dup and detector != selected_detector:
+                        to_drop.append(detector)
+
+                for detector in to_drop:
+                    del detector_channel_pairs[detector]
+        
+        self.channels = detector_channel_pairs
 
     def process_file(self) -> None:
         processed_tables = []
-        channel_index = -1
-        for chrom in self.chroms:
-            channel_index += 1
+        for detector, chrom in self.chroms.items():
+            if detector not in self.channels:
+                continue
             info_lines = chrom[:15]
             info = {}
             info_patterns = {
                 'interval': 'Interval(msec)',
-                'num_samples': '# of Points',
-                'ex': r'Ex\. Wavelength',
-                'em': r'Em\. Wavelength'
+                'num_samples': '# of Points'
             }
             for key in info_patterns:
                 for line in info_lines:
@@ -330,10 +403,7 @@ class NewShimProcessor(HplcProcessor):
                 logging.error(f'Failed to read {self.filename}')
                 return
             
-            if 'ex' in info:
-                df['Channel'] = f'Ex:{info["ex"]}/Em:{info["em"]}'
-            else:
-                df['Channel'] = self.channels[channel_index]
+            df['Channel'] = self.channels[detector]
             df['Sample'] = self.sample_name
             
             df['mL'] = df['Time'] * self.flow_rate
