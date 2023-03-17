@@ -92,12 +92,12 @@ def append_waters(file_list, flow_rate = None):
 
     return chroms, set_name
 
-def get_shim_data(file, channel_names = None, flow_rate = None):
+def get_shim_data(file, channel_names = None, flow_rate = None, only_channels = None):
     with open(file, 'r') as f:
         first_line = f.readline().strip()
 
     if first_line == '[Header]':
-        return new_shim_reader(file, channel_names, flow_rate)
+        return new_shim_reader(file, channel_names, flow_rate, only_channels)
     else:
         return old_shim_reader(file, channel_names, flow_rate)
 
@@ -136,7 +136,7 @@ def old_shim_reader(filename, channel_names, flow_rate = None):
 
     return (to_append, set_name)
 
-def new_shim_reader(filename, channel_names = None, flow_rate = None):
+def new_shim_reader(filename, channel_names = None, flow_rate = None, only_channels = None):
     # new shimadzu tables are actually several tables separated by
     # headers, which are in the format `[header]`
     to_append = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample', 'mL'])
@@ -199,6 +199,8 @@ def new_shim_reader(filename, channel_names = None, flow_rate = None):
         channel_index = -1
         for chrom in chroms:
             channel_index += 1
+            if only_channels is not None and 'ABCDEF'[channel_index] not in only_channels:
+                continue
             info_lines = chrom[:15]
             info = {}
             info_patterns = {
@@ -231,7 +233,7 @@ def new_shim_reader(filename, channel_names = None, flow_rate = None):
 
         return(to_append, sample_set)
 
-def append_shim(file_list, channel_mapping, flow_rate = None):
+def append_shim(file_list, channel_mapping, flow_rate = None, only_channels = None):
     chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
 
     channel_names = list(channel_mapping.keys())
@@ -242,7 +244,7 @@ def append_shim(file_list, channel_mapping, flow_rate = None):
         loading_bar(i+1, (len(file_list)), extension = ' Shimadzu files')
         file = file_list[i]
 
-        to_append, set_name = get_shim_data(file, channel_names, flow_rate)
+        to_append, set_name = get_shim_data(file, channel_names, flow_rate, only_channels)
 
         chroms = pd.concat([chroms, to_append], ignore_index = True, sort = True)
 

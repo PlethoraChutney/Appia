@@ -36,7 +36,7 @@ def main(args):
             channel_mapping[args.channel_mapping[i]] = args.channel_mapping[i+1]
             i += 2
 
-        shim, shim_sample_set = hplc.append_shim(file_list['shimadzu'], channel_mapping, args.hplc_flow_rate)
+        shim, shim_sample_set = hplc.append_shim(file_list['shimadzu'], channel_mapping, args.hplc_flow_rate, args.only_channels)
 
         shim['Value'] = shim['Value'] * args.scale_hplc
 
@@ -215,6 +215,10 @@ process_args.add_argument(
     nargs = '+',
     default = ['A', 'Trp', 'B', 'GFP'],
     help = 'Channel mappings for old Shimadzu instruments. Default: A Trp B GFP'
+)
+process_args.add_argument(
+    '--only-channels',
+    help = 'Use only these channels for new shimadzu instruments. Give as string of letters without spaces, like `--only-channels AB` for only channels A and B.'
 )
 process_args.add_argument(
     '--scale-hplc',
