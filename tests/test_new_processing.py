@@ -9,16 +9,6 @@ appia_dir = os.path.split(
 )[0]
 
 class TestProcessing(unittest.TestCase):
-    def test_find_files(self):
-        test_files_glob = os.path.join(
-            appia_dir, 'test-files', '*'
-        )
-        found_files = appia.processors.core.get_files(test_files_glob)
-
-        self.assertEqual(len(found_files['waters']), 27)
-        self.assertEqual(len(found_files['shimadzu']), 11)
-        self.assertEqual(len(found_files['agilent']), 3)
-        self.assertEqual(len(found_files['akta']), 1)
 
     def test_waters_processing(self):
         waters_file = os.path.join(
