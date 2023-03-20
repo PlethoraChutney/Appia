@@ -248,7 +248,7 @@ web_up.add_argument(
 )
 web_up.add_argument(
     '-d', '--database',
-    help = '''Upload experiment to couchdb. Must have set your parameters using `appia database`.''',
+    help = "Upload experiment to couchdb. Must have set your parameters using `appia database`.",
     action = 'store_true'
 )
 web_up.add_argument(
