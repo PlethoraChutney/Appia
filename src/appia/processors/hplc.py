@@ -92,7 +92,7 @@ class HplcProcessor(object):
             return self._flow_rate
         
     @flow_rate.setter
-    def flow_rate(self, in_flow_rate:float|None):
+    def flow_rate(self, in_flow_rate:float):
         if in_flow_rate is None:
             self._flow_rate = None
         else:
@@ -570,5 +570,5 @@ class AgilentProcessor(HplcProcessor):
             var_name = 'Normalization',
             value_name = 'Value'
         )
-        
+
         self.df = df
