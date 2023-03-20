@@ -570,6 +570,5 @@ class AgilentProcessor(HplcProcessor):
             var_name = 'Normalization',
             value_name = 'Value'
         )
-
-        print(df)
+        
         self.df = df
