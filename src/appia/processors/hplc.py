@@ -223,16 +223,6 @@ class OldShimProcessor(HplcProcessor):
             elif line[0] == 'Total Data Points:':
                 self.data_points = [int(x) for x in line[1:-1]]
 
-<<<<<<< HEAD
-def get_shim_data(file, channel_names = None, flow_rate = None, only_channels = None):
-    with open(file, 'r') as f:
-        first_line = f.readline().strip()
-
-    if first_line == '[Header]':
-        return new_shim_reader(file, channel_names, flow_rate, only_channels)
-    else:
-        return old_shim_reader(file, channel_names, flow_rate)
-=======
             line = lines.pop(0)
 
         # the rest of the lines are just signal reads, but we
@@ -240,7 +230,6 @@ def get_shim_data(file, channel_names = None, flow_rate = None, only_channels = 
         # the `line` var.
         self.signal_column = [float(line)]
         self.signal_column.extend([float(x) for x in lines])
->>>>>>> object-processing
 
     def process_file(self) -> None:
         time_column = []
@@ -286,24 +275,6 @@ class NewShimProcessor(HplcProcessor):
         with open(filename, 'r') as f:
             first_line = f.readline().rstrip()
 
-<<<<<<< HEAD
-    return (to_append, set_name)
-
-def new_shim_reader(filename, channel_names = None, flow_rate = None, only_channels = None):
-    # new shimadzu tables are actually several tables separated by
-    # headers, which are in the format `[header]`
-    to_append = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample', 'mL'])
-
-    with open(filename, 'r') as f:
-        tables = {}
-        curr_table = False
-        for line in f:
-            if re.match('\[.*\]', line):
-                curr_table = line.replace('[', '').replace(']', '').strip()
-            else:
-                if curr_table not in tables:
-                    tables[curr_table] = [line]
-=======
         return first_line == '[Header]'
     
     def prepare_sample(self) -> None:
@@ -315,7 +286,6 @@ def new_shim_reader(filename, channel_names = None, flow_rate = None, only_chann
                 table_header_match = re.match(r'\[(.*)\]', line)
                 if table_header_match:
                     curr_table = table_header_match.group(1).strip()
->>>>>>> object-processing
                 else:
                     if curr_table not in tables:
                         tables[curr_table] = [line]
@@ -376,12 +346,6 @@ def new_shim_reader(filename, channel_names = None, flow_rate = None, only_chann
         # . One detector can have multiple channels, so that's
         # . why we have to do this
 
-<<<<<<< HEAD
-        channel_index = -1
-        for chrom in chroms:
-            channel_index += 1
-            if only_channels is not None and 'ABCDEF'[channel_index] not in only_channels:
-=======
         detector_channel_pairs = {}
         for detector, table in self.chroms.items():
             excitation = None
@@ -453,7 +417,6 @@ def new_shim_reader(filename, channel_names = None, flow_rate = None, only_chann
             # the user selected a different detector for the
             # given channel
             if detector not in self.channels:
->>>>>>> object-processing
                 continue
             info_lines = chrom[:15]
             info = {}
@@ -496,50 +459,6 @@ def new_shim_reader(filename, channel_names = None, flow_rate = None, only_chann
         )
         self.df = df
 
-<<<<<<< HEAD
-def append_shim(file_list, channel_mapping, flow_rate = None, only_channels = None):
-    chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample'])
-
-    channel_names = list(channel_mapping.keys())
-    flow_rate, _ = get_flow_rate(flow_rate, 'Shimadzu Traces', search = False)
-
-    for i in range(len(file_list)):
-
-        loading_bar(i+1, (len(file_list)), extension = ' Shimadzu files')
-        file = file_list[i]
-
-        to_append, set_name = get_shim_data(file, channel_names, flow_rate, only_channels)
-
-        chroms = pd.concat([chroms, to_append], ignore_index = True, sort = True)
-
-    chroms = chroms[['Time', 'Signal', 'Channel', 'Sample', 'mL']]
-    chroms = chroms.replace(channel_mapping)
-
-    chroms = chroms.groupby(['Sample', 'Channel'], group_keys=False).apply(normalizer)
-    chroms = chroms.melt(
-        id_vars = ['mL', 'Sample', 'Channel', 'Time'],
-        value_vars = ['Signal', 'Normalized'],
-        var_name = 'Normalization',
-        value_name = 'Value'
-    )
-
-    return chroms, set_name
-
-def append_agilent(file_list, flow_override = None, channel_override = None):
-    chroms = pd.DataFrame(columns = ['Time', 'Signal', 'Channel', 'Sample', 'mL'])
-
-    if channel_override:
-        channel = channel_override
-    else:
-        channel = False
-
-    for i in range(len(file_list)):
-
-        loading_bar(i+1, (len(file_list)), extension = ' Agilent files')
-        filename = file_list[i]
-
-        to_append = pd.read_csv(
-=======
 class AgilentProcessor(HplcProcessor):
     # Agilent files have basically no metadata,
     # so we need to provide a mechanism similar to our
@@ -565,7 +484,6 @@ class AgilentProcessor(HplcProcessor):
             else:
                 mod_args['hplc_flow_rate'] = float(flow_match.group(1))
         super().__init__(
->>>>>>> object-processing
             filename,
             manufacturer = 'Agilent',
             **mod_args
