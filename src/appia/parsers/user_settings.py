@@ -19,17 +19,11 @@ class AppiaSettings(object):
         with open(self.settings_path, 'w') as f:
             json.dump(self._user_settings, f)
 
-    def access_private_property(self, propname:str, not_found = None):
-        try:
-            return self._user_settings[propname]
-        except KeyError:
-            return not_found
-
     # Flow rates --------------------------------------------------------
 
     @property
     def flow_rates(self) -> dict:
-        return self.access_private_property('flow_rates', {})
+        return self._user_settings.get('flow_rates', {})
 
     @flow_rates.setter
     def flow_rates(self, new_flow_rates:dict):
@@ -56,11 +50,25 @@ class AppiaSettings(object):
 
         return None
     
+    # FPLC column volumes
+
+    @property
+    def default_column_volume(self):
+        return self._user_settings.get('default_column_volume')
+
+    @default_column_volume.setter
+    def default_column_volume(self, cv):
+        if isinstance(cv, float) or cv is None:
+            self._user_settings['default_column_volume'] = cv
+            self.save_settings()
+        else:
+            raise TypeError('Column volume must be a number')
+    
     # Database -------------------------------------------------------------
 
     @property
     def database_host(self):
-        return self.access_private_property('database_host')
+        return self._user_settings.get('database_host')
         
     @database_host.setter
     def database_host(self, hostname:str):
@@ -71,7 +79,7 @@ class AppiaSettings(object):
         
     @property
     def database_port(self):
-        return self.access_private_property('database_port', '5984')
+        return self._user_settings.get('database_port', '5984')
 
     @database_port.setter
     def database_port(self, port:int):
@@ -82,7 +90,7 @@ class AppiaSettings(object):
         
     @property
     def database_user(self):
-        return self.access_private_property('database_username')
+        return self._user_settings.get('database_username')
 
     @database_user.setter
     def database_user(self, username:str):
@@ -93,7 +101,7 @@ class AppiaSettings(object):
         
     @property
     def database_password(self):
-        return self.access_private_property('database_password')
+        return self._user_settings.get('database_password')
 
     @database_password.setter
     def database_password(self, password:str):

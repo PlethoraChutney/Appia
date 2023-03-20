@@ -42,6 +42,12 @@ def main(args):
 
         appia_settings.save_settings()
 
+    if args.set_fplc_cv:
+        appia_settings.default_column_volume = args.set_fplc_cv
+
+    if args.remove_fplc_cv:
+        appia_settings.default_column_volume = None
+
     if args.database_setup:
         print("Setting up database. To leave any of these settings unchanged, leave them blank.")
 
@@ -93,6 +99,16 @@ parser.add_argument(
     '--delete-flow-rate',
     help = 'Remove a flow rate from user settings. Give the method names. Can give multiple method names.',
     nargs='+'
+)
+parser.add_argument(
+    '--set-fplc-cv',
+    help = 'Set default CV for all FPLC traces.',
+    type = float
+)
+parser.add_argument(
+    '--remove-fplc-cv',
+    help = "Remove the default FPLC CV so you'll be asked every time",
+    action = 'store_true'
 )
 parser.add_argument(
     '--database-setup',

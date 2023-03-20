@@ -3,101 +3,106 @@ import os
 import sys
 import logging
 import shutil
+import pandas as pd
+from datetime import datetime
 from appia.processors import hplc, fplc, experiment, core
 from appia.plotters import auto_plot
-from appia.processors.gui import user_input
 
 def main(args):
-    file_list = core.get_files(args.files)
-    logging.debug(file_list)
+    file_list = core.process_globs(args.files)
+    num_files = len(file_list)
+    hplc_processors = hplc.HplcProcessor.__subclasses__()
+    fplc_processors = fplc.FplcProcessor.__subclasses__()
+    processors = hplc_processors + fplc_processors
+    processed_files = []
+
+    for i, filename in enumerate(file_list):
+        core.loading_bar(i + 1, num_files)
+        claimed = [Proc(filename, **vars(args)) for Proc in processors]
+        claimed = [x for x in claimed if x.claimed]
+
+        if len(claimed) == 1:
+            processed_files.append(claimed[0])
+        elif len(claimed) > 1:
+            logging.error(f'{filename} claimed by multiple processors. Skipping.')
+        else:
+            logging.warning(f'{filename} claimed by no processor. If it is not a chromatography trace, this is fine.')
+
 
     # Make Experiment ------------------------------------------------------------
     if args.id:
-        exp = experiment.Experiment(args.id)
-    
-    
-    if file_list['waters']:
-        waters, wat_sample_set = hplc.append_waters(file_list['waters'], args.hplc_flow_rate)
-        if wat_sample_set is None:
-            wat_sample_set = user_input('Sample set name: ')
-
-        waters['Value'] = waters['Value'] * args.scale_hplc
-
-        try:
-            exp.hplc = waters
-        except NameError:
-            exp = experiment.Experiment(wat_sample_set)
-            exp.hplc = waters
-
-    if file_list['shimadzu']:
-        channel_mapping = {}
+        exp_id = args.id
+    else:
+        exp_id = None
         i = 0
-        while i < len(args.channel_mapping):
-            channel_mapping[args.channel_mapping[i]] = args.channel_mapping[i+1]
-            i += 2
+        while exp_id is None and i < len(processed_files):
+            exp_id = processed_files[i].set_name
+            i += 1
+        
+        if exp_id is None:
+            exp_id = 'Processed-On_' + datetime.today().strftime('%Y-%m-%d_%H-%M-%S')
 
-        shim, shim_sample_set = hplc.append_shim(file_list['shimadzu'], channel_mapping, args.hplc_flow_rate, args.only_channels)
+    exp = experiment.Experiment(exp_id)
 
-        shim['Value'] = shim['Value'] * args.scale_hplc
+    try:
+        exp.hplc = pd.concat([x.df for x in processed_files if x.proc_type == 'hplc'])
+    except ValueError:
+        exp.hplc = None
+    try:
+        exp.fplc = pd.concat([x.df for x in processed_files if x.proc_type == 'fplc'])
+    except ValueError:
+        exp.fplc = None
 
-        try:
-            exp.extend_hplc(shim)
-        except NameError:
-            exp = experiment.Experiment(shim_sample_set)
-            exp.hplc = shim
-
-    if file_list['akta']:
-        fplc_trace = fplc.append_fplc(file_list['akta'], args.fplc_cv)
-        # everything but the '.csv' at the end from the first file name without directory info
-        fplc_id = os.path.split(file_list['akta'][0])[1][:-4]
-
-        try:
-            exp.fplc = fplc_trace
-        except NameError:
-            exp = experiment.Experiment(fplc_id)
-            exp.fplc = fplc_trace
-            
-    if file_list['agilent']:
-        agil = hplc.append_agilent(file_list['agilent'], args.hplc_flow_rate)
-
-        agil['Value'] = agil['Value'] * args.scale_hplc
-
-        try:
-            exp.extend_hplc(agil)
-        except NameError:
-            sample_set_name = user_input('Please provide an experiment name: ')
-            exp = experiment.Experiment(sample_set_name)
-            exp.hplc = agil
+    logging.debug('Experiment HPLC data:')
+    logging.debug(exp.hplc)
+    logging.debug('Experiment FPLC data:')
+    logging.debug(exp.fplc)
 
     try:
         logging.info(f'Made {exp}')
     except NameError:
-        logging.error('Cannot make empty experiment.')
+        logging.error('Your experiment is empty. Stopping.')
         sys.exit(1)
+
+    # Set output dir --------------------------------
 
     if args.output_dir:
         out_dir = os.path.abspath(os.path.expanduser(args.output_dir))
     elif not args.no_move:
-        out_dir = os.path.abspath(os.path.join(os.curdir, exp.id))
+        logging.debug('Determining raw data dir...')
+        logging.debug(f'Exp id: {exp.id}')
+        out_dir = os.path.abspath(os.path.join(os.curdir, exp.id.replace(os.path.sep, '-')))
+        logging.debug(f'Outdir: {out_dir}')
     else:
         out_dir = os.path.curdir
         
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
 
-    for file_type in file_list.keys():
-        if not args.no_move and file_list[file_type]:
-            out = os.path.join(out_dir, f'{exp.id}_raw-{file_type}')
-            if not os.path.isdir(out):
-                os.makedirs(out)
+    # move raw files to subdir ---------------------------
 
-            for file in file_list[file_type]:
-                shutil.move(file, os.path.join(out, os.path.basename(file)))
+    if not args.no_move:
+        for claimed_file in processed_files:
+            raw_data_dir = os.path.join(out_dir, f'{claimed_file.manufacturer}_raw-files')
+            if not os.path.isdir(raw_data_dir):
+                os.makedirs(raw_data_dir)
+
+            new_file_path = os.path.join(raw_data_dir, os.path.basename(claimed_file.filename))
+
+            shutil.move(claimed_file.filename, new_file_path)
+
+    # rescale and renormalize whole experiment ------------------------
+
+    if args.scale_hplc and exp.hplc is not None:
+        exp.hplc['Value'] = exp.hplc['Value'] * args.scale_hplc
+
     try:
         exp.renormalize_hplc(args.normalize, args.strict_normalize)
     except ValueError:
         if args.strict_normalize:
             logging.warning('No HPLC data to normalize')
+
+    # save csvs -------------------------------------------
     hplc_csv, fplc_csv = exp.save_csvs(out_dir)
     if hplc_csv:
         logging.debug(f'HPLC: ' + hplc_csv)
@@ -133,6 +138,8 @@ def main(args):
                     height = 1080
                     )
 
+    # copy the manual plotting script, if requested ----------------
+
     if args.copy_manual is not None:
         if exp.hplc is not None:
             shutil.copyfile(
@@ -145,10 +152,14 @@ def main(args):
                 os.path.join(out_dir, f'{exp.id}_manual-plot-FPLC.R')
             )
 
+    # upload to the database -------------------------------------
+
     if args.database:
         from appia.processors.database import db
         exp.reduce_hplc(args.reduce)
         db.upload_experiment(exp, args.overwrite)
+
+    return exp
 
 parser = argparse.ArgumentParser(
     description = 'Process chromatography data',
@@ -217,8 +228,8 @@ process_args.add_argument(
     help = 'Channel mappings for old Shimadzu instruments. Default: A Trp B GFP'
 )
 process_args.add_argument(
-    '--only-channels',
-    help = 'Use only these channels for new shimadzu instruments. Give as string of letters without spaces, like `--only-channels AB` for only channels A and B.'
+    '--agilent-channel-name',
+    help = 'Channel name for Agilent channels. This will override the channel specified by filenames if you have both.'
 )
 process_args.add_argument(
     '--scale-hplc',
@@ -237,7 +248,7 @@ web_up.add_argument(
 )
 web_up.add_argument(
     '-d', '--database',
-    help = '''Upload experiment to couchdb. Must have set your parameters using `appia database`.''',
+    help = "Upload experiment to couchdb. Must have set your parameters using `appia database`.",
     action = 'store_true'
 )
 web_up.add_argument(
