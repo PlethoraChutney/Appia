@@ -94,9 +94,17 @@ class TestProcessing(unittest.TestCase):
             appia_dir, 'test-files', 'NAI-A594_0H_RT_Channel540_Flow1.0.CSV'
         )
 
+        results = hplc.AgilentProcessor(
+            ag_file,
+            hplc_flow_rate = 0.5,
+            agilent_channel_name = 'test-channel'
+        )
+        self.assertEqual(results.channel, 'test-channel')
+        self.assertEqual(results.flow_rate, 0.5)
+
         results = hplc.AgilentProcessor(ag_file)
         self.assertEqual(results.channel, '540')
-        self.assertEqual(results.flow_rate, 1)
+        self.assertEqual(results.flow_rate, 1.0)
 
         df = results.df
         self.assertEqual(df.shape, (52800, 6))
