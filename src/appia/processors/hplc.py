@@ -481,7 +481,7 @@ class AgilentProcessor(HplcProcessor):
         super().__init__(
             filename,
             manufacturer = 'Agilent',
-            flow_rate = flow_rate,
+            hplc_flow_rate = flow_rate,
             **kwargs
         )
 

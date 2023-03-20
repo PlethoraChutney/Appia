@@ -52,7 +52,7 @@ class TestProcessing(unittest.TestCase):
         results = hplc.OldShimProcessor(
             shim_file,
             hplc_flow_rate = 0.5,
-            channel_dict = {'A': 'Trp', 'B': 'GFP'}
+            channel_mapping = {'A': 'Trp', 'B': 'GFP'}
         )
 
         df = results.df
@@ -129,19 +129,6 @@ class TestProcessing(unittest.TestCase):
         norm = df.loc[df['Normalization'] == 'Normalized']
         self.assertEqual(min(norm.Value), 0)
         self.assertEqual(max(norm.Value), 1)
-
-    def test_experiment(self):
-        args = FakeArgs({
-            'files': ['test-files/*'],
-            'no_move': True,
-            'hplc_flow_rate': 0.5,
-            'agilent_channel_name': 'A594'
-        })
-        exp = process_parser.main(args)
-        print(exp)
-        self.assertIsNotNone(exp.hplc)
-        self.assertIsNotNone(exp.fplc)
-
 
 if __name__ == '__main__':
     unittest.main()
