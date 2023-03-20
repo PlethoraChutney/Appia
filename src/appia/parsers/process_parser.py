@@ -18,7 +18,7 @@ def main(args):
 
     for i, filename in enumerate(file_list):
         core.loading_bar(i + 1, num_files)
-        claimed = [Proc(filename) for Proc in processors]
+        claimed = [Proc(filename, **vars(args)) for Proc in processors]
         claimed = [x for x in claimed if x.claimed]
 
         if len(claimed) == 1:
@@ -40,15 +40,9 @@ def main(args):
             i += 1
         
         if exp_id is None:
-            exp_id = 'Processed-On_' + datetime.today().strftime('%Y-%m-%d_%H:%M:%S')
+            exp_id = 'Processed-On_' + datetime.today().strftime('%Y-%m-%d_%H-%M-%S')
 
     exp = experiment.Experiment(exp_id)
-
-    try:
-        logging.info(f'Made {exp}')
-    except NameError:
-        logging.error('Cannot make empty experiment.')
-        sys.exit(1)
 
     try:
         exp.hplc = pd.concat([x.df for x in processed_files if x.proc_type == 'hplc'])
@@ -63,6 +57,12 @@ def main(args):
     logging.debug(exp.hplc)
     logging.debug('Experiment FPLC data:')
     logging.debug(exp.fplc)
+
+    try:
+        logging.info(f'Made {exp}')
+    except NameError:
+        logging.error('Your experiment is empty. Stopping.')
+        sys.exit(1)
 
     # Set output dir --------------------------------
 
@@ -153,6 +153,8 @@ def main(args):
         exp.reduce_hplc(args.reduce)
         db.upload_experiment(exp, args.overwrite)
 
+    return exp
+
 parser = argparse.ArgumentParser(
     description = 'Process chromatography data',
     add_help = False    
@@ -218,6 +220,10 @@ process_args.add_argument(
     nargs = '+',
     default = ['A', 'Trp', 'B', 'GFP'],
     help = 'Channel mappings for old Shimadzu instruments. Default: A Trp B GFP'
+)
+process_args.add_argument(
+    '--agilent-channel-name',
+    help = 'Channel name for Agilent channels. This will override the channel specified by filenames if you have both.'
 )
 process_args.add_argument(
     '--scale-hplc',

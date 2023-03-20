@@ -35,7 +35,7 @@ class HplcProcessor(object):
         self.filename = filename
         self.manufacturer = kwargs.get('manufacturer')
         self.method = kwargs.get('method')
-        self.flow_rate = kwargs.get('flow_rate')
+        self.flow_rate = kwargs.get('hplc_flow_rate')
         self.set_name = None
         self.__dict__.update(**kwargs)
 
@@ -434,16 +434,18 @@ class AgilentProcessor(HplcProcessor):
     flow_pattern = r'_Flow([0-9]*?\.[0-9]*?)?(_|\.(?![0-9]))'
 
     def __init__(self, filename, **kwargs):
-        self._channel = None
+        self._channel = kwargs.get('agilent_channel_name')
+        flow_rate = kwargs.get('hplc_flow_rate')
         
         flow_match = re.search(
             AgilentProcessor.flow_pattern,
             filename
         )
         if flow_match:
-            flow_rate = float(flow_match.group(1))
-        else:
-            flow_rate = None
+            if kwargs.get('hplc_flow_rate') is not None:
+                logging.warning('Agilent filename has a flow rate, but a flow rate was also passed as an argument. Using the argument flow rate. To use the filename flowrate, do not use --hplc-flow-rate option.')
+            else:
+                flow_rate = float(flow_match.group(1))
         super().__init__(
             filename,
             manufacturer = 'Agilent',
@@ -533,4 +535,5 @@ class AgilentProcessor(HplcProcessor):
             value_name = 'Value'
         )
 
+        print(df)
         self.df = df

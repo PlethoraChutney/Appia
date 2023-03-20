@@ -17,7 +17,7 @@ class FplcProcessor(object):
         self.filename = filename
         self.set_name = kwargs.get('set_name')
         self.manufacturer = kwargs.get('manufacturer')
-        self._column_volume = kwargs.get('column_volume')
+        self._column_volume = kwargs.get('fplc_cv')
         self.__dict__.update(**kwargs)
 
         if self.claim_file(filename):

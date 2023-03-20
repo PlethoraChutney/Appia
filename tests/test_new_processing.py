@@ -1,12 +1,20 @@
 import unittest
 import os
-import appia
 from appia.processors import hplc, fplc
+from appia.parsers import process_parser
 
 
 appia_dir = os.path.split(
     os.path.dirname(os.path.realpath(__file__))
 )[0]
+
+class FakeArgs(object):
+    def __init__(self, arg_dict):
+        for key, val in arg_dict.items():
+            setattr(self, key, val)
+
+    def __getattr__(self, attr):
+        return None
 
 class TestProcessing(unittest.TestCase):
 
@@ -15,7 +23,7 @@ class TestProcessing(unittest.TestCase):
             appia_dir, 'test-files', 'results1844.arw'
         )
 
-        results = hplc.WatersProcessor(waters_file, flow_rate = 0.5)
+        results = hplc.WatersProcessor(waters_file, hplc_flow_rate = 0.5)
         self.assertEqual(results.manufacturer, 'Waters')
         self.assertEqual(results.flow_rate, 0.5)
         self.assertEqual(results.sample_name, 'SEC_08')
@@ -43,7 +51,7 @@ class TestProcessing(unittest.TestCase):
 
         results = hplc.OldShimProcessor(
             shim_file,
-            flow_rate = 0.5,
+            hplc_flow_rate = 0.5,
             channel_dict = {'A': 'Trp', 'B': 'GFP'}
         )
 
@@ -66,7 +74,7 @@ class TestProcessing(unittest.TestCase):
         )
         results = hplc.NewShimProcessor(
             shim_file,
-            flow_rate = 0.5
+            hplc_flow_rate = 0.5
         )
 
         df = results.df
@@ -107,7 +115,10 @@ class TestProcessing(unittest.TestCase):
             appia_dir, 'test-files', '2018_0821SEC_detergentENaC.csv'
         )
 
-        results = fplc.AktaProcessor(akta_file, column_volume = 24)
+        results = fplc.AktaProcessor(
+            akta_file,
+            fplc_cv = 24
+        )
         df = results.df
 
         self.assertEqual(df.shape, (87002, 7))
@@ -118,6 +129,18 @@ class TestProcessing(unittest.TestCase):
         norm = df.loc[df['Normalization'] == 'Normalized']
         self.assertEqual(min(norm.Value), 0)
         self.assertEqual(max(norm.Value), 1)
+
+    def test_experiment(self):
+        args = FakeArgs({
+            'files': ['test-files/*'],
+            'no_move': True,
+            'hplc_flow_rate': 0.5,
+            'agilent_channel_name': 'A594'
+        })
+        exp = process_parser.main(args)
+        print(exp)
+        self.assertIsNotNone(exp.hplc)
+        self.assertIsNotNone(exp.fplc)
 
 
 if __name__ == '__main__':
