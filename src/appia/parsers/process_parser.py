@@ -69,7 +69,10 @@ def main(args):
     if args.output_dir:
         out_dir = os.path.abspath(os.path.expanduser(args.output_dir))
     elif not args.no_move:
-        out_dir = os.path.abspath(os.path.join(os.curdir, exp.id))
+        logging.debug('Determining raw data dir...')
+        logging.debug(f'Exp id: {exp.id}')
+        out_dir = os.path.abspath(os.path.join(os.curdir, exp.id.replace(os.path.sep, '-')))
+        logging.debug(f'Outdir: {out_dir}')
     else:
         out_dir = os.path.curdir
         

@@ -107,6 +107,14 @@ class HplcProcessor(object):
         if not isinstance(in_df, pd.DataFrame):
             raise TypeError
         self._df = in_df
+
+    @property
+    def set_name(self):
+        return self._set_name
+    
+    @set_name.setter
+    def set_name(self, new_set_name):
+        self._set_name = None if new_set_name is None else new_set_name.replace(os.path.sep, '-')
             
 
 class WatersProcessor(HplcProcessor):
@@ -157,7 +165,7 @@ class WatersProcessor(HplcProcessor):
 
 class OldShimProcessor(HplcProcessor):
     def __init__(self, filename, **kwargs):
-        self.channel_dict = kwargs.get('channel_dict', {})
+        self.channel_dict = kwargs.get('channel_mapping', [])
         super().__init__(
             filename,
             manufacturer = 'Shimadzu',
@@ -167,6 +175,29 @@ class OldShimProcessor(HplcProcessor):
     @classmethod
     def claim_file(cls, filename:str) -> bool:
         return filename[-4:].lower() == '.asc'
+    
+    @property
+    def channel_dict(self) -> dict:
+        if isinstance(self._channel_dict, list):
+            return_dict = {}
+            i = 0
+            while i < len(self._channel_dict):
+                return_dict[self._channel_dict[i]] = self._channel_dict[i + 1]
+                i += 2
+        
+        elif isinstance(self._channel_dict, dict):
+            return_dict = self._channel_dict
+        else:
+            return_dict = {}
+
+        return return_dict
+    
+    @channel_dict.setter
+    def channel_dict(self, new_dict):
+        if isinstance(new_dict, dict) or isinstance(new_dict, list):
+            self._channel_dict = new_dict
+        else:
+            raise ValueError
 
     def prepare_sample(self) -> None:
         with open(self.filename, 'r') as f:
@@ -212,6 +243,7 @@ class OldShimProcessor(HplcProcessor):
             'Signal': self.signal_column
         })
         df['mL'] = df.Time * super().flow_rate
+        logging.debug(self.channel_dict)
         df = df.replace({'Channel': self.channel_dict})
         df = df.groupby(['Sample', 'Channel'], group_keys=False).apply(normalizer)
         df = df.melt(
