@@ -88,7 +88,10 @@ def main(args):
 
             shutil.move(claimed_file.filename, new_file_path)
 
-    # renormalize whole experiment ------------------------
+    # rescale and renormalize whole experiment ------------------------
+
+    if args.scale_hplc and exp.hplc is not None:
+        exp.hplc['Value'] = exp.hplc['Value'] * args.scale_hplc
 
     try:
         exp.renormalize_hplc(args.normalize, args.strict_normalize)
