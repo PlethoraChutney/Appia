@@ -1,7 +1,8 @@
 import pandas as pd
 import os
+import logging
 from appia.parsers.user_settings import appia_settings
-from appia.processors.core import normalizer, loading_bar
+from appia.processors.core import normalizer
 
 class FplcProcessor(object):
     """
@@ -14,13 +15,18 @@ class FplcProcessor(object):
         self._df = None
         self.proc_type = 'fplc'
         self.filename = filename
+        self.set_name = kwargs.get('set_name')
         self.manufacturer = kwargs.get('manufacturer')
         self._column_volume = kwargs.get('column_volume')
         self.__dict__.update(**kwargs)
 
         if self.claim_file(filename):
+            logging.debug(f'{self.manufacturer} claims {filename}')
+            self.claimed = True
             self.prepare_sample()
             self.process_file()
+        else:
+            self.claimed = False
 
     @property
     def column_volume(self):

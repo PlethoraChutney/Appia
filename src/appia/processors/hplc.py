@@ -36,6 +36,7 @@ class HplcProcessor(object):
         self.manufacturer = kwargs.get('manufacturer')
         self.method = kwargs.get('method')
         self.flow_rate = kwargs.get('flow_rate')
+        self.set_name = None
         self.__dict__.update(**kwargs)
 
         if self.claim_file(filename):
@@ -335,7 +336,7 @@ class NewShimProcessor(HplcProcessor):
         # - and have the user resolve duplicates if they exist
 
         if len(set(detector_channel_pairs.values())) != len(detector_channel_pairs.values()):
-            logging.warning('Duplicate channels detected: ')
+            logging.warning('Duplicate channels detected:                             ')
 
             counter = {}
             for channel in detector_channel_pairs.values():
@@ -376,6 +377,9 @@ class NewShimProcessor(HplcProcessor):
     def process_file(self) -> None:
         processed_tables = []
         for detector, chrom in self.chroms.items():
+            # if the detector isn't in channels, that means
+            # the user selected a different detector for the
+            # given channel
             if detector not in self.channels:
                 continue
             info_lines = chrom[:15]
