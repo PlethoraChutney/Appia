@@ -4,7 +4,7 @@ from io import StringIO
 import os
 import logging
 import re
-from appia.processors.core import loading_bar, normalizer
+from appia.processors.core import normalizer
 from appia.parsers.user_settings import appia_settings
 
 class HplcProcessor(object):
@@ -26,6 +26,10 @@ class HplcProcessor(object):
                 and should produce the dataframe
     """
     def __init__(self, filename, **kwargs):
+        logging.debug(f'HPLC processing arguments for {filename}')
+        for argument, value in kwargs.items():
+            logging.debug(f'    {argument}: {value}')
+
         if not hasattr(self.__class__, 'flow_rate_override'):
             # don't want to reset this every time we instantiate
             # a processor, but I also don't want to add it at the
@@ -468,21 +472,21 @@ class AgilentProcessor(HplcProcessor):
     def __init__(self, filename, **kwargs):
         self._channel = kwargs.get('agilent_channel_name')
         flow_rate = kwargs.get('hplc_flow_rate')
+        mod_args = kwargs.copy()
         
         flow_match = re.search(
             AgilentProcessor.flow_pattern,
             filename
         )
         if flow_match:
-            if kwargs.get('hplc_flow_rate') is not None:
+            if flow_rate is not None:
                 logging.warning('Agilent filename has a flow rate, but a flow rate was also passed as an argument. Using the argument flow rate. To use the filename flowrate, do not use --hplc-flow-rate option.')
             else:
-                flow_rate = float(flow_match.group(1))
+                mod_args['hplc_flow_rate'] = float(flow_match.group(1))
         super().__init__(
             filename,
             manufacturer = 'Agilent',
-            hplc_flow_rate = flow_rate,
-            **kwargs
+            **mod_args
         )
 
 
