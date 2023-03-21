@@ -3,6 +3,7 @@ import os
 import json
 from dash import dcc
 from dash import html
+from dash.dependencies import Input, Output, State
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
@@ -421,8 +422,8 @@ app.layout = serve_layout
 # Update graph experiment title
 
 @app.callback(
-    dash.dependencies.Output('output-container', 'children'),
-    [dash.dependencies.Input('root-location', 'pathname')])
+    Output('output-container', 'children'),
+    [Input('root-location', 'pathname')])
 def update_output(pathname):
     experiment_name = pathname.replace(url_basename, '').replace('+', ' and ').replace('%20', ' ')
     return f'{experiment_name}'
@@ -430,8 +431,8 @@ def update_output(pathname):
 # Make URL pathname the experiment name(s)
 
 @app.callback(
-    dash.dependencies.Output('root-location', 'pathname'),
-    [dash.dependencies.Input('experiment_dropdown', 'value')]
+    Output('root-location', 'pathname'),
+    [Input('experiment_dropdown', 'value')]
 )
 def update_url(value):
     if value is not None:
@@ -441,19 +442,19 @@ def update_url(value):
 
 @app.callback(
     [
-        dash.dependencies.Output('main_graphs', 'children'),
-        dash.dependencies.Output('hplc-options-sidebar', 'hidden'),
-        dash.dependencies.Output('fplc-options-sidebar', 'hidden'),
+        Output('main_graphs', 'children'),
+        Output('hplc-options-sidebar', 'hidden'),
+        Output('fplc-options-sidebar', 'hidden'),
     ],
     [
-        dash.dependencies.Input('root-location', 'pathname'),
-        dash.dependencies.Input('root-location', 'search'),
-        dash.dependencies.Input('x-ax-radios', 'value'),
-        dash.dependencies.Input('renorm-hplc', 'n_clicks'),
-        dash.dependencies.Input('reset-norm', 'n_clicks'),
-        dash.dependencies.Input('reset-hplc', 'n_clicks'),
-        dash.dependencies.Input('download-format-options', 'value'),
-        dash.dependencies.Input('fplc-overlay', 'value')
+        Input('root-location', 'pathname'),
+        Input('root-location', 'search'),
+        Input('x-ax-radios', 'value'),
+        Input('renorm-hplc', 'n_clicks'),
+        Input('reset-norm', 'n_clicks'),
+        Input('reset-hplc', 'n_clicks'),
+        Input('download-format-options', 'value'),
+        Input('fplc-overlay', 'value')
     ]
 )
 def create_graphs(
@@ -489,13 +490,13 @@ def create_graphs(
         )
 
 @app.callback(
-    dash.dependencies.Output('root-location', 'search'),
+    Output('root-location', 'search'),
     [
-        dash.dependencies.Input('data-Signal', 'relayoutData'),
-        dash.dependencies.Input('root-location', 'search'),
-        dash.dependencies.Input('renorm-hplc', 'n_clicks'),
-        dash.dependencies.Input('reset-norm', 'n_clicks'),
-        dash.dependencies.Input('reset-hplc', 'n_clicks')
+        Input('data-Signal', 'relayoutData'),
+        Input('root-location', 'search'),
+        Input('renorm-hplc', 'n_clicks'),
+        Input('reset-norm', 'n_clicks'),
+        Input('reset-hplc', 'n_clicks')
     ]
 )
 def refresh_xrange(relayout_data, search_string, renorm, reset_norm, reset):
@@ -536,23 +537,30 @@ def refresh_xrange(relayout_data, search_string, renorm, reset_norm, reset):
     return new_q_string
 
 @app.callback(
-    dash.dependencies.Output('download-hplc-dataframe', 'data'),
+    Output('download-hplc-dataframe', 'data'),
     [
-        dash.dependencies.Input('download-hplc-long', 'n_clicks'),
-        dash.dependencies.Input('download-hplc-wide', 'n_clicks'),
-        dash.dependencies.Input('download-fplc', 'n_clicks'),
-        dash.dependencies.Input('root-location', 'pathname')
+        Input('download-hplc-long', 'n_clicks'),
+        Input('download-hplc-wide', 'n_clicks'),
+        Input('download-fplc', 'n_clicks'),
+        Input('root-location', 'pathname')
     ],
+    State('root-location', 'search'),
     prevent_initial_call = True
 )
-def download_csv(hplc_l, hplc_w, fplc, pathname):
+def download_csv(hplc_l, hplc_w, fplc, pathname, search_string):
     changed = [p['prop_id'] for p in dash.callback_context.triggered][0]
 
     if changed is None or changed == 'root-location.pathname':
         raise dash.exceptions.PreventUpdate
     else:
+
+        norm_range, _ = parse_query(search_string)
         exp_list = exp_list_from_pathname(pathname)
         exp = get_experiments(exp_list)
+
+        if norm_range is not None:
+            exp.renormalize_hplc(norm_range, False)
+
 
     if changed == 'download-hplc-long.n_clicks':
         if exp.hplc is not None:
