@@ -10,7 +10,15 @@ web interface, built with [plotly dash](https://plotly.com/dash/). Please check 
 If you find Appia useful in your research, please [cite it](https://dx.doi.org/10.1371/journal.pone.0280255).
 
 ## Installation 👷
-### Server installation 
+### Server installation - Automated
+
+For Mac or PC I've written some wrappers around the manual installation process (below).
+You still need to install [docker](https://www.docker.com/), but then just download
+the appropriate `install-appia-web` script and run it. You'll be prompted to set your
+username and password --- you'll need these to set up your processing installations.
+
+### Manual installation
+
 1. Install [docker](https://www.docker.com/)
 2. Copy `docker-compose.yml` and `local.ini` wherever you want the database to save data
 3. If you're installing Appia Web on an Apple Silicon Mac, set $APPIA_ARCH to "arm64-"
