@@ -7,8 +7,8 @@ then
 fi
 
 echo Downloading docker files from github
-rm docker-compose.yml &> /dev/null
-rm local.ini &> /dev/null
+mv docker-compose.yml old-docker-compose.yml &> /dev/null
+mv local.ini old-local.ini &> /dev/null
 wget https://raw.githubusercontent.com/PlethoraChutney/Appia/main/docker-compose.yml &> /dev/null
 wget https://raw.githubusercontent.com/PlethoraChutney/Appia/main/local.ini &> /dev/null
 
