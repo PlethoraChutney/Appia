@@ -261,6 +261,11 @@ class OldShimProcessor(HplcProcessor):
 
 class NewShimProcessor(HplcProcessor):
     def __init__(self, filename, **kwargs):
+        if not hasattr(NewShimProcessor, 'prefer_detector'):
+            # this attribute is used to pick detectors for channels that have
+            # multiple detectors. We want the samples to be consistent across
+            # channels, and don't want to have to ask the user multiple times.
+            NewShimProcessor.prefer_detector = kwargs.get('prefer_detector')
         super().__init__(
             filename,
             manufacturer = 'Shimadzu',
@@ -372,8 +377,6 @@ class NewShimProcessor(HplcProcessor):
         # - and have the user resolve duplicates if they exist
 
         if len(set(detector_channel_pairs.values())) != len(detector_channel_pairs.values()):
-            logging.warning('Duplicate channels detected:                             ')
-
             counter = {}
             for channel in detector_channel_pairs.values():
                 try:
@@ -390,14 +393,31 @@ class NewShimProcessor(HplcProcessor):
                     if channel == dup:
                         duped_detectors.append(detector)
 
-                print(f'Select a detector for {dup}. Any non-numeric choice will default to 0.')
-                for i in range(len(duped_detectors)):
-                    print(f'{i}: {duped_detectors[i]}')
-                
-                try:
-                    selected_detector = duped_detectors[int(input())]
-                except (ValueError, IndexError):
-                    selected_detector = duped_detectors[0]
+                # check if there is exactly one duplicated detector which matches the user's
+                # preferred detector. Otherwise, prompt them for input.
+                selected_detector = None
+                if NewShimProcessor.prefer_detector is not None:
+                    # split on space to avoid "Detector" and add -Ch to avoid "C" matching supriously
+                    is_preferred = [x for x in duped_detectors if NewShimProcessor.prefer_detector + '-Ch' in x.split(' ')[1]]
+                    if len(is_preferred) == 1:
+                        selected_detector = is_preferred[0]
+                    elif len(is_preferred) > 1:
+                        logging.warning(f'Preferred detector matched more than once: {", ".join(is_preferred)}')
+                    else:
+                        logging.info(f'Preferred detector {NewShimProcessor.prefer_detector} does not match any duplicated channel.')
+
+                if selected_detector is None:
+                    logging.warning('Duplicate channels detected. You can use --prefer-detector to select one in the future.')
+                    print(f'Select a detector for {dup}. Any non-numeric choice will default to 0.')
+                    for i in range(len(duped_detectors)):
+                        print(f'{i}: {re.sub("-Ch[0-9]*", "", duped_detectors[i])}')
+                    
+                    try:
+                        selected_detector = duped_detectors[int(input())]
+                        # update the class preferred detector so that the user isn't prompted for each file.
+                        NewShimProcessor.prefer_detector = re.search(r'Detector (.*?)-Ch[0-9]*', selected_detector).group(1)
+                    except (ValueError, IndexError):
+                        selected_detector = duped_detectors[0]
 
                 # drop other detectors for this channel from the paired dict
                 to_drop = []

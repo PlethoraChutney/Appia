@@ -228,6 +228,10 @@ process_args.add_argument(
     help = 'Channel mappings for old Shimadzu instruments. Default: A Trp B GFP'
 )
 process_args.add_argument(
+    '--prefer-detector',
+    help = 'New Shimadzu: if two detectors have the same channel, prefer the one with this name.'
+)
+process_args.add_argument(
     '--agilent-channel-name',
     help = 'Channel name for Agilent channels. This will override the channel specified by filenames if you have both.'
 )
