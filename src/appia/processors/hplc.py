@@ -310,7 +310,10 @@ class NewShimProcessor(HplcProcessor):
         # get sample name
         for line in tables["Sample Information"]:
             if "Sample Name" in line:
-                self.sample_name = line.strip().split("\t")[1]
+                try:
+                    self.sample_name = line.strip().split("\t")[1]
+                except IndexError:
+                    self.sample_name = ""
             elif "Sample ID" in line:
                 try:
                     self.sample_id = line.strip().split("\t")[1]
@@ -323,14 +326,37 @@ class NewShimProcessor(HplcProcessor):
         else:
             self.sample_name = self.sample_name
 
+        # correct for completely missing sample name
+        if not (self.sample_name or self.sample_id):
+            print(
+                f"File {self.filename} did not have a sample name or a sample ID.\nPlease enter a sample name:"
+            )
+            self.sample_name = input()
+
         # Get sample set name
         for line in tables["Original Files"]:
             if "Method File" in line:
-                method_path = line.strip().split("\t")[1]
-                self.method = method_path.split("\\")[-1]
+                try:
+                    method_path = line.strip().split("\t")[1]
+                    self.method = method_path.split("\\")[-1]
+                except IndexError:
+                    logging.warning(
+                        f'File {self.filename} did not have a method name. Setting to "No method name".'
+                    )
+                    self.method = "No method name"
             if "Batch File" in line:
-                batch_path = line.strip().split("\t")[1]
-                self.set_name = os.path.split(batch_path)[1][:-4]
+                try:
+                    batch_path = line.strip().split("\t")[1]
+                    self.set_name = os.path.split(batch_path)[1][:-4]
+                except IndexError:
+                    print(
+                        f"File {self.filename} did not have a sample set name. Please name this experiment:"
+                    )
+                    set_name = input()
+                    while not set_name:
+                        "Set name must not be blank. Please enter a sample set name:"
+                        set_name = input()
+                    self.set_name = set_name
 
         # Get all chromatograms
         self.chroms = {}
