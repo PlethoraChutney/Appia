@@ -111,5 +111,16 @@ class AppiaSettings(object):
         else:
             raise TypeError(f"Password must be a string, not a {type(password)}")
 
+    @property
+    def max_path_length(self):
+        return self._user_settings.get("max_path_length", 0)
+
+    @max_path_length.setter
+    def max_path_length(self, path_length: int):
+        try:
+            self._user_settings["max_path_length"] = int(path_length)
+        except ValueError:
+            raise ValueError("Max path length must be an integer.")
+
 
 appia_settings = AppiaSettings()

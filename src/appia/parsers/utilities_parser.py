@@ -85,6 +85,10 @@ def main(args):
         print("Password:", appia_settings.database_password)
         print("Port:", appia_settings.database_port)
 
+    if args.set_max_path_length:
+        appia_settings.max_path_length = args.set_max_path_length
+        appia_settings.save_settings()
+
 
 parser = argparse.ArgumentParser("Appia utilities", add_help=False)
 parser.set_defaults(func=main)
@@ -128,4 +132,9 @@ parser.add_argument(
     "--check-database-login",
     help="Print login info to the terminal",
     action="store_true",
+)
+parser.add_argument(
+    "--set-max-path-length",
+    help="Set greatest number of path steps to display. Set to 0 to show full path",
+    type=int,
 )

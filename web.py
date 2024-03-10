@@ -10,11 +10,31 @@ import pandas as pd
 from urllib.parse import parse_qs
 from appia.processors.database import Database
 from appia.processors.experiment import concat_experiments
+from appia.parsers.user_settings import appia_settings
 
 url_basename = "/traces/"
 app = dash.Dash(__name__, url_base_pathname=url_basename)
 server = app.server
 db = Database()
+
+
+def shorten_path_length(fullpath):
+    # can't use os.path.sep b/c processing machine may be different OS
+    # most likely processing machine is Windows, so check \\ second
+    sep = ""
+    if "/" in fullpath:
+        sep = "/"
+    if "\\" in fullpath:
+        sep = "\\"
+    if not sep or appia_settings.max_path_length <= 0:
+        return fullpath
+
+    split_path = fullpath.split(sep)
+    try:
+        split_path = split_path[-appia_settings.max_path_length :]
+    except IndexError:
+        pass
+    return sep.join(split_path)
 
 
 def exp_list_from_pathname(pathname):
@@ -307,7 +327,7 @@ def serve_layout():
                             dcc.Dropdown(
                                 id="experiment_dropdown",
                                 options=[
-                                    {"label": x, "value": x}
+                                    {"label": shorten_path_length(x), "value": x}
                                     for x in db.update_experiment_list()
                                 ],
                                 multi=True,
