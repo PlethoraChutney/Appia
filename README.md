@@ -5,7 +5,7 @@
 Appia is a set of scripts to process and view chromatography data from AKTA, Shimadzu, and
 Waters systems. Chromatography data can then be viewed on the easy-to-use and intuitive
 web interface, built with [plotly dash](https://plotly.com/dash/). Please check out the
-[web demo](https://traces.baconguislab.com/)!
+[web demo](https://appia.waldo.science/traces/)!
 
 If you find Appia useful in your research, please [cite it](https://dx.doi.org/10.1371/journal.pone.0280255).
 
