@@ -1,3 +1,6 @@
+# Migrated to Codeberg
+Appia has moved to [Codeberg](https://codeberg.org/plethorachutney/Appia).
+
 [![DOI](https://zenodo.org/badge/160436725.svg)](https://zenodo.org/badge/latestdoi/160436725)
 ![Tests](https://github.com/plethorachutney/appia/actions/workflows/tests.yaml/badge.svg)
 
